@@ -198,7 +198,11 @@ function tick(){
   document.getElementById('date-d').textContent =
     DAYS[n.getDay()] + ', ' + n.getDate() + '/' + (n.getMonth()+1) + '/' + n.getFullYear();
 }
-setInterval(tick, 1000); tick();
+// Chạy sau khi DOM load xong
+window.onload = function() {
+  tick();
+  setInterval(tick, 1000);
+};
 
 // ── Email — localStorage, không cho đổi ─────────────────
 function initEmail() {
@@ -267,10 +271,14 @@ function checkOffice(lat,lng){
   return {office:best, dist:min, inside:best&&min<=best.radius};
 }
 function setLoc(type, icon, title, lines){
-  const el = document.getElementById('loc');
+  var el = document.getElementById('loc');
   el.className = 'loc ' + type;
-  el.innerHTML = `<span class="li">${icon}</span>
-    <div class="lb"><strong>${title}</strong>${lines.map(l=>`<span>${l}</span>`).join('')}</div>`;
+  var spans = '';
+  for (var i = 0; i < lines.length; i++) {
+    spans += '<span>' + lines[i] + '</span>';
+  }
+  el.innerHTML = '<span class="li">' + icon + '</span>'
+    + '<div class="lb"><strong>' + title + '</strong>' + spans + '</div>';
 }
 
 function getGPS(){
@@ -356,7 +364,7 @@ function doSend(lat, lng, accuracy){
   const email = getEmail();
   if (!email) { alert('Vui lòng nhập họ tên.'); return; }
 
-    document.getElementById(id).disabled = true);
+    document.getElementById(id).disabled = true;
   document.getElementById('btn-send').innerHTML =
     '<span class="spin"></span> Đang gửi...';
 
@@ -370,12 +378,12 @@ function doSend(lat, lng, accuracy){
   })
   .then(r => r.json())
   .then(r => {
-      document.getElementById(id).disabled = false);
+      document.getElementById(id).disabled = false;
     document.getElementById('btn-send').innerHTML = '✅ Gửi chấm công';
     showDone(r, email);
   })
   .catch(e => {
-      document.getElementById(id).disabled = false);
+      document.getElementById(id).disabled = false;
     document.getElementById('btn-send').innerHTML = '✅ Gửi chấm công';
     alert('Lỗi kết nối: ' + e.message);
   });
