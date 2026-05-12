@@ -327,7 +327,7 @@ function getGPS(){
       const acc = gpsCoords.accuracy;
       const {office, dist, inside} = checkOffice(lat, lng);
       btn.disabled = false;
-      btn.innerHTML = '🔄 Lấy lại Vị trí';
+      btn.innerHTML = '🔄 Xác định lại Vị trí';
 
       // Kiểm tra vượt quá khoảng cách tối đa
       const overMax = MAX_DISTANCE > 0 && dist > MAX_DISTANCE;
