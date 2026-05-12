@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chấm Công - Siêu Thanh HN</title>
+<title>Chấm Công - Siêu Thanh Hà Nội</title>
 
 <!-- PWA: Add to Home Screen -->
 <meta name="mobile-web-app-capable" content="yes">
@@ -327,7 +327,7 @@ function getGPS(){
       const acc = gpsCoords.accuracy;
       const {office, dist, inside} = checkOffice(lat, lng);
       btn.disabled = false;
-      btn.innerHTML = '🔄 Xác định lại Vị trí';
+      btn.innerHTML = '🔄 Xác định lại vị trí';
 
       // Kiểm tra vượt quá khoảng cách tối đa
       const overMax = MAX_DISTANCE > 0 && dist > MAX_DISTANCE;
@@ -344,18 +344,21 @@ function getGPS(){
           `📏 Khoảng cách: ${Math.round(dist)} m`,
           `🎯 Độ chính xác: ±${Math.round(acc)} m`
         ]);
+        document.getElementById('btn-gps').style.display = 'none';
         document.getElementById('btn-send').style.display = 'flex';
       } else {
         setLoc('warn','⚠️','Ngoài phạm vi Công ty',[
           `📏 Cách ${office?office.name:'VP'}: ${Math.round(dist)} m`,
           `🎯 Độ chính xác: ±${Math.round(acc)} m`,
-          '⚠️ Vẫn có thể Chấm công — Hãy lưu ý lần sau!'
+          'Vẫn có thể chấm công — Hãy lưu ý lần sau.'
         ]);
+        document.getElementById('btn-gps').style.display = 'none';
         document.getElementById('btn-send').style.display = 'flex';
       }
     },
     err => {
       gpsCoords = null;
+      btn.style.display = 'flex';
       btn.disabled = false;
       btn.innerHTML = '🔄 Thử lại GPS';
       const m = {
@@ -443,14 +446,19 @@ function resetForm(){
   document.getElementById('main').classList.remove('hide');
   document.getElementById('note').value = '';
   document.getElementById('btn-send').style.display = 'none';
-  document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí GPS';
+  document.getElementById('btn-gps').style.display = 'none';
   document.getElementById('btn-gps').disabled = false;
-  setLoc('idle','📍','Chưa xác định vị trí',['Bấm nút bên dưới để bắt đầu']);
-
+  document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí';
+  setLoc('idle','📡','Đang xác định vị trí...','Vui lòng chờ'.split('|'));
+  getGPS();
 }
 
 // Khởi động
 initEmail();
+// Tự động lấy GPS khi mở app
+if (employeeName) {
+  getGPS();
+}
 </script>
 </body>
 </html>
