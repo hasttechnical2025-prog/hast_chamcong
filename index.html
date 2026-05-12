@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chấm công - Xác nhận vị trí</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+.card{background:white;border-radius:18px;box-shadow:0 4px 28px rgba(0,0,0,.12);
+  padding:30px 24px;max-width:400px;width:100%;}
+.header{text-align:center;margin-bottom:22px;}
+.header .icon{font-size:44px;margin-bottom:8px;}
+.header h1{color:#1a73e8;font-size:21px;font-weight:700;}
+.header p{color:#777;font-size:13px;margin-top:5px;}
+
+label{display:block;font-size:13px;color:#555;font-weight:600;margin-bottom:5px;}
+input,textarea{width:100%;border:1.5px solid #dadce0;border-radius:10px;
+  padding:11px 13px;font-size:15px;outline:none;transition:border-color .2s;font-family:inherit;}
+input:focus,textarea:focus{border-color:#1a73e8;}
+textarea{resize:none;}
+.field{margin-bottom:16px;}
+
+.loc{border-radius:12px;padding:13px 15px;font-size:13px;
+  display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;}
+.loc.idle   {background:#f1f3f4;color:#555;}
+.loc.ok     {background:#e6f4ea;color:#137333;}
+.loc.warn   {background:#fef7e0;color:#8a4f00;}
+.loc.err    {background:#fce8e6;color:#c5221f;}
+.loc .li{font-size:20px;flex-shrink:0;margin-top:1px;}
+.loc .lb strong{display:block;font-size:14px;margin-bottom:2px;}
+.loc .lb span{display:block;line-height:1.7;}
+
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;
+  font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:8px;transition:all .2s;margin-bottom:10px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn:last-child{margin-bottom:0;}
+.blue {background:#1a73e8;color:#fff;}
+.blue:hover:not(:disabled){background:#1557b0;}
+.green{background:#34a853;color:#fff;}
+.green:hover:not(:disabled){background:#137333;}
+.gray {background:#f1f3f4;color:#444;font-size:14px;}
+.gray:hover:not(:disabled){background:#e0e0e0;}
+.red  {background:#ea4335;color:#fff;}
+
+.spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;flex-shrink:0;}
+.spin.dark{border-color:rgba(0,0,0,.15);border-top-color:#555;}
+@keyframes s{to{transform:rotate(360deg)}}
+
+/* Result */
+#done{display:none;text-align:center;padding:10px 0;}
+#done.show{display:block;}
+.main.hide{display:none;}
+.res-emoji{font-size:58px;margin-bottom:10px;}
+.res-title{font-size:20px;font-weight:700;margin-bottom:14px;}
+.rows{background:#f8f9fa;border-radius:12px;padding:14px 16px;
+  text-align:left;margin-bottom:18px;}
+.row{display:flex;justify-content:space-between;padding:6px 0;
+  font-size:14px;border-bottom:1px solid #eee;}
+.row:last-child{border-bottom:none;}
+.row .l{color:#888;font-size:13px;flex-shrink:0;}
+.row .v{font-weight:600;color:#202124;text-align:right;word-break:break-all;max-width:58%;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <!-- Màn hình chính -->
+  <div class="main" id="main">
+    <div class="header">
+      <div class="icon">📍</div>
+      <h1>Xác nhận vị trí chấm công</h1>
+      <p>Điền email rồi bấm lấy vị trí GPS</p>
+    </div>
+
+    <div class="field">
+      <label>📧 Email chấm công</label>
+      <input type="email" id="email" placeholder="ten@gmail.com"
+        inputmode="email" autocomplete="email">
+    </div>
+
+    <!-- Trạng thái vị trí -->
+    <div class="loc idle" id="loc">
+      <span class="li">📍</span>
+      <div class="lb">
+        <strong>Chưa lấy vị trí</strong>
+        <span>Bấm nút bên dưới để bắt đầu</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>📝 Ghi chú (tuỳ chọn)</label>
+      <textarea id="note" rows="2" placeholder="Công tác, đi muộn, lý do khác..."></textarea>
+    </div>
+
+    <!-- Nút 1: Lấy GPS -->
+    <button class="btn blue" id="btn-gps" onclick="getGPS()">
+      📡 Lấy vị trí GPS
+    </button>
+
+    <!-- Nút 2: Gửi (chỉ hiện sau khi có GPS) -->
+    <button class="btn green" id="btn-send" onclick="send()" style="display:none">
+      ✅ Gửi chấm công
+    </button>
+
+    <!-- Nút 3: Gửi không có GPS (chỉ hiện khi lỗi GPS) -->
+    <button class="btn gray" id="btn-no-gps" onclick="sendNoGPS()" style="display:none">
+      📤 Gửi không có GPS
+    </button>
+  </div>
+
+  <!-- Màn hình kết quả -->
+  <div id="done">
+    <div class="res-emoji" id="r-emoji"></div>
+    <div class="res-title" id="r-title"></div>
+    <div class="rows" id="r-rows"></div>
+    <button class="btn green" onclick="reset()">🔄 Chấm công tiếp</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// ⚙️ CẤU HÌNH - THAY 2 GIÁ TRỊ NÀY
+// ═══════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+
+const OFFICES = [
+  { name: 'Văn phòng chính', lat: 21.0000, lng: 105.8412, radius: 200 },
+  // Thêm văn phòng khác nếu cần
+];
+// ═══════════════════════════════════════════════════
+
+let gpsCoords = null;
+
+function haversine(a,b,c,d){
+  const R=6371000,r=x=>x*Math.PI/180,da=r(c-a),db=r(d-b);
+  const e=Math.sin(da/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(db/2)**2;
+  return R*2*Math.atan2(Math.sqrt(e),Math.sqrt(1-e));
+}
+function checkOffice(lat,lng){
+  let best=null,min=Infinity;
+  OFFICES.forEach(o=>{const d=haversine(lat,lng,o.lat,o.lng);if(d<min){min=d;best=o;}});
+  return {office:best,dist:min,inside:best&&min<=best.radius};
+}
+
+function setLoc(type, icon, title, lines){
+  const el=document.getElementById('loc');
+  el.className='loc '+type;
+  el.innerHTML=`<span class="li">${icon}</span>
+    <div class="lb"><strong>${title}</strong>${lines.map(l=>`<span>${l}</span>`).join('')}</div>`;
+}
+
+// ── Lấy GPS ────────────────────────────────────────
+function getGPS(){
+  const email=document.getElementById('email').value.trim();
+  if(!email||!email.includes('@')){
+    alert('Vui lòng nhập email trước khi lấy vị trí.');
+    document.getElementById('email').focus();
+    return;
+  }
+
+  const btn=document.getElementById('btn-gps');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span> Đang lấy GPS...';
+  document.getElementById('btn-send').style.display='none';
+  document.getElementById('btn-no-gps').style.display='none';
+  setLoc('idle','📡','Đang lấy vị trí...','Trình duyệt sẽ hỏi quyền — bấm Cho phép'.split('|'));
+
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      gpsCoords=pos.coords;
+      const {latitude:lat,longitude:lng,accuracy:acc}=pos.coords;
+      const {office,dist,inside}=checkOffice(lat,lng);
+
+      btn.disabled=false;
+      btn.innerHTML='🔄 Lấy lại GPS';
+
+      if(inside){
+        setLoc('ok','✅',`Trong phạm vi: ${office.name}`,[
+          `📏 Khoảng cách: ${Math.round(dist)} m`,
+          `🎯 Độ chính xác: ±${Math.round(acc)} m`
+        ]);
+      } else {
+        setLoc('warn','⚠️','Ngoài phạm vi văn phòng',[
+          `📏 Cách ${office?office.name:'VP'}: ${Math.round(dist)} m`,
+          `🎯 Độ chính xác: ±${Math.round(acc)} m`,
+          'Vẫn có thể gửi — sẽ được ghi nhận.'
+        ]);
+      }
+      document.getElementById('btn-send').style.display='flex';
+    },
+    err=>{
+      gpsCoords=null;
+      btn.disabled=false;
+      btn.innerHTML='🔄 Thử lại GPS';
+
+      const msgs={
+        1:'Bạn đã từ chối quyền vị trí.\nVào Cài đặt Chrome → Quyền → Vị trí → Cho phép.',
+        2:'Không bắt được tín hiệu GPS. Ra chỗ thoáng hoặc bật Wi-Fi thử lại.',
+        3:'Hết thời gian chờ GPS. Thử lại.'
+      };
+      const msg=msgs[err.code]||'Lỗi GPS không xác định.';
+      setLoc('err','❌','Không lấy được vị trí',msg.split('\n'));
+      document.getElementById('btn-no-gps').style.display='flex';
+    },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:0}
+  );
+}
+
+// ── Gửi có GPS ─────────────────────────────────────
+function send(){
+  const email=document.getElementById('email').value.trim();
+  if(!gpsCoords){alert('Chưa có GPS. Bấm Lấy vị trí trước.');return;}
+  doSend(email, gpsCoords.latitude, gpsCoords.longitude, gpsCoords.accuracy);
+}
+
+// ── Gửi không có GPS ───────────────────────────────
+function sendNoGPS(){
+  const email=document.getElementById('email').value.trim();
+  if(!email||!email.includes('@')){
+    alert('Vui lòng nhập email.');
+    document.getElementById('email').focus();
+    return;
+  }
+  if(!confirm('Gửi chấm công không có dữ liệu GPS?')) return;
+  doSend(email, null, null, null);
+}
+
+// ── Gọi Apps Script ────────────────────────────────
+function doSend(email, lat, lng, accuracy){
+  const btnSend=document.getElementById('btn-send');
+  const btnNoGPS=document.getElementById('btn-no-gps');
+  btnSend.disabled=true;
+  btnNoGPS.disabled=true;
+  btnSend.innerHTML='<span class="spin"></span> Đang gửi...';
+
+  const payload={
+    email, lat, lng, accuracy,
+    note: document.getElementById('note').value.trim()
+  };
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(r=>r.json())
+  .then(r=>{
+    btnSend.disabled=false;
+    btnNoGPS.disabled=false;
+    btnSend.innerHTML='✅ Gửi chấm công';
+    showDone(r, email);
+  })
+  .catch(e=>{
+    btnSend.disabled=false;
+    btnNoGPS.disabled=false;
+    btnSend.innerHTML='✅ Gửi chấm công';
+    alert('Lỗi gửi dữ liệu: '+e.message+'\nKiểm tra lại APPS_SCRIPT_URL trong file.');
+  });
+}
+
+function showDone(r, email){
+  document.getElementById('main').classList.add('hide');
+  const done=document.getElementById('done');
+  done.classList.add('show');
+  if(r.success){
+    document.getElementById('r-emoji').textContent=r.isAllowed?'✅':'⚠️';
+    document.getElementById('r-title').textContent='Đã ghi nhận vị trí!';
+    document.getElementById('r-rows').innerHTML=`
+      <div class="row"><span class="l">🕐 Thời gian</span><span class="v">${r.time}</span></div>
+      <div class="row"><span class="l">📧 Email</span><span class="v">${email}</span></div>
+      <div class="row"><span class="l">📍 Địa điểm</span><span class="v">${r.location}</span></div>
+      ${r.distance!=null?`<div class="row"><span class="l">📏 Khoảng cách</span><span class="v">${r.distance} m</span></div>`:''}
+      <div class="row"><span class="l">✔ Trạng thái</span><span class="v">${r.isAllowed?'✅ Hợp lệ':'⚠️ Ngoài phạm vi'}</span></div>`;
+  } else {
+    document.getElementById('r-emoji').textContent='❌';
+    document.getElementById('r-title').textContent='Có lỗi xảy ra';
+    document.getElementById('r-rows').innerHTML=
+      `<div class="row"><span class="v" style="color:#c5221f">${r.error}</span></div>`;
+  }
+}
+
+function reset(){
+  gpsCoords=null;
+  document.getElementById('done').classList.remove('show');
+  document.getElementById('main').classList.remove('hide');
+  document.getElementById('note').value='';
+  document.getElementById('btn-send').style.display='none';
+  document.getElementById('btn-no-gps').style.display='none';
+  document.getElementById('btn-gps').innerHTML='📡 Lấy vị trí GPS';
+  setLoc('idle','📍','Chưa lấy vị trí',['Bấm nút bên dưới để bắt đầu']);
+}
+</script>
+</body>
+</html>
