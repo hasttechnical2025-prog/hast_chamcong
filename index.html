@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chấm Công - Siêu Thanh Hà Nội</title>
+<title>Chấm Công - Siêu Thanh HN</title>
 
 <!-- PWA: Add to Home Screen -->
 <meta name="mobile-web-app-capable" content="yes">
@@ -131,6 +131,7 @@ textarea:focus{border-color:#1a73e8;}
         alt="Logo HSTC - Siêu Thanh Hà Nội"
         style="max-width:240px;width:90%;object-fit:contain;margin-bottom:4px;">
       <h1>CHẤM CÔNG CBNV</h1>
+      <p style="font-size:12px;color:#555;margin-top:2px;">📍 Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, Hà Nội</p>
     </div>
 
     <div class="clock-box">
@@ -196,7 +197,7 @@ textarea:focus{border-color:#1a73e8;}
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNZYP-0_8NkYgyH0p7yFcb91uTdmRsgEKtb3Amg75c-Mv6pPKoYzFiKV-UmupcBPaF/exec';
 
 const OFFICES = [
-  { name: 'Văn phòng Siêu Thanh', lat: 21.009109, lng: 105.813355, radius: 200 },
+  { name: 'Công ty CP Siêu Thanh Hà Nội', lat: 21.009109, lng: 105.813355, radius: 200 },
 ];
 
 // Khoảng cách tối đa cho phép chấm công (mét). Vượt quá sẽ bị chặn hoàn toàn.
@@ -245,7 +246,7 @@ function initEmail() {
     if (savedName) {
       employeeName = savedName;
       document.getElementById('name-display').textContent = savedName;
-      document.getElementById('name-hint').textContent = '(Đã lưu từ lần quét QR trước)';
+      document.getElementById('name-hint').textContent = '';
     } else {
       // Chưa từng quét QR → báo lỗi
       employeeName = '';
@@ -417,13 +418,13 @@ function showDone(r, email){
   document.getElementById('done').classList.add('show');
   if (r.success){
     document.getElementById('r-emoji').textContent = r.isAllowed ? '✅' : '⚠️';
-    document.getElementById('r-title').textContent = 'Chấm công thành công!';
+    document.getElementById('r-title').textContent = 'Hoàn thành chấm công';
     document.getElementById('r-rows').innerHTML = `
       <div class="row"><span class="l">🕐 Thời gian</span><span class="v">${r.time}</span></div>
       <div class="row"><span class="l">👤 Họ tên</span><span class="v">${email}</span></div>
-      <div class="row"><span class="l">📍 Địa điểm</span><span class="v">${r.location}</span></div>
+      <div class="row"><span class="l">📍 Checkin</span><span class="v">${r.location}</span></div>
       ${r.distance!=null?`<div class="row"><span class="l">📏 Khoảng cách</span><span class="v">${r.distance} m</span></div>`:''}
-      ${r.address?`<div class="row"><span class="l">🗺 Địa chỉ</span><span class="v">${r.address}</span></div>`:''}
+      ${r.address?`<div class="row"><span class="l">🗺 Vị trí chấm công</span><span class="v">${r.address}</span></div>`:''}
       <div class="row"><span class="l">✔ Trạng thái</span>
         <span class="v">${r.isAllowed?'✅ Hợp lệ':'⚠️ Ngoài phạm vi'}</span></div>`;
   } else {
