@@ -390,7 +390,7 @@ function doSend(lat, lng, accuracy){
   var btnGps  = document.getElementById('btn-gps');
   btnSend.disabled = true;
   btnGps.disabled  = true;
-  btnSend.innerHTML = '<span class="spin"></span> Đang gửi...';
+  btnSend.innerHTML = '<span class="spin"></span> Đang gửi thông tin...';
 
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
