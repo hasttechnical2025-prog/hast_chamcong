@@ -113,15 +113,13 @@ textarea:focus{border-color:#1a73e8;}
     <!-- Email block -->
     <div class="email-block" id="email-block">
       <label>📧 Email chấm công</label>
-      <!-- Hiện email đã lưu -->
+      <!-- Hiện email đã lưu (không có nút đổi) -->
       <div id="email-saved-ui" style="display:none">
-        <div class="email-saved" onclick="switchEmail()">
+        <div class="email-saved">
           <span class="addr" id="saved-addr"></span>
-          <span class="change">Đổi email</span>
         </div>
-        <div class="email-hint">Bấm vào email để thay đổi</div>
       </div>
-      <!-- Nhập email mới -->
+      <!-- Nhập email lần đầu -->
       <div id="email-input-ui">
         <div class="email-input-wrap">
           <input type="email" id="email-input"
@@ -130,7 +128,7 @@ textarea:focus{border-color:#1a73e8;}
             onkeydown="if(event.key==='Enter')confirmEmail()">
           <button class="btn-confirm-email" onclick="confirmEmail()">Xác nhận</button>
         </div>
-        <div class="email-hint">Nhập email → bấm Xác nhận để lưu cho lần sau</div>
+        <div class="email-hint">Nhập email → bấm Xác nhận để lưu</div>
       </div>
     </div>
 
@@ -173,10 +171,10 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdkj_HlhLZcndOWfG55t6WgefPC5ZmzYN0vFmdnzPkFk9kvyliKZXI51CrCn4A2uo/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec';
 
 const OFFICES = [
-  { name: 'Văn phòng Siêu Thanh', lat: 21.009109, lng: 105.813355, radius: 200 },
+  { name: 'Văn phòng Siêu Thanh', lat: 21.0000, lng: 105.8412, radius: 200 },
 ];
 // ═══════════════════════════════════════════
 
@@ -194,7 +192,7 @@ function tick(){
 }
 setInterval(tick, 1000); tick();
 
-// ── Email — localStorage ──────────────────────────────────
+// ── Email — localStorage, không cho đổi ─────────────────
 function initEmail() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
@@ -213,9 +211,6 @@ function showSavedEmail(email) {
 function showEmailInput() {
   document.getElementById('email-saved-ui').style.display = 'none';
   document.getElementById('email-input-ui').style.display = 'block';
-  // Điền sẵn email đã lưu vào input nếu có
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) document.getElementById('email-input').value = saved;
   setTimeout(() => document.getElementById('email-input').focus(), 100);
 }
 
@@ -227,17 +222,6 @@ function confirmEmail() {
   }
   localStorage.setItem(STORAGE_KEY, val);
   showSavedEmail(val);
-}
-
-function switchEmail() {
-  showEmailInput();
-  // Reset GPS khi đổi email
-  gpsCoords = null;
-  document.getElementById('btn-send').style.display = 'none';
-  document.getElementById('btn-no-gps').style.display = 'none';
-  document.getElementById('btn-gps').innerHTML = '📡 Lấy vị trí GPS';
-  document.getElementById('btn-gps').disabled = false;
-  setLoc('idle', '📍', 'Chưa lấy vị trí', ['Bấm nút bên dưới để bắt đầu']);
 }
 
 function getEmail() {
@@ -266,18 +250,10 @@ function setLoc(type, icon, title, lines){
 }
 
 function getGPS(){
-  // Kiểm tra email trước
   const email = getEmail();
   if (!email) {
-    // Nếu đang trong input-ui thì nhắc confirm trước
-    const inputVal = document.getElementById('email-input').value.trim();
-    if (inputVal && inputVal.includes('@')) {
-      confirmEmail(); // tự confirm nếu đã nhập
-    } else {
-      alert('Vui lòng nhập và xác nhận email trước.');
-      document.getElementById('email-input').focus();
-      return;
-    }
+    alert('Vui lòng nhập và xác nhận email trước.');
+    return;
   }
 
   const btn = document.getElementById('btn-gps');
@@ -395,6 +371,7 @@ function resetForm(){
   document.getElementById('btn-gps').innerHTML = '📡 Lấy vị trí GPS';
   document.getElementById('btn-gps').disabled = false;
   setLoc('idle','📍','Chưa lấy vị trí',['Bấm nút bên dưới để bắt đầu']);
+
 }
 
 // Khởi động
