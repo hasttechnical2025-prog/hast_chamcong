@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chấm Công - Siêu Thanh HN</title>
+<title>Chấm Công - Siêu Thanh Hà Nội</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
@@ -98,7 +98,21 @@ textarea:focus{border-color:#1a73e8;}
   <!-- Màn hình chính -->
   <div class="main" id="main">
     <div class="header">
-      <div style="font-size:42px">🏢</div>
+      <!--
+        CÁCH 1 — Link ảnh trực tuyến:
+        Thay LINK_LOGO_CUA_BAN bằng URL ảnh logo (Google Drive, imgur, v.v.)
+
+        CÁCH 2 — Ảnh nhúng trực tiếp (Base64):
+        Thay toàn bộ thẻ <img> bằng:
+        <img src="data:image/png;base64,CHUỖI_BASE64" ...>
+        (xem hướng dẫn bên dưới)
+      -->
+      <img
+        src="https://github.com/hasttechnical2025-prog/hast_chamcong/blob/main/Sieu%20Thanh%20Logo.png"
+        alt="Logo Siêu Thanh"
+        style="height:64px;object-fit:contain;margin-bottom:8px;"
+        onerror="this.style.display='none';document.getElementById('fallback-icon').style.display='block'">
+      <div id="fallback-icon" style="font-size:42px;display:none">🏢</div>
       <h1>Chấm Công</h1>
       <p>Công ty CP Siêu Thanh Hà Nội</p>
     </div>
@@ -171,10 +185,10 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdkj_HlhLZcndOWfG55t6WgefPC5ZmzYN0vFmdnzPkFk9kvyliKZXI51CrCn4A2uo/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec';
 
 const OFFICES = [
-  { name: 'Văn phòng Siêu Thanh', lat: 21.009109, lng: 105.813355, radius: 200 },
+  { name: 'Văn phòng Siêu Thanh', lat: 21.0000, lng: 105.8412, radius: 200 },
 ];
 // ═══════════════════════════════════════════
 
