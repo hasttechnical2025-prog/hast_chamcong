@@ -406,13 +406,13 @@ function doSend(lat, lng, accuracy){
   .then(function(r){
     btnSend.disabled = false;
     btnGps.disabled  = false;
-    btnSend.innerHTML = '✅ Gửi chấm công';
+    btnSend.innerHTML = '✅ Chấm công';
     showDone(r, email);
   })
   .catch(function(e){
     btnSend.disabled = false;
     btnGps.disabled  = false;
-    btnSend.innerHTML = '✅ Gửi chấm công';
+    btnSend.innerHTML = '✅ Chấm công';
     showPopup('Lỗi kết nối: ' + e.message, 'Có lỗi xảy ra');
   });
 }
