@@ -77,6 +77,20 @@ textarea:focus{border-color:#1a73e8;}
   border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0;}
 @keyframes sp{to{transform:rotate(360deg)}}
 
+/* Custom popup */
+#popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
+  z-index:999;align-items:center;justify-content:center;padding:24px;}
+#popup-overlay.show{display:flex;}
+.popup-box{background:white;border-radius:16px;padding:24px 22px;
+  max-width:300px;width:100%;text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.18);animation:pop .2s ease;}
+@keyframes pop{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.popup-title{font-size:15px;font-weight:700;color:#1a73e8;margin-bottom:10px;}
+.popup-msg{font-size:14px;color:#333;line-height:1.6;margin-bottom:18px;}
+.popup-btn{background:#1a73e8;color:white;border:none;border-radius:10px;
+  padding:11px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%;}
+.popup-btn:hover{background:#1557b0;}
+
 /* Result */
 #done{display:none;text-align:center;padding:8px 0;}
 #done.show{display:block;}
@@ -157,6 +171,15 @@ textarea:focus{border-color:#1a73e8;}
 
   </div>
 
+  <!-- Custom popup -->
+  <div id="popup-overlay">
+    <div class="popup-box">
+      <div class="popup-title" id="popup-title">HAST Chấm công</div>
+      <div class="popup-msg"   id="popup-msg"></div>
+      <button class="popup-btn" onclick="closePopup()">OK</button>
+    </div>
+  </div>
+
   <!-- Màn hình kết quả -->
   <div id="done">
     <div class="r-emoji" id="r-emoji"></div>
@@ -170,7 +193,7 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQpP7fpH42EnjB6q2Yymre0nXVoTCdlwrnHBKjtKzWYd1uYk5xZkHtrMGvCfdLUTeD/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-YDKTWrHVpYTlNXRzUHJgy4TbKJHWz8a7NfXV8A_XqHtfSulV46sHcUTjV4ihRlUT/exec';
 
 const OFFICES = [
   { name: 'Văn phòng Siêu Thanh', lat: 21.009109, lng: 105.813355, radius: 200 },
@@ -180,8 +203,7 @@ const OFFICES = [
 // Ví dụ: 10000 = 10 km. Đặt 0 để tắt giới hạn này.
 const MAX_DISTANCE = 10000;
 
-// Google Maps Geocoding API key — lấy tại console.cloud.google.com
-const MAPS_API_KEY = 'AIzaSyACGwambFAouG_5bkpIA1sAhFN4xvuYbvU';
+// Dùng OpenStreetMap Nominatim — miễn phí, không cần API key
 // ═══════════════════════════════════════════
 
 const STORAGE_KEY = 'chamcong_name';
@@ -229,7 +251,7 @@ function showEmailInput() {
 function confirmEmail() {
   const val = document.getElementById('email-input').value.trim();
   if (!val || val.length < 2) {
-    alert('Vui lòng nhập họ tên hợp lệ (ít nhất 2 ký tự).');
+    showPopup('Vui lòng nhập họ tên hợp lệ (ít nhất 2 ký tự).');
     return;
   }
   localStorage.setItem(STORAGE_KEY, val);
@@ -240,17 +262,49 @@ function getEmail() {
   return localStorage.getItem(STORAGE_KEY) || '';
 }
 
-// ── Geocoding: tọa độ → địa chỉ ─────────────────────────
+// ── Custom popup (thay alert) ─────────────────────────────
+function showPopup(msg, title) {
+  document.getElementById('popup-title').textContent = title || 'HAST Chấm công';
+  document.getElementById('popup-msg').textContent   = msg;
+  document.getElementById('popup-overlay').classList.add('show');
+}
+function closePopup() {
+  document.getElementById('popup-overlay').classList.remove('show');
+}
+
+// ── Geocoding: tọa độ → địa chỉ (OpenStreetMap Nominatim) ──
 async function getAddress(lat, lng) {
-  if (!MAPS_API_KEY || MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') return '';
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${MAPS_API_KEY}&language=vi`;
-    const res  = await fetch(url);
-    const data = await res.json();
-    if (data.status === 'OK' && data.results.length > 0) {
-      return data.results[0].formatted_address;
-    }
-    return '';
+    var url = 'https://nominatim.openstreetmap.org/reverse'
+      + '?lat=' + lat + '&lon=' + lng
+      + '&format=json&addressdetails=1&accept-language=vi';
+    var res  = await fetch(url, {
+      headers: { 'Accept-Language': 'vi', 'User-Agent': 'ChamCongHSTC/1.0' }
+    });
+    var data = await res.json();
+    if (!data || !data.address) return '';
+
+    var a = data.address;
+    var parts = [];
+
+    // Số nhà + tên đường
+    if (a.house_number) parts.push(a.house_number);
+    var road = a.road || a.pedestrian || a.footway || a.street || '';
+    if (road) parts.push(road);
+
+    // Phường/xã
+    var ward = a.suburb || a.quarter || a.neighbourhood || a.village || '';
+    if (ward) parts.push(ward);
+
+    // Quận/huyện
+    var district = a.city_district || a.district || a.county || '';
+    if (district) parts.push(district);
+
+    // Thành phố
+    var city = a.city || a.town || a.state || '';
+    if (city) parts.push(city);
+
+    return parts.length > 0 ? parts.join(', ') : (data.display_name || '');
   } catch (e) {
     return '';
   }
@@ -284,7 +338,7 @@ function setLoc(type, icon, title, lines){
 function getGPS(){
   const email = getEmail();
   if (!email) {
-    alert('Vui lòng nhập và xác nhận họ tên trước.');
+    showPopup('Vui lòng nhập và xác nhận họ tên trước.');
     return;
   }
 
@@ -355,14 +409,14 @@ function getGPS(){
 
 // ── Gửi ──────────────────────────────────────────────────
 function send(){
-  if (!gpsCoords) { alert('Chưa có GPS.'); return; }
+  if (!gpsCoords) { showPopup('Chưa có GPS. Vui lòng lấy vị trí trước.'); return; }
   doSend(gpsCoords.latitude, gpsCoords.longitude, gpsCoords.accuracy);
 }
 
 
 function doSend(lat, lng, accuracy){
   var email = getEmail();
-  if (!email) { alert('Vui lòng nhập họ tên.'); return; }
+  if (!email) { showPopup('Vui lòng nhập họ tên.'); return; }
 
   var btnSend = document.getElementById('btn-send');
   var btnGps  = document.getElementById('btn-gps');
@@ -392,7 +446,7 @@ function doSend(lat, lng, accuracy){
     btnSend.disabled = false;
     btnGps.disabled  = false;
     btnSend.innerHTML = '✅ Gửi chấm công';
-    alert('Lỗi kết nối: ' + e.message);
+    showPopup('Lỗi kết nối: ' + e.message, 'Có lỗi xảy ra');
   });
 }
 
