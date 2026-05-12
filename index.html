@@ -349,7 +349,7 @@ function getGPS(){
         setLoc('warn','⚠️','Ngoài phạm vi Công ty',[
           `📏 Cách ${office?office.name:'VP'}: ${Math.round(dist)} m`,
           `🎯 Độ chính xác: ±${Math.round(acc)} m`,
-          'Vẫn có thể gửi — sẽ được ghi nhận.'
+          '⚠️ Vẫn có thể Chấm công — Hãy lưu ý lần sau!'
         ]);
         document.getElementById('btn-send').style.display = 'flex';
       }
