@@ -203,9 +203,7 @@ const OFFICES = [
 // Ví dụ: 10000 = 10 km. Đặt 0 để tắt giới hạn này.
 const MAX_DISTANCE = 10000;
 
-// Google Maps Geocoding API key — lấy tại console.cloud.google.com
-// Bật "Geocoding API" → Credentials → Create API Key
-const MAPS_API_KEY = 'AIzaSyDeFNedVgBv1dCZeDkx3cjCGjw_Ibkv_Fg';
+// Dùng OpenStreetMap Nominatim — miễn phí, không cần API key
 // ═══════════════════════════════════════════
 
 const STORAGE_KEY = 'chamcong_name';
@@ -274,28 +272,41 @@ function closePopup() {
   document.getElementById('popup-overlay').classList.remove('show');
 }
 
-// ── Geocoding: tọa độ → địa chỉ (Google Maps) ───────────
+// ── Geocoding: tọa độ → địa chỉ (OpenStreetMap Nominatim) ──
 async function getAddress(lat, lng) {
-  if (!MAPS_API_KEY || MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
-    console.log('[GPS] MAPS_API_KEY chưa được cấu hình');
-    return '';
-  }
   try {
-    var url = 'https://maps.googleapis.com/maps/api/geocode/json'
-      + '?latlng=' + lat + ',' + lng
-      + '&key=' + MAPS_API_KEY
-      + '&language=vi';
-    console.log('[GPS] Gọi Geocoding API:', url.replace(MAPS_API_KEY, 'KEY_HIDDEN'));
-    var res  = await fetch(url);
+    var url = 'https://nominatim.openstreetmap.org/reverse'
+      + '?lat=' + lat + '&lon=' + lng
+      + '&format=json&addressdetails=1&accept-language=vi';
+    var res  = await fetch(url, {
+      headers: { 'Accept-Language': 'vi', 'User-Agent': 'ChamCongHSTC/1.0' }
+    });
     var data = await res.json();
-    console.log('[GPS] Kết quả:', data.status, data.error_message || '');
-    if (data.status === 'OK' && data.results.length > 0) {
-      console.log('[GPS] Địa chỉ:', data.results[0].formatted_address);
-      return data.results[0].formatted_address;
-    }
-    return '';
+    if (!data || !data.address) return '';
+
+    var a = data.address;
+    var parts = [];
+
+    // Số nhà + tên đường
+    if (a.house_number) parts.push(a.house_number);
+    var road = a.road || a.pedestrian || a.footway || a.street || '';
+    if (road) parts.push(road);
+
+    // Phường/xã
+    var ward = a.suburb || a.quarter || a.neighbourhood || a.village || '';
+    if (ward) parts.push(ward);
+
+    // Quận/huyện
+    var district = a.city_district || a.district || a.county || '';
+    if (district) parts.push(district);
+
+    // Thành phố
+    var city = a.city || a.town || a.state || '';
+    if (city) parts.push(city);
+
+    // Nếu không parse được → dùng display_name
+    return parts.length > 0 ? parts.join(', ') : (data.display_name || '');
   } catch (e) {
-    console.log('[GPS] Lỗi fetch:', e.message);
     return '';
   }
 }
