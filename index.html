@@ -344,7 +344,7 @@ function getGPS(){
           `📏 Khoảng cách: ${Math.round(dist)} m`,
           `🎯 Độ chính xác: ±${Math.round(acc)} m`
         ]);
-        document.getElementById('btn-gps').style.display = 'none';
+        
         document.getElementById('btn-send').style.display = 'flex';
       } else {
         setLoc('warn','⚠️','Ngoài phạm vi Công ty',[
@@ -352,7 +352,7 @@ function getGPS(){
           `🎯 Độ chính xác: ±${Math.round(acc)} m`,
           'Vẫn có thể chấm công — Hãy lưu ý lần sau.'
         ]);
-        document.getElementById('btn-gps').style.display = 'none';
+        //document.getElementById('btn-gps').style.display = 'none'; - ẩn nút chấm công
         document.getElementById('btn-send').style.display = 'flex';
       }
     },
@@ -446,7 +446,7 @@ function resetForm(){
   document.getElementById('main').classList.remove('hide');
   document.getElementById('note').value = '';
   document.getElementById('btn-send').style.display = 'none';
-  document.getElementById('btn-gps').style.display = 'none';
+  document.getElementById('btn-gps').style.display = 'flex';
   document.getElementById('btn-gps').disabled = false;
   document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí';
   setLoc('idle','📡','Đang xác định vị trí...','Vui lòng chờ'.split('|'));
