@@ -193,7 +193,7 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-YDKTWrHVpYTlNXRzUHJgy4TbKJHWz8a7NfXV8A_XqHtfSulV46sHcUTjV4ihRlUT/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZRDaHUDC9i2_vIAGPgTzCvfyTOOxp77g3U5YhDbsq0agXH8gTEsUVYkzek9XmGmM/exec';
 
 const OFFICES = [
   { name: 'Văn phòng Siêu Thanh', lat: 21.009109, lng: 105.813355, radius: 200 },
@@ -272,44 +272,7 @@ function closePopup() {
   document.getElementById('popup-overlay').classList.remove('show');
 }
 
-// ── Geocoding: tọa độ → địa chỉ (OpenStreetMap Nominatim) ──
-async function getAddress(lat, lng) {
-  try {
-    var url = 'https://nominatim.openstreetmap.org/reverse'
-      + '?lat=' + lat + '&lon=' + lng
-      + '&format=json&addressdetails=1&accept-language=vi';
-    var res  = await fetch(url, {
-      headers: { 'Accept-Language': 'vi', 'User-Agent': 'ChamCongHSTC/1.0' }
-    });
-    var data = await res.json();
-    if (!data || !data.address) return '';
 
-    var a = data.address;
-    var parts = [];
-
-    // Số nhà + tên đường
-    if (a.house_number) parts.push(a.house_number);
-    var road = a.road || a.pedestrian || a.footway || a.street || '';
-    if (road) parts.push(road);
-
-    // Phường/xã
-    var ward = a.suburb || a.quarter || a.neighbourhood || a.village || '';
-    if (ward) parts.push(ward);
-
-    // Quận/huyện
-    var district = a.city_district || a.district || a.county || '';
-    if (district) parts.push(district);
-
-    // Thành phố
-    var city = a.city || a.town || a.state || '';
-    if (city) parts.push(city);
-
-    // Nếu không parse được → dùng display_name
-    return parts.length > 0 ? parts.join(', ') : (data.display_name || '');
-  } catch (e) {
-    return '';
-  }
-}
 
 // ── GPS ───────────────────────────────────────────────────
 function haversine(a,b,c,d){
@@ -364,16 +327,10 @@ function getGPS(){
       btn.disabled = false;
       btn.innerHTML = '🔄 Lấy lại GPS';
 
-      // Lấy địa chỉ từ tọa độ
-      setLoc('idle','🔍','Đang tra địa chỉ...','Vui lòng chờ giây lát'.split('|'));
-      gpsCoords.address = await getAddress(lat, lng);
-
       // Kiểm tra vượt quá khoảng cách tối đa
       const overMax = MAX_DISTANCE > 0 && dist > MAX_DISTANCE;
       const distKm  = (dist / 1000).toFixed(1);
       const maxKm   = (MAX_DISTANCE / 1000).toFixed(0);
-      const addrLine = gpsCoords.address ? `📍 ${gpsCoords.address}` : '';
-
       if (overMax) {
         setLoc('err','🚫','Không thể chấm công',[
           `📏 Bạn đang cách văn phòng <b>${distKm} km</b>`,
@@ -383,15 +340,13 @@ function getGPS(){
       } else if (inside) {
         setLoc('ok','✅',`Trong phạm vi: ${office.name}`,[
           `📏 Khoảng cách: ${Math.round(dist)} m`,
-          `🎯 Độ chính xác: ±${Math.round(acc)} m`,
-          ...(addrLine ? [addrLine] : [])
+          `🎯 Độ chính xác: ±${Math.round(acc)} m`
         ]);
         document.getElementById('btn-send').style.display = 'flex';
       } else {
         setLoc('warn','⚠️','Ngoài phạm vi văn phòng',[
           `📏 Cách ${office?office.name:'VP'}: ${Math.round(dist)} m`,
           `🎯 Độ chính xác: ±${Math.round(acc)} m`,
-          ...(addrLine ? [addrLine] : []),
           'Vẫn có thể gửi — sẽ được ghi nhận.'
         ]);
         document.getElementById('btn-send').style.display = 'flex';
@@ -439,7 +394,6 @@ function doSend(lat, lng, accuracy){
       lat: lat,
       lng: lng,
       accuracy: accuracy,
-      address: (gpsCoords && gpsCoords.address) ? gpsCoords.address : '',
       note: document.getElementById('note').value.trim()
     })
   })
