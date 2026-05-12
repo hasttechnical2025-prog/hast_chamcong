@@ -173,7 +173,7 @@ textarea:focus{border-color:#1a73e8;}
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQpP7fpH42EnjB6q2Yymre0nXVoTCdlwrnHBKjtKzWYd1uYk5xZkHtrMGvCfdLUTeD/exec';
 
 const OFFICES = [
-  { name: 'Văn phòng Công ty', lat: 21.009109, lng: 105.813355, radius: 200 },
+  { name: 'Văn phòng Siêu Thanh', lat: 21.009109, lng: 105.813355, radius: 200 },
 ];
 
 // Khoảng cách tối đa cho phép chấm công (mét). Vượt quá sẽ bị chặn hoàn toàn.
@@ -361,30 +361,37 @@ function send(){
 
 
 function doSend(lat, lng, accuracy){
-  const email = getEmail();
+  var email = getEmail();
   if (!email) { alert('Vui lòng nhập họ tên.'); return; }
 
-    document.getElementById(id).disabled = true;
-  document.getElementById('btn-send').innerHTML =
-    '<span class="spin"></span> Đang gửi...';
+  var btnSend = document.getElementById('btn-send');
+  var btnGps  = document.getElementById('btn-gps');
+  btnSend.disabled = true;
+  btnGps.disabled  = true;
+  btnSend.innerHTML = '<span class="spin"></span> Đang gửi...';
 
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     body: JSON.stringify({
-      email, lat, lng, accuracy,
+      email: email,
+      lat: lat,
+      lng: lng,
+      accuracy: accuracy,
       address: (gpsCoords && gpsCoords.address) ? gpsCoords.address : '',
       note: document.getElementById('note').value.trim()
     })
   })
-  .then(r => r.json())
-  .then(r => {
-      document.getElementById(id).disabled = false;
-    document.getElementById('btn-send').innerHTML = '✅ Gửi chấm công';
+  .then(function(r){ return r.json(); })
+  .then(function(r){
+    btnSend.disabled = false;
+    btnGps.disabled  = false;
+    btnSend.innerHTML = '✅ Gửi chấm công';
     showDone(r, email);
   })
-  .catch(e => {
-      document.getElementById(id).disabled = false;
-    document.getElementById('btn-send').innerHTML = '✅ Gửi chấm công';
+  .catch(function(e){
+    btnSend.disabled = false;
+    btnGps.disabled  = false;
+    btnSend.innerHTML = '✅ Gửi chấm công';
     alert('Lỗi kết nối: ' + e.message);
   });
 }
