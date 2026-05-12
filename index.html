@@ -340,8 +340,15 @@ function getGPS(){
 
   navigator.geolocation.getCurrentPosition(
     async pos => {
-      gpsCoords = pos.coords;
-      const {latitude:lat, longitude:lng, accuracy:acc} = pos.coords;
+      // Copy ra plain object để có thể gán thêm .address
+      gpsCoords = {
+        latitude:  pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy:  pos.coords.accuracy
+      };
+      const lat = gpsCoords.latitude;
+      const lng = gpsCoords.longitude;
+      const acc = gpsCoords.accuracy;
       const {office, dist, inside} = checkOffice(lat, lng);
       btn.disabled = false;
       btn.innerHTML = '🔄 Lấy lại GPS';
