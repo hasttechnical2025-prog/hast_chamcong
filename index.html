@@ -310,9 +310,9 @@ function getGPS(){
 
   const btn = document.getElementById('btn-gps');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span> Đang lấy GPS...';
+  btn.innerHTML = '<span class="spin"></span> Đang xác định vị trí...';
   document.getElementById('btn-send').style.display = 'none';
-  setLoc('idle','📡','Đang lấy vị trí...','Nếu trình duyệt hỏi quyền → bấm Cho phép'.split('|'));
+  setLoc('idle','📡','Đang xác định vị trí...','Nếu trình duyệt hỏi quyền → bấm Cho phép'.split('|'));
 
   navigator.geolocation.getCurrentPosition(
     async pos => {
