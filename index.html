@@ -334,7 +334,7 @@ function getGPS(){
       // Kiểm tra vượt quá khoảng cách tối đa
       const overMax = MAX_DISTANCE > 0 && dist > MAX_DISTANCE;
       const distKm  = (dist / 1000).toFixed(1);
-      const maxKm   = (MAX_DISTANCE / 1000).toFixed(1);
+      const maxKm   = (MAX_DISTANCE / 1000).toFixed(1);; //(MAX_DISTANCE / 1000).toFixed(0);
       if (overMax) {
         setLoc('err','🚫','Không thể chấm công',[
           `📏 Bạn đang cách Công ty <b>${distKm} km</b>`,
