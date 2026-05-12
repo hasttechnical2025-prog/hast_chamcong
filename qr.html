@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản lý QR Chấm Công - HSTC</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;padding:20px;}
+
+.header{text-align:center;margin-bottom:28px;}
+.header h1{color:#1a73e8;font-size:22px;font-weight:700;margin-top:8px;}
+.header p{color:#666;font-size:13px;margin-top:4px;}
+
+/* Cấu hình */
+.config-card{background:white;border-radius:14px;padding:20px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:24px;max-width:700px;margin-inline:auto;}
+.config-card h2{font-size:15px;color:#333;margin-bottom:14px;font-weight:600;}
+.config-row{display:flex;gap:10px;margin-bottom:10px;align-items:center;}
+.config-row label{font-size:13px;color:#555;width:90px;flex-shrink:0;}
+.config-row input{flex:1;border:1.5px solid #dadce0;border-radius:8px;
+  padding:9px 12px;font-size:14px;outline:none;font-family:inherit;}
+.config-row input:focus{border-color:#1a73e8;}
+
+/* Nhân viên list */
+.emp-section{background:white;border-radius:14px;padding:20px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:24px;max-width:700px;margin-inline:auto;}
+.emp-section h2{font-size:15px;color:#333;margin-bottom:14px;font-weight:600;}
+.emp-input-row{display:flex;gap:8px;margin-bottom:12px;}
+.emp-input-row textarea{flex:1;border:1.5px solid #dadce0;border-radius:8px;
+  padding:9px 12px;font-size:14px;outline:none;font-family:inherit;
+  resize:vertical;min-height:100px;}
+.emp-input-row textarea:focus{border-color:#1a73e8;}
+.hint{font-size:12px;color:#888;margin-bottom:12px;line-height:1.6;}
+
+/* Buttons */
+.btn{padding:11px 20px;border:none;border-radius:9px;font-size:14px;
+  font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-blue{background:#1a73e8;color:white;}
+.btn-blue:hover{background:#1557b0;}
+.btn-green{background:#34a853;color:white;}
+.btn-green:hover{background:#137333;}
+.btn-gray{background:#f1f3f4;color:#444;}
+.btn-gray:hover{background:#e0e0e0;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* QR Grid */
+#qr-section{max-width:900px;margin-inline:auto;}
+#qr-section h2{font-size:16px;color:#333;margin-bottom:16px;font-weight:600;}
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
+
+.qr-card{background:white;border-radius:14px;padding:16px;text-align:center;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);break-inside:avoid;}
+.qr-card .qr-name{font-size:14px;font-weight:700;color:#202124;margin-bottom:10px;
+  word-break:break-word;}
+.qr-card .qr-box{display:flex;justify-content:center;margin-bottom:10px;}
+.qr-card .qr-box canvas,.qr-card .qr-box img{border-radius:6px;}
+.qr-card .qr-link{font-size:10px;color:#888;word-break:break-all;
+  margin-bottom:10px;line-height:1.4;}
+.qr-card .btn-dl{width:100%;padding:8px;font-size:12px;border:none;
+  border-radius:7px;background:#e8f0fe;color:#1a73e8;
+  font-weight:600;cursor:pointer;}
+.qr-card .btn-dl:hover{background:#d2e3fc;}
+
+/* Print */
+@media print {
+  body{background:white;padding:0;}
+  .config-card,.emp-section,.no-print{display:none!important;}
+  #qr-section h2{display:none;}
+  .qr-grid{grid-template-columns:repeat(3,1fr);gap:12px;}
+  .qr-card{box-shadow:none;border:1px solid #ddd;page-break-inside:avoid;}
+  .qr-card .btn-dl{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="font-size:36px">📋</div>
+  <h1>Quản lý QR Code Chấm Công</h1>
+  <p>HSTC Group - Công ty CP Siêu Thanh Hà Nội</p>
+</div>
+
+<!-- Cấu hình URL -->
+<div class="config-card">
+  <h2>⚙️ Cấu hình</h2>
+  <div class="config-row">
+    <label>URL trang chấm công</label>
+    <input type="text" id="base-url"
+      placeholder="https://ten-ban.github.io/chamcong/"
+      value="">
+  </div>
+  <div class="hint">
+    Ví dụ: <code>https://hasttechnical2025-prog.github.io/hast_chamcong/</code><br>
+    (URL GitHub Pages của bạn, có dấu / ở cuối)
+  </div>
+</div>
+
+<!-- Danh sách nhân viên -->
+<div class="emp-section">
+  <h2>👥 Danh sách nhân viên</h2>
+  <div class="hint">Nhập mỗi tên một dòng. Tên sẽ được dùng làm tham số trong link.</div>
+  <div class="emp-input-row">
+    <textarea id="emp-list" placeholder="Nguyen Van A
+Tran Thi B
+Le Van C
+Pham Thi D"></textarea>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-blue" onclick="generateAll()">🔄 Tạo QR Code</button>
+    <button class="btn btn-green no-print" onclick="window.print()">🖨️ In tất cả</button>
+    <button class="btn btn-gray no-print" onclick="downloadAll()">⬇️ Tải tất cả</button>
+  </div>
+</div>
+
+<!-- Kết quả QR -->
+<div id="qr-section" style="display:none">
+  <h2>📱 QR Code nhân viên <span id="qr-count"></span></h2>
+  <div class="qr-grid" id="qr-grid"></div>
+</div>
+
+<script>
+function slugName(name) {
+  // Encode tên cho URL — giữ nguyên tiếng Việt, thay space bằng +
+  return encodeURIComponent(name.trim()).replace(/%20/g, '+');
+}
+
+function generateAll() {
+  var baseUrl = document.getElementById('base-url').value.trim();
+  if (!baseUrl) {
+    alert('Vui lòng nhập URL trang chấm công trước.');
+    document.getElementById('base-url').focus();
+    return;
+  }
+  if (!baseUrl.endsWith('/')) baseUrl += '/';
+
+  var raw = document.getElementById('emp-list').value;
+  var names = raw.split('\n')
+    .map(n => n.trim())
+    .filter(n => n.length > 0);
+
+  if (names.length === 0) {
+    alert('Vui lòng nhập ít nhất 1 tên nhân viên.');
+    return;
+  }
+
+  var grid = document.getElementById('qr-grid');
+  grid.innerHTML = '';
+
+  names.forEach(function(name) {
+    var url = baseUrl + '?name=' + slugName(name);
+
+    var card = document.createElement('div');
+    card.className = 'qr-card';
+
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'qr-name';
+    nameDiv.textContent = name;
+
+    var qrBox = document.createElement('div');
+    qrBox.className = 'qr-box';
+    var qrDiv = document.createElement('div');
+    qrDiv.id = 'qr-' + slugName(name);
+    qrBox.appendChild(qrDiv);
+
+    var linkDiv = document.createElement('div');
+    linkDiv.className = 'qr-link';
+    linkDiv.textContent = url;
+
+    var dlBtn = document.createElement('button');
+    dlBtn.className = 'btn-dl';
+    dlBtn.textContent = '⬇️ Tải QR';
+    dlBtn.onclick = (function(n, u) {
+      return function() { downloadQR(n, u); };
+    })(name, url);
+
+    card.appendChild(nameDiv);
+    card.appendChild(qrBox);
+    card.appendChild(linkDiv);
+    card.appendChild(dlBtn);
+    grid.appendChild(card);
+
+    // Tạo QR
+    new QRCode(qrDiv, {
+      text: url,
+      width: 160,
+      height: 160,
+      colorDark: '#1a1a1a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  });
+
+  document.getElementById('qr-count').textContent = '(' + names.length + ' nhân viên)';
+  document.getElementById('qr-section').style.display = 'block';
+  document.getElementById('qr-section').scrollIntoView({behavior:'smooth'});
+}
+
+function downloadQR(name, url) {
+  // Lấy canvas từ QRCode
+  var qrDiv = document.getElementById('qr-' + slugName(name));
+  var canvas = qrDiv.querySelector('canvas');
+  if (!canvas) {
+    // Một số browser dùng img thay canvas
+    var img = qrDiv.querySelector('img');
+    if (img) {
+      var c = document.createElement('canvas');
+      c.width = 160; c.height = 160;
+      c.getContext('2d').drawImage(img, 0, 0);
+      canvas = c;
+    }
+  }
+  if (!canvas) { alert('Không tải được QR.'); return; }
+
+  // Tạo canvas mới với tên nhân viên ở dưới
+  var final = document.createElement('canvas');
+  final.width = 200;
+  final.height = 230;
+  var ctx = final.getContext('2d');
+
+  // Nền trắng
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 200, 230);
+
+  // QR ở giữa
+  ctx.drawImage(canvas, 20, 10, 160, 160);
+
+  // Tên nhân viên
+  ctx.fillStyle = '#1a73e8';
+  ctx.font = 'bold 14px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText(name, 100, 192);
+
+  // Dòng nhỏ
+  ctx.fillStyle = '#888';
+  ctx.font = '11px Arial';
+  ctx.fillText('Chấm Công HSTC', 100, 212);
+
+  var link = document.createElement('a');
+  link.download = 'QR_' + name.replace(/\s+/g,'_') + '.png';
+  link.href = final.toDataURL('image/png');
+  link.click();
+}
+
+function downloadAll() {
+  var cards = document.querySelectorAll('.qr-card');
+  if (cards.length === 0) { alert('Chưa có QR nào. Bấm Tạo QR Code trước.'); return; }
+  // Tải từng cái cách nhau 300ms để không bị chặn
+  cards.forEach(function(card, i) {
+    setTimeout(function() {
+      var btn = card.querySelector('.btn-dl');
+      if (btn) btn.click();
+    }, i * 350);
+  });
+}
+
+// Tự detect URL hiện tại
+window.onload = function() {
+  var url = window.location.href.replace('qr.html','').replace('qr','');
+  document.getElementById('base-url').value = url;
+};
+</script>
+</body>
+</html>
