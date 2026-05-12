@@ -154,8 +154,8 @@ textarea:focus{border-color:#1a73e8;}
     <div class="loc idle" id="loc">
       <span class="li">📍</span>
       <div class="lb">
-        <strong>Chưa lấy vị trí</strong>
-        <span>Bấm nút bên dưới để lấy GPS</span>
+        <strong>Chưa xác định vị trí</strong>
+        <span>Bấm nút bên dưới để xác định vị trí</span>
       </div>
     </div>
 
@@ -166,7 +166,7 @@ textarea:focus{border-color:#1a73e8;}
     </div>
 
     <button class="btn blue" id="btn-gps" onclick="getGPS()">
-      📡 Lấy vị trí GPS
+      📡 Xác định vị trí
     </button>
     <button class="btn green" id="btn-send" onclick="send()" style="display:none">
       ✅ Gửi chấm công
@@ -374,7 +374,7 @@ function getGPS(){
 
 // ── Gửi ──────────────────────────────────────────────────
 function send(){
-  if (!gpsCoords) { showPopup('Chưa có GPS. Vui lòng lấy vị trí trước.'); return; }
+  if (!gpsCoords) { showPopup('Chưa có GPS. Vui lòng xác định vị trí trước.'); return; }
   doSend(gpsCoords.latitude, gpsCoords.longitude, gpsCoords.accuracy);
 }
 
@@ -443,9 +443,9 @@ function resetForm(){
   document.getElementById('main').classList.remove('hide');
   document.getElementById('note').value = '';
   document.getElementById('btn-send').style.display = 'none';
-  document.getElementById('btn-gps').innerHTML = '📡 Lấy vị trí GPS';
+  document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí GPS';
   document.getElementById('btn-gps').disabled = false;
-  setLoc('idle','📍','Chưa lấy vị trí',['Bấm nút bên dưới để bắt đầu']);
+  setLoc('idle','📍','Chưa xác định vị trí',['Bấm nút bên dưới để bắt đầu']);
 
 }
 
