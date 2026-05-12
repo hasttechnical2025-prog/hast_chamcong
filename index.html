@@ -276,20 +276,26 @@ function closePopup() {
 
 // ── Geocoding: tọa độ → địa chỉ (Google Maps) ───────────
 async function getAddress(lat, lng) {
-  if (!MAPS_API_KEY || MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') return '';
+  if (!MAPS_API_KEY || MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
+    console.log('[GPS] MAPS_API_KEY chưa được cấu hình');
+    return '';
+  }
   try {
     var url = 'https://maps.googleapis.com/maps/api/geocode/json'
       + '?latlng=' + lat + ',' + lng
       + '&key=' + MAPS_API_KEY
-      + '&language=vi'
-      + '&result_type=street_address|premise';
+      + '&language=vi';
+    console.log('[GPS] Gọi Geocoding API:', url.replace(MAPS_API_KEY, 'KEY_HIDDEN'));
     var res  = await fetch(url);
     var data = await res.json();
+    console.log('[GPS] Kết quả:', data.status, data.error_message || '');
     if (data.status === 'OK' && data.results.length > 0) {
+      console.log('[GPS] Địa chỉ:', data.results[0].formatted_address);
       return data.results[0].formatted_address;
     }
     return '';
   } catch (e) {
+    console.log('[GPS] Lỗi fetch:', e.message);
     return '';
   }
 }
