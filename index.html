@@ -106,7 +106,7 @@ textarea:focus{border-color:#1a73e8;}
     </div>
 
     <div class="clock-box">
-      <div class="time" id="clock">--:--:--</div>
+      <div class="time" id="clock">00:00:00</div>
       <div class="date" id="date-d"></div>
     </div>
 
@@ -122,9 +122,10 @@ textarea:focus{border-color:#1a73e8;}
       <!-- Nhập email lần đầu -->
       <div id="email-input-ui">
         <div class="email-input-wrap">
-          <input type="email" id="email-input"
+          <input type="text" id="email-input"
             placeholder="Nguyễn Văn A"
-            inputmode="text" autocomplete="name"
+            lang="vi"
+            autocomplete="name"
             onkeydown="if(event.key==='Enter')confirmEmail()">
           <button class="btn-confirm-email" onclick="confirmEmail()">Xác nhận</button>
         </div>
@@ -190,10 +191,12 @@ let gpsCoords = null;
 // ── Đồng hồ ──────────────────────────────────────────────
 function tick(){
   const n = new Date();
-  document.getElementById('clock').textContent =
-    n.toLocaleTimeString('vi-VN', {hour12: false});
+  const hh = String(n.getHours()).padStart(2,'0');
+  const mm = String(n.getMinutes()).padStart(2,'0');
+  const ss = String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = hh + ':' + mm + ':' + ss;
   document.getElementById('date-d').textContent =
-    DAYS[n.getDay()] + ', ' + n.toLocaleDateString('vi-VN');
+    DAYS[n.getDay()] + ', ' + n.getDate() + '/' + (n.getMonth()+1) + '/' + n.getFullYear();
 }
 setInterval(tick, 1000); tick();
 
