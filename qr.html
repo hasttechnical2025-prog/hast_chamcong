@@ -106,6 +106,56 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;padding:20px;}
 </div>
 
 
+<!-- GitHub Auto Upload -->
+<div class="config-card">
+  <h2>☁️ Tự động upload lên GitHub</h2>
+  <div class="hint" style="margin-bottom:12px;">
+    Điền thông tin GitHub để file cá nhân được upload tự động sau khi tạo.
+  </div>
+  <div class="config-row">
+    <label>GitHub Username</label>
+    <input type="text" id="gh-user" placeholder="ten-github-cua-ban"
+      autocomplete="off">
+  </div>
+  <div class="config-row">
+    <label>Repository name</label>
+    <input type="text" id="gh-repo" placeholder="hast_chamcong"
+      autocomplete="off">
+  </div>
+  <div class="config-row">
+    <label>Thư mục đích</label>
+    <input type="text" id="gh-folder" placeholder="nv" value="nv"
+      autocomplete="off">
+  </div>
+  <div class="config-row">
+    <label>Branch</label>
+    <input type="text" id="gh-branch" placeholder="main" value="main"
+      autocomplete="off">
+  </div>
+  <div class="config-row">
+    <label>Personal Access Token</label>
+    <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx"
+      autocomplete="off">
+  </div>
+  <div class="hint">
+    Lấy token tại: GitHub → Settings → Developer settings →
+    Personal access tokens → Tokens (classic) → tick <b>repo</b>
+    <br>Token được lưu trong trình duyệt, không gửi đi đâu ngoài GitHub API.
+  </div>
+  <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <button class="btn btn-gray" onclick="saveGHConfig()"
+      style="width:auto;padding:9px 16px;font-size:13px;">
+      💾 Lưu cấu hình
+    </button>
+    <button class="btn btn-blue" onclick="testGHToken()"
+      style="width:auto;padding:9px 16px;font-size:13px;">
+      🔑 Kiểm tra Token
+    </button>
+  </div>
+  <div id="gh-status" style="display:none;margin-top:10px;padding:10px 14px;
+    border-radius:9px;font-size:13px;"></div>
+</div>
+
 <!-- File cá nhân iOS -->
 <div class="config-card">
   <h2>📱 File cá nhân cho iPhone (iOS)</h2>
@@ -128,6 +178,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;padding:20px;}
     <div style="background:#f3e5f5;border-radius:10px;padding:14px;margin-bottom:10px;">
       <div style="font-weight:700;color:#6a1b9a;margin-bottom:8px;">📥 Bước 1 — Tải file về máy</div>
       <div id="pf-list"></div>
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-blue no-print" onclick="uploadAllToGitHub()"
+          style="width:auto;padding:10px 18px;font-size:14px;">
+          ☁️ Upload tất cả lên GitHub
+        </button>
+      </div>
     </div>
 
     <div style="background:#e8f5e9;border-radius:10px;padding:14px;margin-bottom:10px;">
@@ -475,12 +531,38 @@ function generatePersonalFiles() {
     var blob    = new Blob([personalHtml],{type:'text/html;charset=utf-8'});
     var blobUrl = URL.createObjectURL(blob);
     var row = document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;justify-content:space-between;'
-      +'padding:9px 12px;background:white;border-radius:8px;margin-bottom:6px;';
-    row.innerHTML='<span style="font-size:14px;font-weight:600;color:#6a1b9a;">📄 '+fileName+'</span>'
-      +'<a href="'+blobUrl+'" download="'+fileName+'" '
-      +'style="background:#7b1fa2;color:white;border-radius:7px;padding:7px 14px;'
-      +'font-size:13px;font-weight:600;text-decoration:none;">⬇️ Tải</a>';
+    row.id = 'row-' + safeName;
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;'
+      +'padding:9px 12px;background:white;border-radius:8px;margin-bottom:6px;gap:8px;flex-wrap:wrap;';
+
+    var nameSpan = document.createElement('span');
+    nameSpan.style.cssText = 'font-size:14px;font-weight:600;color:#6a1b9a;flex:1;min-width:120px;';
+    nameSpan.textContent = '📄 ' + fileName;
+
+    var statusSpan = document.createElement('span');
+    statusSpan.id = 'upload-status-' + safeName;
+    statusSpan.style.cssText = 'font-size:12px;color:#666;';
+
+    var dlBtn = document.createElement('a');
+    dlBtn.href = blobUrl;
+    dlBtn.download = fileName;
+    dlBtn.style.cssText = 'background:#7b1fa2;color:white;border-radius:7px;padding:7px 12px;'
+      +'font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;';
+    dlBtn.textContent = '⬇️ Tải';
+
+    var upBtn = document.createElement('button');
+    upBtn.id = 'upload-btn-' + safeName;
+    upBtn.style.cssText = 'background:#1a73e8;color:white;border:none;border-radius:7px;'
+      +'padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;';
+    upBtn.textContent = '☁️ Upload';
+    (function(fn, pc, sn) {
+      upBtn.onclick = function() { uploadToGitHub(fn, pc, sn); };
+    })(fileName, personalHtml, safeName);
+
+    row.appendChild(nameSpan);
+    row.appendChild(statusSpan);
+    row.appendChild(dlBtn);
+    row.appendChild(upBtn);
     list.appendChild(row);
 
     // QR code trỏ đến URL trên GitHub
@@ -622,6 +704,173 @@ function printPersonalQR() {
   setTimeout(function(){ win.print(); }, 800);
 }
 
+
+
+// ── GitHub API Upload ─────────────────────────────────────────────────
+var GH_CONFIG = {};
+
+function saveGHConfig() {
+  GH_CONFIG = {
+    user:   document.getElementById('gh-user').value.trim(),
+    repo:   document.getElementById('gh-repo').value.trim(),
+    folder: (document.getElementById('gh-folder').value.trim() || 'nv'),
+    branch: (document.getElementById('gh-branch').value.trim() || 'main'),
+    token:  document.getElementById('gh-token').value.trim()
+  };
+  // Lưu vào localStorage (trừ token vì nhạy cảm)
+  try {
+    localStorage.setItem('gh_config', JSON.stringify({
+      user: GH_CONFIG.user, repo: GH_CONFIG.repo,
+      folder: GH_CONFIG.folder, branch: GH_CONFIG.branch
+    }));
+  } catch(e) {}
+  setGHStatus('✅ Đã lưu cấu hình: ' + GH_CONFIG.user + '/' + GH_CONFIG.repo
+    + '/' + GH_CONFIG.folder, 'ok');
+}
+
+function testGHToken() {
+  var token = document.getElementById('gh-token').value.trim();
+  var user  = document.getElementById('gh-user').value.trim();
+  var repo  = document.getElementById('gh-repo').value.trim();
+  if (!token || !user || !repo) {
+    setGHStatus('⚠️ Điền đầy đủ Username, Repository và Token trước.', 'warn');
+    return;
+  }
+  setGHStatus('⏳ Đang kiểm tra token...', 'loading');
+  fetch('https://api.github.com/repos/' + user + '/' + repo, {
+    headers: {
+      'Authorization': 'token ' + token,
+      'Accept': 'application/vnd.github.v3+json'
+    }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.full_name) {
+      setGHStatus('✅ Token hợp lệ! Repo: ' + d.full_name
+        + (d.private ? ' (private)' : ' (public)'), 'ok');
+    } else {
+      setGHStatus('❌ ' + (d.message || 'Token không hợp lệ'), 'err');
+    }
+  })
+  .catch(function(e) {
+    setGHStatus('❌ Lỗi kết nối: ' + e.message, 'err');
+  });
+}
+
+function setGHStatus(msg, type) {
+  var el = document.getElementById('gh-status');
+  el.style.display = 'block';
+  var colors = {
+    loading:{bg:'#e8f0fe',color:'#1a73e8'},
+    ok:     {bg:'#e6f4ea',color:'#137333'},
+    warn:   {bg:'#fef7e0',color:'#8a4f00'},
+    err:    {bg:'#fce8e6',color:'#c5221f'}
+  };
+  var c = colors[type] || colors.loading;
+  el.style.background = c.bg;
+  el.style.color = c.color;
+  el.textContent = msg;
+}
+
+function setUploadStatus(safeName, msg, type) {
+  var el = document.getElementById('upload-status-' + safeName);
+  if (!el) return;
+  var icons = {loading:'⏳',ok:'✅',err:'❌',warn:'⚠️'};
+  el.textContent = (icons[type]||'') + ' ' + msg;
+  el.style.color = type==='ok'?'#137333': type==='err'?'#c5221f': '#888';
+}
+
+async function uploadToGitHub(fileName, content, safeName) {
+  // Lấy config
+  var token  = document.getElementById('gh-token').value.trim();
+  var user   = document.getElementById('gh-user').value.trim();
+  var repo   = document.getElementById('gh-repo').value.trim();
+  var folder = (document.getElementById('gh-folder').value.trim() || 'nv');
+  var branch = (document.getElementById('gh-branch').value.trim() || 'main');
+
+  if (!token || !user || !repo) {
+    setGHStatus('⚠️ Điền đầy đủ thông tin GitHub và Token trước khi upload.', 'warn');
+    document.getElementById('gh-token').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+
+  var filePath = folder + '/' + fileName;
+  var apiUrl   = 'https://api.github.com/repos/' + user + '/' + repo
+               + '/contents/' + filePath;
+
+  setUploadStatus(safeName, 'Đang upload...', 'loading');
+  var upBtn = document.getElementById('upload-btn-' + safeName);
+  if (upBtn) upBtn.disabled = true;
+
+  try {
+    // Encode content sang base64
+    var b64Content = btoa(unescape(encodeURIComponent(content)));
+
+    // Kiểm tra file đã tồn tại chưa (để lấy SHA nếu cần update)
+    var sha = null;
+    var checkResp = await fetch(apiUrl + '?ref=' + branch, {
+      headers: {
+        'Authorization': 'token ' + token,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (checkResp.ok) {
+      var existing = await checkResp.json();
+      sha = existing.sha;  // file đã tồn tại → cần SHA để update
+    }
+
+    // Upload / update file
+    var body = {
+      message: sha ? 'Update ' + fileName : 'Add ' + fileName,
+      content: b64Content,
+      branch:  branch
+    };
+    if (sha) body.sha = sha;
+
+    var uploadResp = await fetch(apiUrl, {
+      method:  'PUT',
+      headers: {
+        'Authorization': 'token ' + token,
+        'Accept':        'application/vnd.github.v3+json',
+        'Content-Type':  'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    var result = await uploadResp.json();
+    if (uploadResp.ok) {
+      setUploadStatus(safeName, sha ? 'Đã cập nhật!' : 'Upload thành công!', 'ok');
+      if (upBtn) { upBtn.textContent = '✅ Done'; upBtn.style.background = '#34a853'; }
+    } else {
+      throw new Error(result.message || 'Upload thất bại');
+    }
+  } catch(e) {
+    setUploadStatus(safeName, e.message, 'err');
+    if (upBtn) { upBtn.disabled = false; upBtn.textContent = '🔄 Thử lại'; }
+  }
+}
+
+async function uploadAllToGitHub() {
+  var rows = document.querySelectorAll('#pf-list [id^="upload-btn-"]');
+  if (!rows.length) { alert('Chưa có file nào để upload.'); return; }
+  for (var i = 0; i < rows.length; i++) {
+    if (!rows[i].disabled) {
+      rows[i].click();
+      await new Promise(function(r){ setTimeout(r, 600); }); // delay tránh rate limit
+    }
+  }
+}
+
+// Load cấu hình GitHub đã lưu khi trang load
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var saved = JSON.parse(localStorage.getItem('gh_config') || '{}');
+    if (saved.user)   document.getElementById('gh-user').value   = saved.user;
+    if (saved.repo)   document.getElementById('gh-repo').value   = saved.repo;
+    if (saved.folder) document.getElementById('gh-folder').value = saved.folder;
+    if (saved.branch) document.getElementById('gh-branch').value = saved.branch;
+  } catch(e) {}
+});
 
 </script>
 
