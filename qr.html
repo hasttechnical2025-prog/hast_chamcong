@@ -137,6 +137,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;padding:20px;}
         QR trỏ thẳng vào file cá nhân — quét → Add to Home Screen → ✅
       </div>
       <div id="pf-qr-grid" class="qr-grid"></div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-green no-print" onclick="printPersonalQR()" style="width:auto;padding:10px 18px;font-size:14px;">
+          🖨️ In tất cả QR
+        </button>
+        <button class="btn btn-gray no-print" onclick="downloadAllPersonalQR()" style="width:auto;padding:10px 18px;font-size:14px;">
+          ⬇️ Tải tất cả QR
+        </button>
+      </div>
     </div>
 
     <div style="background:#fff3e0;border-radius:10px;padding:14px;">
@@ -395,9 +403,17 @@ function generatePersonalFiles() {
     var urlDiv = document.createElement('div');
     urlDiv.className = 'qr-link';
     urlDiv.textContent = fileUrl;
+    // Nút tải QR
+    var dlBtn = document.createElement('button');
+    dlBtn.className = 'btn-dl';
+    dlBtn.textContent = '⬇️ Tải QR';
+    dlBtn.onclick = (function(n, sid) {
+      return function() { downloadPersonalQR(n, sid); };
+    })(name, safeName);
     card.appendChild(nameDiv);
     card.appendChild(qrBox);
     card.appendChild(urlDiv);
+    card.appendChild(dlBtn);
     qrGrid.appendChild(card);
 
     new QRCode(qrDiv, {
@@ -409,6 +425,102 @@ function generatePersonalFiles() {
 
   document.getElementById('pf-result').style.display = 'block';
   document.getElementById('pf-result').scrollIntoView({behavior:'smooth'});
+}
+
+
+// ── Tải / In QR cá nhân ──────────────────────────────────────────────
+function downloadPersonalQR(name, safeName) {
+  var qrDiv = document.getElementById('pqr-' + safeName);
+  if (!qrDiv) { alert('Không tìm thấy QR.'); return; }
+  var canvas = qrDiv.querySelector('canvas');
+  var img    = qrDiv.querySelector('img');
+
+  // Tạo canvas kết hợp QR + tên
+  var final = document.createElement('canvas');
+  final.width  = 220;
+  final.height = 250;
+  var ctx = final.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 220, 250);
+
+  function drawAndSave(source) {
+    ctx.drawImage(source, 30, 10, 160, 160);
+    ctx.fillStyle = '#1a73e8';
+    ctx.font = 'bold 13px Arial';
+    ctx.textAlign = 'center';
+    // Wrap tên dài
+    var words = name.split(' ');
+    var line = '', y = 192, lineH = 17;
+    words.forEach(function(w) {
+      var test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > 200) {
+        ctx.fillText(line, 110, y); y += lineH; line = w;
+      } else { line = test; }
+    });
+    if (line) ctx.fillText(line, 110, y); y += lineH;
+    ctx.fillStyle = '#888';
+    ctx.font = '11px Arial';
+    ctx.fillText('Chấm Công HSTC', 110, y);
+    var a = document.createElement('a');
+    a.download = 'QR_' + name.replace(/\s+/g,'_') + '.png';
+    a.href = final.toDataURL('image/png');
+    a.click();
+  }
+
+  if (canvas) {
+    drawAndSave(canvas);
+  } else if (img) {
+    var tmp = new Image();
+    tmp.crossOrigin = 'anonymous';
+    tmp.onload = function() { drawAndSave(tmp); };
+    tmp.src = img.src;
+  }
+}
+
+function downloadAllPersonalQR() {
+  var cards = document.querySelectorAll('#pf-qr-grid .qr-card');
+  if (!cards.length) { alert('Chưa có QR nào.'); return; }
+  cards.forEach(function(card, i) {
+    var btn = card.querySelector('.btn-dl');
+    if (btn) setTimeout(function(){ btn.click(); }, i * 400);
+  });
+}
+
+function printPersonalQR() {
+  // Tạo cửa sổ in chỉ chứa QR grid
+  var grid = document.getElementById('pf-qr-grid');
+  if (!grid || !grid.children.length) { alert('Chưa có QR nào.'); return; }
+
+  var win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write('<html><head><title>QR Code Chấm Công</title><style>'
+    + 'body{font-family:Arial,sans-serif;padding:20px;}'
+    + '.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}'
+    + '.card{border:1px solid #ddd;border-radius:10px;padding:12px;text-align:center;break-inside:avoid;}'
+    + '.name{font-size:13px;font-weight:700;color:#202124;margin-bottom:8px;}'
+    + 'img,canvas{border-radius:4px;max-width:140px;}'
+    + '.url{font-size:9px;color:#888;margin-top:6px;word-break:break-all;}'
+    + '@media print{@page{margin:10mm}}'
+    + '</style></head><body>'
+    + '<h3 style="text-align:center;color:#1a73e8;margin-bottom:16px;">QR Code Chấm Công - HSTC</h3>'
+    + '<div class="grid">');
+
+  var cards = grid.querySelectorAll('.qr-card');
+  cards.forEach(function(card) {
+    var name  = card.querySelector('.qr-name')  ? card.querySelector('.qr-name').textContent  : '';
+    var url   = card.querySelector('.qr-link')  ? card.querySelector('.qr-link').textContent  : '';
+    var canvas= card.querySelector('canvas');
+    var img   = card.querySelector('img');
+    var src   = canvas ? canvas.toDataURL('image/png') : (img ? img.src : '');
+    win.document.write('<div class="card">'
+      + '<div class="name">' + name + '</div>'
+      + (src ? '<img src="' + src + '" width="140" height="140">' : '')
+      + '<div class="url">' + url + '</div>'
+      + '</div>');
+  });
+
+  win.document.write('</div></body></html>');
+  win.document.close();
+  setTimeout(function(){ win.print(); }, 800);
 }
 
 </script>
