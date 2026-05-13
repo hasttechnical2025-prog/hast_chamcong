@@ -350,7 +350,13 @@ function generatePersonalFiles() {
   qrGrid.innerHTML = '';
 
   names.forEach(function(name) {
-    var safeName = name.replace(/\s+/g,'_').replace(/[^\w\u00C0-\u024F\u1E00-\u1EFF]/g,'');
+    // Bỏ dấu tiếng Việt để URL là ASCII thuần túy (QR đọc được)
+    var safeName = name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')  // bỏ combining marks (dấu)
+      .replace(/\u0111/g, 'd').replace(/\u0110/g, 'D')  // đ/Đ
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_]/g, '');
     var fileName = safeName + '.html';
     var fileUrl  = personalBaseUrl + fileName;
     var nameJson = JSON.stringify(name);
