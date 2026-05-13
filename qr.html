@@ -123,7 +123,6 @@ Pham Thi D"></textarea>
 
 <script>
 function slugName(name) {
-  // Encode tên cho URL — giữ nguyên tiếng Việt, thay space bằng +
   return encodeURIComponent(name.trim()).replace(/%20/g, '+');
 }
 
@@ -150,7 +149,8 @@ function generateAll() {
   grid.innerHTML = '';
 
   names.forEach(function(name) {
-    var url = baseUrl + '?name=' + slugName(name);
+    // Dùng hash (#name=) thay vì query (?name=) để iOS PWA hoạt động
+    var url = baseUrl + '#name=' + slugName(name);
 
     var card = document.createElement('div');
     card.className = 'qr-card';
