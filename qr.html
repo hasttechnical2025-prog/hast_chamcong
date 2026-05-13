@@ -165,11 +165,9 @@ Pham Thi D"></textarea>
     <button class="btn btn-blue" onclick="generateAll()">🔄 Tạo QR Code</button>
     <button class="btn btn-green no-print" onclick="window.print()">🖨️ In tất cả</button>
     <button class="btn btn-gray no-print" onclick="downloadAll()">⬇️ Tải QR</button>
-    <button class="btn no-print" style="background:#9c27b0;color:white;" onclick="generatePersonalFiles()">📱 Tạo file iPhone</button>
+
   </div>
-  <div class="hint" style="margin-top:10px;color:#9c27b0;">
-    📱 <b>Tạo file iPhone:</b> Tạo file HTML riêng cho từng nhân viên (tên nhúng cứng) — dùng Add to Home Screen trên iOS không bị lỗi tên.
-  </div>
+
 </div>
 
 <!-- Kết quả QR -->
@@ -414,14 +412,6 @@ function generatePersonalFiles() {
 }
 
 </script>
-
-<!-- Kết quả file cá nhân iOS -->
-<div id="pf-result" style="display:none;max-width:700px;margin:0 auto 20px;">
-  <div style="font-size:15px;font-weight:700;color:#6a1b9a;margin-bottom:12px;">
-    📱 File HTML cá nhân — dành cho iPhone
-  </div>
-  <div id="pf-list"></div>
-</div>
 
 </body>
 </html>
