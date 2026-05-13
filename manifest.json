@@ -2,7 +2,7 @@
   "name": "Chấm Công - Siêu Thanh HN",
   "short_name": "Chấm Công",
   "description": "Hệ thống chấm công HSTC Group",
-  "start_url": "./index.html",
+  "start_url": "https://hasttechnical2025-prog.github.io/hast_chamcong/index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
