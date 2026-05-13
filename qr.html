@@ -156,6 +156,25 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;padding:20px;}
     border-radius:9px;font-size:13px;"></div>
 </div>
 
+<!-- Danh sách nhân viên -->
+<div class="emp-section">
+  <h2>👥 Danh sách nhân viên</h2>
+  <div class="hint">Nhập mỗi tên một dòng. Tên sẽ được dùng làm tham số trong link.</div>
+  <div class="emp-input-row">
+    <textarea id="emp-list" placeholder="Nguyen Van A
+Tran Thi B
+Le Van C
+Pham Thi D"></textarea>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-blue" onclick="generateAll()">🔄 Tạo QR Code</button>
+    <button class="btn btn-green no-print" onclick="window.print()">🖨️ In tất cả</button>
+    <button class="btn btn-gray no-print" onclick="downloadAll()">⬇️ Tải QR</button>
+
+  </div>
+
+</div>
+
 <!-- File cá nhân iOS -->
 <div class="config-card">
   <h2>📱 File cá nhân cho iPhone (iOS)</h2>
@@ -221,25 +240,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;padding:20px;}
       </div>
     </div>
   </div>
-</div>
-
-<!-- Danh sách nhân viên -->
-<div class="emp-section">
-  <h2>👥 Danh sách nhân viên</h2>
-  <div class="hint">Nhập mỗi tên một dòng. Tên sẽ được dùng làm tham số trong link.</div>
-  <div class="emp-input-row">
-    <textarea id="emp-list" placeholder="Nguyen Van A
-Tran Thi B
-Le Van C
-Pham Thi D"></textarea>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-blue" onclick="generateAll()">🔄 Tạo QR Code</button>
-    <button class="btn btn-green no-print" onclick="window.print()">🖨️ In tất cả</button>
-    <button class="btn btn-gray no-print" onclick="downloadAll()">⬇️ Tải QR</button>
-
-  </div>
-
 </div>
 
 <!-- Kết quả QR -->
