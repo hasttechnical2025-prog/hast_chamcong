@@ -214,6 +214,10 @@ const MAX_DISTANCE = 10000; //10000
 const DAYS = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
 let gpsCoords = null;
 
+// GPS hết hạn sau 1 phút — phải lấy lại
+const GPS_EXPIRE_MS = 1 * 60 * 1000;
+var gpsTimestamp = 0; // thời điểm lấy GPS
+  
 // ── Đồng hồ ──────────────────────────────────────────────
 function tick(){
   const n = new Date();
@@ -331,6 +335,7 @@ function getGPS(){
         longitude: pos.coords.longitude,
         accuracy:  pos.coords.accuracy
       };
+      gpsTimestamp = Date.now(); // lưu thời điểm lấy GPS
       const lat = gpsCoords.latitude;
       const lng = gpsCoords.longitude;
       const acc = gpsCoords.accuracy;
@@ -385,11 +390,25 @@ function getGPS(){
 }
 
 // ── Gửi ──────────────────────────────────────────────────
-function send(){
-  if (!gpsCoords) { showPopup('Chưa có GPS. Vui lòng xác định vị trí trước.'); return; }
+function send() {
+  if (!gpsCoords) {
+    showPopup('Chưa có GPS. Vui lòng xác định vị trí trước.');
+    return;
+  }
+  // Kiểm tra GPS có bị hết hạn không
+  if (Date.now() - gpsTimestamp > GPS_EXPIRE_MS) {
+    gpsCoords = null;
+    gpsTimestamp = 0;
+    document.getElementById('btn-send').style.display = 'none';
+    setLoc('warn','⏱️','Vị trí đã hết hạn',[
+      'GPS lấy quá 3 phút trước.',
+      'Đang tự động xác định lại...'
+    ]);
+    getGPS(); // tự động lấy lại
+    return;
+  }
   doSend(gpsCoords.latitude, gpsCoords.longitude, gpsCoords.accuracy);
 }
-
 
 function doSend(lat, lng, accuracy){
   var email = getEmail();
@@ -462,6 +481,22 @@ function resetForm(){
   getGPS();
 }
 
+// Khi người dùng quay lại app (từ background)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && gpsCoords) {
+      // Nếu GPS đã hết hạn → tự động lấy lại
+      if (Date.now() - gpsTimestamp > GPS_EXPIRE_MS) {
+        gpsCoords = null;
+        gpsTimestamp = 0;
+        document.getElementById('btn-send').style.display = 'none';
+        setLoc('warn','⏱️','Vị trí cần cập nhật',[
+          'Đang xác định lại vị trí...'
+        ]);
+        if (employeeName) getGPS();
+      }
+    }
+  });
+  
 // Khởi động
 initEmail();
 // Tự động lấy GPS khi mở app
