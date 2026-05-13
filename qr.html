@@ -417,8 +417,8 @@ function generatePersonalFiles() {
     qrGrid.appendChild(card);
 
     new QRCode(qrDiv, {
-      text: fileUrl, width:160, height:160,
-      colorDark:'#1a1a1a', colorLight:'#ffffff',
+      text: fileUrl, width:256, height:256,
+      colorDark:'#000000', colorLight:'#ffffff',
       correctLevel: QRCode.CorrectLevel.M
     });
   });
@@ -432,47 +432,52 @@ function generatePersonalFiles() {
 function downloadPersonalQR(name, safeName) {
   var qrDiv = document.getElementById('pqr-' + safeName);
   if (!qrDiv) { alert('Không tìm thấy QR.'); return; }
+
+  // Lấy canvas/img gốc của QRCode (không scale lại để giữ chất lượng)
   var canvas = qrDiv.querySelector('canvas');
   var img    = qrDiv.querySelector('img');
 
-  // Tạo canvas kết hợp QR + tên
-  var final = document.createElement('canvas');
-  final.width  = 220;
-  final.height = 250;
-  var ctx = final.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, 220, 250);
+  function saveQR(src) {
+    // Vẽ QR lớn hơn (300px) để rõ nét hơn khi in
+    var size = 300;
+    var padTop = 20, padBot = 60;
+    var final = document.createElement('canvas');
+    final.width  = size + 40;
+    final.height = size + padTop + padBot;
+    var ctx = final.getContext('2d');
 
-  function drawAndSave(source) {
-    ctx.drawImage(source, 30, 10, 160, 160);
+    // Nền trắng
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, final.width, final.height);
+
+    // Vẽ QR — scale lên 300px từ nguồn gốc (canvas gốc 160px)
+    ctx.imageSmoothingEnabled = false; // giữ pixel sắc nét
+    ctx.drawImage(src, 0, 0, src.width || src.naturalWidth, src.height || src.naturalHeight,
+                  20, padTop, size, size);
+
+    // Tên nhân viên
     ctx.fillStyle = '#1a73e8';
-    ctx.font = 'bold 13px Arial';
+    ctx.font = 'bold 16px Arial';
     ctx.textAlign = 'center';
-    // Wrap tên dài
-    var words = name.split(' ');
-    var line = '', y = 192, lineH = 17;
-    words.forEach(function(w) {
-      var test = line ? line + ' ' + w : w;
-      if (ctx.measureText(test).width > 200) {
-        ctx.fillText(line, 110, y); y += lineH; line = w;
-      } else { line = test; }
-    });
-    if (line) ctx.fillText(line, 110, y); y += lineH;
+    ctx.fillText(name, final.width / 2, size + padTop + 26);
+
+    // Nhãn phụ
     ctx.fillStyle = '#888';
-    ctx.font = '11px Arial';
-    ctx.fillText('Chấm Công HSTC', 110, y);
+    ctx.font = '12px Arial';
+    ctx.fillText('Chấm Công HSTC', final.width / 2, size + padTop + 46);
+
     var a = document.createElement('a');
-    a.download = 'QR_' + name.replace(/\s+/g,'_') + '.png';
+    a.download = 'QR_' + name.replace(/\s+/g, '_') + '.png';
     a.href = final.toDataURL('image/png');
     a.click();
   }
 
   if (canvas) {
-    drawAndSave(canvas);
+    saveQR(canvas);
   } else if (img) {
+    // QRCode dùng img tag
     var tmp = new Image();
-    tmp.crossOrigin = 'anonymous';
-    tmp.onload = function() { drawAndSave(tmp); };
+    tmp.onload = function() { saveQR(tmp); };
     tmp.src = img.src;
   }
 }
