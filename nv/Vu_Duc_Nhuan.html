@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chấm Công - Siêu Thanh HN</title>
+
+<!-- PWA: Add to Home Screen -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Chấm Công">
+<meta name="application-name" content="Chấm Công">
+<meta name="theme-color" content="#1a73e8">
+
+<!-- Icons nhúng thẳng (không cần file ngoài) -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<!-- Web App Manifest nhúng inline -->
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+.card{background:white;border-radius:18px;box-shadow:0 4px 28px rgba(0,0,0,.12);
+  padding:28px 22px;max-width:420px;width:100%;}
+
+.header{text-align:center;margin-bottom:20px;}
+.header h1{color:#1a73e8;font-size:21px;font-weight:700;margin-top:6px;}
+.header p{color:#777;font-size:13px;margin-top:3px;}
+
+.clock-box{background:#f8f9fa;border-radius:12px;padding:12px;
+  text-align:center;margin-bottom:18px;}
+.clock-box .time{font-size:30px;font-weight:700;color:#202124;letter-spacing:2px;}
+.clock-box .date{font-size:13px;color:#666;margin-top:3px;}
+
+/* Email block */
+.email-block{margin-bottom:14px;}
+label{display:block;font-size:13px;color:#555;font-weight:600;margin-bottom:5px;}
+
+/* Email đã lưu */
+.email-saved{display:flex;align-items:center;justify-content:space-between;
+  border:1.5px solid #1a73e8;border-radius:10px;padding:10px 14px;
+  background:#e8f0fe;cursor:pointer;}
+.email-saved .addr{font-size:15px;font-weight:600;color:#1a73e8;word-break:break-all;}
+
+/* Input email */
+.email-input-wrap{display:flex;gap:8px;align-items:stretch;}
+.email-input-wrap input{flex:1;border:1.5px solid #dadce0;border-radius:10px;
+  padding:11px 13px;font-size:15px;outline:none;
+  transition:border-color .2s;font-family:inherit;}
+.email-input-wrap input:focus{border-color:#1a73e8;}
+.btn-confirm-email{background:#1a73e8;color:white;border:none;border-radius:10px;
+  padding:0 16px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-confirm-email:hover{background:#1557b0;}
+
+.email-hint{font-size:12px;color:#888;margin-top:5px;}
+
+textarea{width:100%;border:1.5px solid #dadce0;border-radius:10px;
+  padding:10px 12px;font-size:14px;resize:none;outline:none;
+  transition:border-color .2s;font-family:inherit;}
+textarea:focus{border-color:#1a73e8;}
+.field{margin-bottom:14px;}
+
+/* Location */
+.loc{border-radius:12px;padding:13px 15px;font-size:13px;
+  display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;}
+.loc.idle {background:#f1f3f4;color:#555;}
+.loc.ok   {background:#e6f4ea;color:#137333;}
+.loc.warn {background:#fef7e0;color:#8a4f00;}
+.loc.err  {background:#fce8e6;color:#c5221f;}
+.loc .li{font-size:20px;flex-shrink:0;margin-top:1px;}
+.loc .lb strong{display:block;font-size:14px;margin-bottom:2px;}
+.loc .lb span{display:block;line-height:1.7;}
+
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;
+  font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:8px;transition:all .2s;margin-bottom:10px;}
+.btn:last-child{margin-bottom:0;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.blue {background:#1a73e8;color:#fff;}
+.blue:hover:not(:disabled){background:#1557b0;}
+.green{background:#34a853;color:#fff;}
+.green:hover:not(:disabled){background:#137333;}
+.gray {background:#f1f3f4;color:#444;font-size:14px;font-weight:500;}
+.gray:hover:not(:disabled){background:#e0e0e0;}
+
+.spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Custom popup */
+#popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
+  z-index:999;align-items:center;justify-content:center;padding:24px;}
+#popup-overlay.show{display:flex;}
+.popup-box{background:white;border-radius:16px;padding:24px 22px;
+  max-width:300px;width:100%;text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.18);animation:pop .2s ease;}
+@keyframes pop{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.popup-title{font-size:15px;font-weight:700;color:#1a73e8;margin-bottom:10px;}
+.popup-msg{font-size:14px;color:#333;line-height:1.6;margin-bottom:18px;}
+.popup-btn{background:#1a73e8;color:white;border:none;border-radius:10px;
+  padding:11px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%;}
+.popup-btn:hover{background:#1557b0;}
+
+/* Name input fallback */
+.name-input-wrap{display:flex;gap:8px;}
+.name-input-wrap input{flex:1;border:1.5px solid #1a73e8;border-radius:10px;
+  padding:10px 13px;font-size:15px;outline:none;font-family:inherit;}
+.name-input-wrap button{background:#1a73e8;color:white;border:none;
+  border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;}
+.name-input-wrap button:hover{background:#1557b0;}
+
+/* Result */
+#done{display:none;text-align:center;padding:8px 0;}
+#done.show{display:block;}
+.main.hide{display:none;}
+.r-emoji{font-size:56px;margin-bottom:8px;}
+.r-title{font-size:20px;font-weight:700;margin-bottom:14px;}
+.rows{background:#f8f9fa;border-radius:12px;padding:14px 16px;
+  text-align:left;margin-bottom:18px;}
+.row{display:flex;justify-content:space-between;padding:7px 0;
+  font-size:14px;border-bottom:1px solid #eee;}
+.row:last-child{border-bottom:none;}
+.row .l{color:#888;font-size:13px;flex-shrink:0;padding-right:8px;}
+.row .v{font-weight:600;color:#202124;text-align:right;word-break:break-all;}
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Màn hình chính -->
+  <div class="main" id="main">
+    <div class="header">
+      <img
+        src="data:image/jpeg;base64,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"
+        alt="Logo HSTC - Siêu Thanh Hà Nội"
+        style="max-width:240px;width:90%;object-fit:contain;margin-bottom:4px;">
+      <h1>Chấm Công</h1>
+      <p style="font-size:12px;color:#555;margin-top:2px;">📍 Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, Hà Nội</p>
+    </div>
+
+    <div class="clock-box">
+      <div class="time" id="clock">00:00:00</div>
+      <div class="date" id="date-d"></div>
+    </div>
+
+    <!-- Tên nhân viên từ URL -->
+    <div class="email-block" id="email-block">
+      <label>👤 Nhân viên</label>
+      <!-- Hiển thị tên đã xác định -->
+      <div class="email-saved" id="name-saved-ui">
+        <span class="addr" id="name-display">Đang tải...</span>
+      </div>
+      <!-- Input thủ công khi không lấy được từ URL/storage (iOS PWA) -->
+      <div id="name-input-ui" style="display:none;">
+        <div class="name-input-wrap">
+          <input type="text" id="name-manual-input"
+            placeholder="Nhập họ tên của bạn..."
+            lang="vi" autocomplete="name"
+            onkeydown="if(event.key==='Enter')confirmManualName()">
+          <button onclick="confirmManualName()">Xác nhận</button>
+        </div>
+        <div class="email-hint">Nhập họ tên rồi bấm Xác nhận</div>
+      </div>
+      <div class="email-hint" id="name-hint"></div>
+    </div>
+
+    <!-- GPS -->
+    <div class="loc idle" id="loc">
+      <span class="li">📍</span>
+      <div class="lb">
+        <strong>Chưa lấy vị trí</strong>
+        <span>Bấm nút bên dưới để lấy GPS</span>
+      </div>
+    </div>
+
+    <!-- Ghi chú -->
+    <div class="field">
+      <label>📝 Ghi chú (tuỳ chọn)</label>
+      <textarea id="note" rows="2" placeholder="Công tác, đi muộn, lý do khác..."></textarea>
+    </div>
+
+    <button class="btn blue" id="btn-gps" onclick="getGPS()" style="display:none">
+      📡 Xác định vị trí
+    </button>
+    <button class="btn green" id="btn-send" onclick="send()" style="display:none">
+      ✅ Gửi chấm công
+    </button>
+
+  </div>
+
+  <!-- Custom popup -->
+  <div id="popup-overlay">
+    <div class="popup-box">
+      <div class="popup-title" id="popup-title">HAST Chấm công</div>
+      <div class="popup-msg"   id="popup-msg"></div>
+      <button class="popup-btn" onclick="closePopup()">OK</button>
+    </div>
+  </div>
+
+  <!-- Màn hình kết quả -->
+  <div id="done">
+    <div class="r-emoji" id="r-emoji"></div>
+    <div class="r-title" id="r-title"></div>
+    <div class="rows"    id="r-rows"></div>
+    <button class="btn green" onclick="resetForm()">🔄 Chấm công tiếp</button>
+  </div>
+
+</div>
+<script>
+// ═══════════════════════════════════════════
+// ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
+// ═══════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec';
+
+const OFFICES = [
+  { name: 'Văn phòng Siêu Thanh', lat: 21.0000, lng: 105.8412, radius: 200 },
+];
+
+// Khoảng cách tối đa cho phép chấm công (mét). Vượt quá sẽ bị chặn hoàn toàn.
+// Ví dụ: 10000 = 10 km. Đặt 0 để tắt giới hạn này.
+const MAX_DISTANCE = 10000;
+
+// Dùng OpenStreetMap Nominatim — miễn phí, không cần API key
+// ═══════════════════════════════════════════
+
+const DAYS = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+let gpsCoords = null;
+
+// ── Đồng hồ ──────────────────────────────────────────────
+function tick(){
+  const n = new Date();
+  const hh = String(n.getHours()).padStart(2,'0');
+  const mm = String(n.getMinutes()).padStart(2,'0');
+  const ss = String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = hh + ':' + mm + ':' + ss;
+  document.getElementById('date-d').textContent =
+    DAYS[n.getDay()] + ', ' + n.getDate() + '/' + (n.getMonth()+1) + '/' + n.getFullYear();
+}
+// Chạy sau khi DOM load xong
+window.onload = function() {
+  tick();
+  setInterval(tick, 1000);
+};
+
+// ── Tên nhân viên từ URL parameter + localStorage fallback ──
+var employeeName = '';
+
+function initEmail() {
+  employeeName = "Vũ Đức Nhuận";
+  try{document.getElementById("name-saved-ui").style.display="flex";}catch(e){}
+  try{document.getElementById("name-input-ui").style.display="none";}catch(e){}
+  try{document.getElementById("name-display").textContent="Vũ Đức Nhuận";}catch(e){}
+  try{document.getElementById("name-hint").textContent="";}catch(e){}
+}
+
+function getEmail() {
+  return employeeName;
+}
+
+function confirmManualName() {
+  var val = document.getElementById('name-manual-input').value.trim();
+  if (!val || val.length < 2) {
+    showPopup('Vui lòng nhập họ tên hợp lệ (ít nhất 2 ký tự).');
+    return;
+  }
+  employeeName = val;
+  try { localStorage.setItem('chamcong_name', val); } catch(e) {}
+  try { sessionStorage.setItem('chamcong_name', val); } catch(e) {}
+  try {
+    var exp = new Date(); exp.setFullYear(exp.getFullYear()+1);
+    document.cookie = 'chamcong_name=' + encodeURIComponent(val)
+      + '; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+  } catch(e) {}
+  document.getElementById('name-input-ui').style.display  = 'none';
+  document.getElementById('name-saved-ui').style.display  = 'flex';
+  document.getElementById('name-display').textContent = val;
+  document.getElementById('name-hint').textContent    = '';
+  document.getElementById('btn-gps').disabled = false;
+  getGPS();
+}
+
+// ── Custom popup (thay alert) ─────────────────────────────
+function showPopup(msg, title) {
+  document.getElementById('popup-title').textContent = title || 'HAST Chấm công';
+  document.getElementById('popup-msg').textContent   = msg;
+  document.getElementById('popup-overlay').classList.add('show');
+}
+function closePopup() {
+  document.getElementById('popup-overlay').classList.remove('show');
+}
+
+
+
+// ── GPS ───────────────────────────────────────────────────
+function haversine(a,b,c,d){
+  const R=6371000, r=x=>x*Math.PI/180, da=r(c-a), db=r(d-b);
+  const e=Math.sin(da/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(db/2)**2;
+  return R*2*Math.atan2(Math.sqrt(e),Math.sqrt(1-e));
+}
+function checkOffice(lat,lng){
+  let best=null, min=Infinity;
+  OFFICES.forEach(o=>{
+    const d=haversine(lat,lng,o.lat,o.lng);
+    if(d<min){min=d;best=o;}
+  });
+  return {office:best, dist:min, inside:best&&min<=best.radius};
+}
+function setLoc(type, icon, title, lines){
+  var el = document.getElementById('loc');
+  el.className = 'loc ' + type;
+  var spans = '';
+  for (var i = 0; i < lines.length; i++) {
+    spans += '<span>' + lines[i] + '</span>';
+  }
+  el.innerHTML = '<span class="li">' + icon + '</span>'
+    + '<div class="lb"><strong>' + title + '</strong>' + spans + '</div>';
+}
+
+function getGPS(){
+  const email = getEmail();
+  if (!email) {
+    showPopup('Vui lòng nhập và xác nhận họ tên trước.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-gps');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Đang lấy GPS...';
+  document.getElementById('btn-send').style.display = 'none';
+  setLoc('idle','📡','Đang lấy vị trí...','Nếu trình duyệt hỏi quyền → bấm Cho phép'.split('|'));
+
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      // Copy ra plain object để có thể gán thêm .address
+      gpsCoords = {
+        latitude:  pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy:  pos.coords.accuracy
+      };
+      const lat = gpsCoords.latitude;
+      const lng = gpsCoords.longitude;
+      const acc = gpsCoords.accuracy;
+      const {office, dist, inside} = checkOffice(lat, lng);
+      btn.disabled = false;
+      btn.innerHTML = '🔄 Lấy lại GPS';
+
+      // Kiểm tra vượt quá khoảng cách tối đa
+      const overMax = MAX_DISTANCE > 0 && dist > MAX_DISTANCE;
+      const distKm  = (dist / 1000).toFixed(1);
+      const maxKm   = (MAX_DISTANCE / 1000).toFixed(0);
+      if (overMax) {
+        setLoc('err','🚫','Không thể chấm công',[
+          `📏 Bạn đang cách văn phòng <b>${distKm} km</b>`,
+          `⛔ Giới hạn cho phép: ${maxKm} km`,
+          'Vui lòng đến gần văn phòng hơn để chấm công.'
+        ]);
+      } else if (inside) {
+        setLoc('ok','✅',`Trong phạm vi: ${office.name}`,[
+          `📏 Khoảng cách: ${Math.round(dist)} m`,
+          `🎯 Độ chính xác: ±${Math.round(acc)} m`
+        ]);
+        document.getElementById('btn-gps').style.display = 'none';
+        document.getElementById('btn-send').style.display = 'flex';
+      } else {
+        setLoc('warn','⚠️','Ngoài phạm vi văn phòng',[
+          `📏 Cách ${office?office.name:'VP'}: ${Math.round(dist)} m`,
+          `🎯 Độ chính xác: ±${Math.round(acc)} m`,
+          'Vẫn có thể gửi — sẽ được ghi nhận.'
+        ]);
+        document.getElementById('btn-gps').style.display = 'none';
+        document.getElementById('btn-send').style.display = 'flex';
+      }
+    },
+    err => {
+      gpsCoords = null;
+      btn.style.display = 'flex';
+      btn.disabled = false;
+      btn.innerHTML = '🔄 Thử lại GPS';
+      const m = {
+        1: 'Bạn đã từ chối quyền GPS. Vào Cài đặt → Chrome → Vị trí → Cho phép rồi thử lại.',
+        2: 'Không bắt được tín hiệu GPS. Ra chỗ thoáng hoặc bật Wi-Fi rồi thử lại.',
+        3: 'Hết thời gian chờ GPS. Kiểm tra kết nối rồi thử lại.'
+      };
+      setLoc('err','❌','Không lấy được vị trí — Không thể chấm công',[
+        m[err.code]||'Lỗi GPS không xác định.',
+        '⛔ Bắt buộc phải có GPS để chấm công.'
+      ]);
+    },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:0}
+  );
+}
+
+// ── Gửi ──────────────────────────────────────────────────
+function send(){
+  if (!gpsCoords) { showPopup('Chưa có GPS. Vui lòng lấy vị trí trước.'); return; }
+  doSend(gpsCoords.latitude, gpsCoords.longitude, gpsCoords.accuracy);
+}
+
+
+function doSend(lat, lng, accuracy){
+  var email = getEmail();
+  if (!email) { showPopup('Vui lòng nhập họ tên.'); return; }
+
+  var btnSend = document.getElementById('btn-send');
+  var btnGps  = document.getElementById('btn-gps');
+  btnSend.disabled = true;
+  btnGps.disabled  = true;
+  btnSend.innerHTML = '<span class="spin"></span> Đang gửi...';
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      email: email,
+      lat: lat,
+      lng: lng,
+      accuracy: accuracy,
+      note: document.getElementById('note').value.trim()
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(r){
+    btnSend.disabled = false;
+    btnGps.disabled  = false;
+    btnSend.innerHTML = '✅ Gửi chấm công';
+    showDone(r, email);
+  })
+  .catch(function(e){
+    btnSend.disabled = false;
+    btnGps.disabled  = false;
+    btnSend.innerHTML = '✅ Gửi chấm công';
+    showPopup('Lỗi kết nối: ' + e.message, 'Có lỗi xảy ra');
+  });
+}
+
+// ── Kết quả ──────────────────────────────────────────────
+function showDone(r, email){
+  document.getElementById('main').classList.add('hide');
+  document.getElementById('done').classList.add('show');
+  if (r.success){
+    document.getElementById('r-emoji').textContent = r.isAllowed ? '✅' : '⚠️';
+    document.getElementById('r-title').textContent = 'Hoàn thành chấm công';
+    document.getElementById('r-rows').innerHTML = `
+      <div class="row"><span class="l">🕐 Thời gian</span><span class="v">${r.time}</span></div>
+      <div class="row"><span class="l">👤 Họ tên</span><span class="v">${email}</span></div>
+      <div class="row"><span class="l">📍 Checkin</span><span class="v">${r.location}</span></div>
+      ${r.distance!=null?`<div class="row"><span class="l">📏 Khoảng cách</span><span class="v">${r.distance} m</span></div>`:''}
+      ${r.address?`<div class="row"><span class="l">🗺 Vị trí chấm công</span><span class="v">${r.address}</span></div>`:''}
+      <div class="row"><span class="l">✔ Trạng thái</span>
+        <span class="v">${r.isAllowed?'✅ Hợp lệ':'⚠️ Ngoài phạm vi'}</span></div>`;
+  } else {
+    document.getElementById('r-emoji').textContent = '❌';
+    document.getElementById('r-title').textContent = 'Có lỗi xảy ra';
+    document.getElementById('r-rows').innerHTML =
+      `<div class="row"><span class="v" style="color:#c5221f">${r.error}</span></div>`;
+  }
+}
+
+function resetForm(){
+  gpsCoords = null;
+  document.getElementById('done').classList.remove('show');
+  document.getElementById('main').classList.remove('hide');
+  document.getElementById('note').value = '';
+  document.getElementById('btn-send').style.display = 'none';
+  document.getElementById('btn-gps').style.display = 'none';
+  document.getElementById('btn-gps').disabled = false;
+  document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí';
+  setLoc('idle','📡','Đang xác định vị trí...','Vui lòng chờ'.split('|'));
+  getGPS();
+}
+
+// Khởi động
+initEmail();
+// Tự động lấy GPS ngay khi mở app
+if (employeeName) {
+  getGPS();
+}
+</script>
+</body>
+</html>
