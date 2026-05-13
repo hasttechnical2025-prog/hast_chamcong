@@ -241,14 +241,21 @@ function initEmail() {
   if (nameFromUrl) {
     // Có tên trong URL → lưu vào localStorage để dùng lần sau (khi mở từ Home Screen)
     employeeName = nameFromUrl;
+    // Lưu vào cả 2 nơi để phòng iOS xóa localStorage
     localStorage.setItem('chamcong_name', nameFromUrl);
+    sessionStorage.setItem('chamcong_name', nameFromUrl);
     document.getElementById('name-display').textContent = nameFromUrl;
     document.getElementById('name-hint').textContent = '';
   } else {
     // Không có trong URL → thử lấy từ localStorage (đã quét QR trước đó)
-    var savedName = localStorage.getItem('chamcong_name') || '';
+    // Thử localStorage trước, rồi sessionStorage
+    var savedName = localStorage.getItem('chamcong_name')
+                 || sessionStorage.getItem('chamcong_name')
+                 || '';
     if (savedName) {
       employeeName = savedName;
+      // Ghi lại để đồng bộ
+      localStorage.setItem('chamcong_name', savedName);
       document.getElementById('name-display').textContent = savedName;
       document.getElementById('name-hint').textContent = '';
     } else {
