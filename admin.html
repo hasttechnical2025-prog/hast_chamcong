@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản trị Chấm Công - HSTC</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;padding:20px;}
+
+.header{text-align:center;margin-bottom:28px;}
+.header h1{color:#1a73e8;font-size:22px;font-weight:700;margin-top:8px;}
+.header p{color:#666;font-size:13px;margin-top:4px;}
+
+.page{max-width:700px;margin:0 auto;}
+
+/* Section cards */
+.section{background:white;border-radius:14px;padding:22px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:20px;}
+.section-title{font-size:15px;font-weight:700;color:#202124;
+  margin-bottom:16px;display:flex;align-items:center;gap:8px;
+  padding-bottom:12px;border-bottom:1px solid #f0f0f0;}
+
+/* Form elements */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:13px;color:#555;font-weight:600;margin-bottom:5px;}
+.field input,.field textarea,.field select{
+  width:100%;border:1.5px solid #dadce0;border-radius:9px;
+  padding:10px 13px;font-size:14px;outline:none;
+  transition:border-color .2s;font-family:inherit;background:white;}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#1a73e8;}
+.field textarea{resize:vertical;min-height:70px;}
+.field .hint{font-size:12px;color:#888;margin-top:4px;line-height:1.5;}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+/* Buttons */
+.btn{padding:11px 20px;border:none;border-radius:9px;font-size:14px;
+  font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;
+  align-items:center;gap:6px;}
+.btn-blue{background:#1a73e8;color:white;}
+.btn-blue:hover{background:#1557b0;}
+.btn-green{background:#34a853;color:white;}
+.btn-green:hover{background:#137333;}
+.btn-red{background:#ea4335;color:white;}
+.btn-red:hover{background:#c5221f;}
+.btn-gray{background:#f1f3f4;color:#444;}
+.btn-gray:hover{background:#e0e0e0;}
+.btn-full{width:100%;justify-content:center;padding:13px;}
+
+/* Office list */
+.office-item{background:#f8f9fa;border-radius:9px;padding:12px 14px;
+  margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.office-item .info{font-size:13px;}
+.office-item .info strong{display:block;color:#202124;margin-bottom:2px;}
+.office-item .info span{color:#666;font-size:12px;}
+.office-item .del{background:none;border:none;color:#ea4335;cursor:pointer;
+  font-size:18px;padding:4px 8px;border-radius:6px;}
+.office-item .del:hover{background:#fce8e6;}
+
+/* Logo preview */
+.logo-preview{border:2px dashed #dadce0;border-radius:10px;padding:16px;
+  text-align:center;margin-top:8px;background:#fafafa;min-height:80px;
+  display:flex;align-items:center;justify-content:center;}
+.logo-preview img{max-height:70px;max-width:100%;object-fit:contain;}
+.logo-preview .placeholder{color:#aaa;font-size:13px;}
+
+/* Map button */
+.map-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;
+  background:#e8f0fe;color:#1a73e8;border:none;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;text-decoration:none;}
+.map-btn:hover{background:#d2e3fc;}
+
+/* Status */
+.status{border-radius:10px;padding:14px 16px;font-size:13px;margin-top:16px;display:none;}
+.status.ok{background:#e6f4ea;color:#137333;display:block;}
+.status.err{background:#fce8e6;color:#c5221f;display:block;}
+
+/* Sheets link */
+.sheets-row{display:flex;gap:10px;align-items:flex-end;}
+.sheets-row .field{flex:1;margin-bottom:0;}
+
+/* Preview card */
+.preview-wrap{border:1.5px solid #e0e0e0;border-radius:12px;overflow:hidden;margin-top:12px;}
+.preview-label{background:#f1f3f4;padding:8px 14px;font-size:12px;
+  color:#666;font-weight:600;border-bottom:1px solid #e0e0e0;}
+.preview-content{padding:14px;font-size:13px;color:#444;line-height:1.8;
+  font-family:monospace;white-space:pre-wrap;word-break:break-all;
+  max-height:200px;overflow-y:auto;}
+
+/* Action bar */
+.action-bar{background:white;border-radius:14px;padding:20px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:20px;
+  display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.action-bar .title{font-size:14px;font-weight:600;color:#333;flex:1;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div style="font-size:36px">⚙️</div>
+    <h1>Quản trị Chấm Công</h1>
+    <p>Cấu hình và tạo file index.html cho hệ thống chấm công</p>
+  </div>
+
+  <!-- ① Apps Script URL -->
+  <div class="section">
+    <div class="section-title">🔗 Kết nối Apps Script</div>
+    <div class="field">
+      <label>URL Apps Script (doPost endpoint)</label>
+      <input type="url" id="apps-url"
+        placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+      <div class="hint">Lấy từ Apps Script → Deploy → Manage deployments → Web app URL</div>
+    </div>
+    <div class="field">
+      <label>URL Google Sheets (để mở xem dữ liệu)</label>
+      <div class="sheets-row">
+        <div class="field">
+          <input type="url" id="sheets-url"
+            placeholder="https://docs.google.com/spreadsheets/d/...">
+        </div>
+        <button class="btn btn-green" onclick="openSheets()" style="margin-bottom:14px;">
+          📊 Mở Sheets
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② Logo công ty -->
+  <div class="section">
+    <div class="section-title">🖼️ Logo công ty</div>
+    <div class="field">
+      <label>Upload logo (PNG/JPG, nền trắng)</label>
+      <input type="file" id="logo-file" accept="image/*" onchange="previewLogo(this)">
+      <div class="hint">Logo sẽ được nhúng thẳng vào file HTML (không cần host ảnh ngoài)</div>
+    </div>
+    <div class="logo-preview" id="logo-preview">
+      <div class="placeholder">📷 Chưa có logo — upload ảnh để xem trước</div>
+    </div>
+  </div>
+
+  <!-- ③ Thông tin công ty -->
+  <div class="section">
+    <div class="section-title">🏢 Thông tin công ty</div>
+    <div class="field">
+      <label>Tên công ty (hiển thị trên trang chấm công)</label>
+      <input type="text" id="company-name" value="CHẤM CÔNG CBNV"
+        placeholder="CHẤM CÔNG CBNV">
+    </div>
+    <div class="field">
+      <label>Địa chỉ công ty (hiển thị dưới logo)</label>
+      <input type="text" id="company-address"
+        value="Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, TP Hà Nội"
+        placeholder="Số 5 Nguyễn Ngọc Vũ...">
+    </div>
+    <div class="field">
+      <label>Version (ví dụ: 2026.05)</label>
+      <input type="text" id="app-version" value="2026.05" placeholder="2026.05">
+    </div>
+  </div>
+
+  <!-- ④ Vị trí văn phòng -->
+  <div class="section">
+    <div class="section-title">📍 Vị trí văn phòng</div>
+    <div class="hint" style="margin-bottom:14px;">
+      Lấy tọa độ: mở <a href="https://maps.google.com" target="_blank">Google Maps</a>
+      → bấm chuột phải vào vị trí → copy tọa độ
+    </div>
+
+    <!-- Form thêm văn phòng -->
+    <div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div class="row3">
+        <div class="field" style="margin-bottom:0;">
+          <label>Tên địa điểm</label>
+          <input type="text" id="off-name" placeholder="Văn phòng chính">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Vĩ độ (Lat)</label>
+          <input type="number" id="off-lat" placeholder="21.009109" step="any">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Kinh độ (Lng)</label>
+          <input type="number" id="off-lng" placeholder="105.813355" step="any">
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center;">
+        <div class="field" style="margin-bottom:0;flex:1;">
+          <label>Bán kính cho phép (mét)</label>
+          <input type="number" id="off-radius" value="200" min="50" max="2000">
+        </div>
+        <div style="margin-top:18px;">
+          <button class="btn btn-blue" onclick="addOffice()">➕ Thêm</button>
+          <a class="map-btn" id="pick-map-btn" href="#" target="_blank"
+            onclick="openMapPicker()">🗺️ Chọn trên bản đồ</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danh sách văn phòng -->
+    <div id="office-list"></div>
+  </div>
+
+  <!-- ⑤ Giới hạn khoảng cách -->
+  <div class="section">
+    <div class="section-title">📏 Giới hạn khoảng cách</div>
+    <div class="row2">
+      <div class="field">
+        <label>Khoảng cách tối đa cho phép (mét)</label>
+        <input type="number" id="max-dist" value="10000" min="0">
+        <div class="hint">0 = không giới hạn. Ví dụ: 10000 = 10 km</div>
+      </div>
+      <div class="field">
+        <label>Giải thích khoảng cách</label>
+        <div class="hint" style="margin-top:8px;line-height:2;">
+          ✅ Trong <b id="radius-show">200</b>m → Hợp lệ<br>
+          ⚠️ 200m – <b id="maxdist-show">10</b>km → Cảnh báo<br>
+          🚫 Hơn <b id="maxdist-show2">10</b>km → Chặn
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑥ Popup & thông báo -->
+  <div class="section">
+    <div class="section-title">💬 Tên ứng dụng</div>
+    <div class="field">
+      <label>Tên hiển thị trong popup thông báo</label>
+      <input type="text" id="app-name" value="HAST Chấm công"
+        placeholder="HAST Chấm công">
+      <div class="hint">Ví dụ: "HSTC Chấm công", "Siêu Thanh Chấm công"</div>
+    </div>
+  </div>
+
+  <!-- Action bar -->
+  <div class="action-bar">
+    <div class="title">📄 Tạo file index.html</div>
+    <button class="btn btn-gray" onclick="previewConfig()">👁️ Xem cấu hình</button>
+    <button class="btn btn-green" onclick="generateAndDownload()">
+      ⬇️ Tạo &amp; Tải file
+    </button>
+  </div>
+
+  <!-- Preview config -->
+  <div id="preview-section" style="display:none;" class="section">
+    <div class="section-title">👁️ Xem trước cấu hình</div>
+    <div class="preview-wrap">
+      <div class="preview-label">Cấu hình sẽ được nhúng vào index.html</div>
+      <div class="preview-content" id="preview-content"></div>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <!-- Hướng dẫn -->
+  <div class="section">
+    <div class="section-title">📋 Hướng dẫn sử dụng</div>
+    <div style="font-size:13px;color:#555;line-height:2;">
+      <b>Bước 1:</b> Điền đầy đủ thông tin ở trên<br>
+      <b>Bước 2:</b> Bấm <b>"Tạo &amp; Tải file"</b> → tải về <code>index.html</code><br>
+      <b>Bước 3:</b> Upload file lên GitHub repository (thay file cũ)<br>
+      <b>Bước 4:</b> Trang chấm công tự cập nhật sau ~1 phút<br>
+      <br>
+      <b>Lưu ý:</b> File <code>admin.html</code> này chỉ dùng nội bộ để tạo cấu hình,
+      không cần upload lên GitHub (hoặc upload nhưng không chia sẻ link cho nhân viên).
+    </div>
+  </div>
+
+</div><!-- .page -->
+
+<script>
+// ── Dữ liệu ──────────────────────────────────────────────
+var offices = [
+  { name: 'Công ty CP Siêu Thanh Hà Nội', lat: 21.009109, lng: 105.813355, radius: 200 }
+];
+var logoBase64 = '';  // sẽ được điền khi upload logo
+
+// ── Logo ─────────────────────────────────────────────────
+function previewLogo(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    logoBase64 = e.target.result; // data:image/...;base64,...
+    var preview = document.getElementById('logo-preview');
+    preview.innerHTML = '<img src="' + logoBase64 + '" alt="Logo">';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Văn phòng ────────────────────────────────────────────
+function addOffice() {
+  var name   = document.getElementById('off-name').value.trim();
+  var lat    = parseFloat(document.getElementById('off-lat').value);
+  var lng    = parseFloat(document.getElementById('off-lng').value);
+  var radius = parseInt(document.getElementById('off-radius').value) || 200;
+
+  if (!name)        { alert('Vui lòng nhập tên địa điểm.'); return; }
+  if (isNaN(lat))   { alert('Vui lòng nhập vĩ độ hợp lệ.'); return; }
+  if (isNaN(lng))   { alert('Vui lòng nhập kinh độ hợp lệ.'); return; }
+
+  offices.push({ name, lat, lng, radius });
+  renderOffices();
+
+  document.getElementById('off-name').value = '';
+  document.getElementById('off-lat').value  = '';
+  document.getElementById('off-lng').value  = '';
+}
+
+function removeOffice(idx) {
+  if (offices.length <= 1) { alert('Phải có ít nhất 1 địa điểm.'); return; }
+  offices.splice(idx, 1);
+  renderOffices();
+}
+
+function renderOffices() {
+  var list = document.getElementById('office-list');
+  if (offices.length === 0) {
+    list.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:10px;">Chưa có địa điểm nào</div>';
+    return;
+  }
+  list.innerHTML = offices.map(function(o, i) {
+    return '<div class="office-item">'
+      + '<div class="info"><strong>' + o.name + '</strong>'
+      + '<span>📍 ' + o.lat + ', ' + o.lng + ' &nbsp;|&nbsp; Bán kính: ' + o.radius + ' m</span></div>'
+      + '<button class="del" onclick="removeOffice(' + i + ')">✕</button>'
+      + '</div>';
+  }).join('');
+}
+
+function openMapPicker() {
+  var lat = document.getElementById('off-lat').value || '21.009109';
+  var lng = document.getElementById('off-lng').value || '105.813355';
+  var url = 'https://www.google.com/maps/@' + lat + ',' + lng + ',17z';
+  window.open(url, '_blank');
+  document.getElementById('pick-map-btn').href = '#';
+  return false;
+}
+
+// Cập nhật hiển thị khoảng cách
+document.getElementById('max-dist').addEventListener('input', function() {
+  var km = (parseInt(this.value)||0) / 1000;
+  document.getElementById('maxdist-show').textContent  = km.toFixed(0);
+  document.getElementById('maxdist-show2').textContent = km.toFixed(0);
+});
+
+// ── Mở Sheets ────────────────────────────────────────────
+function openSheets() {
+  var url = document.getElementById('sheets-url').value.trim();
+  if (!url) { alert('Vui lòng nhập URL Google Sheets.'); return; }
+  window.open(url, '_blank');
+}
+
+// ── Preview config ────────────────────────────────────────
+function previewConfig() {
+  var cfg = buildConfig();
+  document.getElementById('preview-content').textContent = cfg;
+  document.getElementById('preview-section').style.display = 'block';
+  document.getElementById('preview-section').scrollIntoView({behavior:'smooth'});
+}
+
+function buildConfig() {
+  return [
+    'APPS_SCRIPT_URL = "' + (document.getElementById('apps-url').value.trim() || 'CHƯA CẤU HÌNH') + '"',
+    'TÊN CÔNG TY     = "' + document.getElementById('company-name').value.trim() + '"',
+    'ĐỊA CHỈ         = "' + document.getElementById('company-address').value.trim() + '"',
+    'VERSION         = "' + document.getElementById('app-version').value.trim() + '"',
+    'TÊN APP         = "' + document.getElementById('app-name').value.trim() + '"',
+    'MAX DISTANCE    = ' + document.getElementById('max-dist').value + ' m',
+    'LOGO            = ' + (logoBase64 ? 'Đã upload (' + Math.round(logoBase64.length/1024) + ' KB)' : 'Chưa upload'),
+    '',
+    'VĂN PHÒNG (' + offices.length + '):',
+    ...offices.map(function(o,i) {
+      return '  ' + (i+1) + '. ' + o.name + '\n     Lat: ' + o.lat + ', Lng: ' + o.lng + ', Radius: ' + o.radius + 'm';
+    })
+  ].join('\n');
+}
+
+// ── Tạo & Tải file ───────────────────────────────────────
+function generateAndDownload() {
+  var appsUrl     = document.getElementById('apps-url').value.trim();
+  var companyName = document.getElementById('company-name').value.trim() || 'CHẤM CÔNG CBNV';
+  var companyAddr = document.getElementById('company-address').value.trim();
+  var version     = document.getElementById('app-version').value.trim() || '2026.05';
+  var maxDist     = parseInt(document.getElementById('max-dist').value) || 10000;
+  var appName     = document.getElementById('app-name').value.trim() || 'HAST Chấm công';
+
+  if (!appsUrl) {
+    showStatus('Vui lòng nhập URL Apps Script trước.', 'err');
+    return;
+  }
+  if (offices.length === 0) {
+    showStatus('Vui lòng thêm ít nhất 1 vị trí văn phòng.', 'err');
+    return;
+  }
+
+  var logoSrc = logoBase64 || DEFAULT_LOGO;
+  var officesJS = JSON.stringify(offices, null, 2);
+  var addrLine = companyAddr
+    ? '<p style="font-size:12px;color:#555;margin-top:-4px;margin-bottom:14px;">📍 ' + companyAddr + '</p>'
+    : '';
+  var footerLine = '<p style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">© ' + companyName.replace('CHẤM CÔNG CBNV','Công ty CP Siêu Thanh Hà Nội') + ' · v' + version + '</p>';
+
+  var html = buildIndexHtml({
+    appsUrl, companyName, addrLine, footerLine,
+    logoSrc, officesJS, maxDist, appName
+  });
+
+  // Tải xuống
+  var blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'index.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  showStatus('✅ Đã tạo file index.html! Upload lên GitHub để áp dụng cấu hình mới.', 'ok');
+}
+
+function showStatus(msg, type) {
+  var el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status ' + type;
+  el.scrollIntoView({behavior:'smooth'});
+}
+
+// ── Logo mặc định (placeholder nhỏ nếu chưa upload) ──────
+var DEFAULT_LOGO = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><rect width="200" height="60" fill="#f0f4f8" rx="8"/><text x="100" y="36" font-family="Arial" font-size="13" fill="#1a73e8" text-anchor="middle" font-weight="bold">LOGO CHUA CAU HINH</text></svg>');
+
+// ── Build HTML ────────────────────────────────────────────
+function buildIndexHtml(cfg) {
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chấm Công - Siêu Thanh Hà Nội</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Chấm Công">
+<meta name="application-name" content="Chấm Công">
+<meta name="theme-color" content="#1a73e8">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+.card{background:white;border-radius:18px;box-shadow:0 4px 28px rgba(0,0,0,.12);
+  padding:28px 22px;max-width:420px;width:100%;}
+.header{text-align:center;margin-bottom:20px;}
+.header h1{color:#1a73e8;font-size:21px;font-weight:700;}
+.clock-box{background:#f8f9fa;border-radius:12px;padding:12px;
+  text-align:center;margin-bottom:18px;}
+.clock-box .time{font-size:30px;font-weight:700;color:#202124;letter-spacing:2px;}
+.clock-box .date{font-size:13px;color:#666;margin-top:3px;}
+.email-block{margin-bottom:14px;}
+label{display:block;font-size:13px;color:#555;font-weight:600;margin-bottom:5px;}
+.email-saved{display:flex;align-items:center;border:1.5px solid #1a73e8;
+  border-radius:10px;padding:10px 14px;background:#e8f0fe;}
+.email-saved .addr{font-size:15px;font-weight:600;color:#1a73e8;word-break:break-all;}
+.email-hint{font-size:12px;color:#888;margin-top:5px;}
+textarea{width:100%;border:1.5px solid #dadce0;border-radius:10px;
+  padding:10px 12px;font-size:14px;resize:none;outline:none;
+  transition:border-color .2s;font-family:inherit;}
+textarea:focus{border-color:#1a73e8;}
+.field{margin-bottom:14px;}
+.loc{border-radius:12px;padding:13px 15px;font-size:13px;
+  display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;}
+.loc.idle{background:#f1f3f4;color:#555;}
+.loc.ok  {background:#e6f4ea;color:#137333;}
+.loc.warn{background:#fef7e0;color:#8a4f00;}
+.loc.err {background:#fce8e6;color:#c5221f;}
+.loc .li{font-size:20px;flex-shrink:0;margin-top:1px;}
+.loc .lb strong{display:block;font-size:14px;margin-bottom:2px;}
+.loc .lb span{display:block;line-height:1.7;}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;
+  font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:8px;transition:all .2s;margin-bottom:10px;}
+.btn:last-child{margin-bottom:0;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.blue {background:#1a73e8;color:#fff;}
+.blue:hover:not(:disabled){background:#1557b0;}
+.green{background:#34a853;color:#fff;}
+.green:hover:not(:disabled){background:#137333;}
+.spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0;}
+@keyframes sp{to{transform:rotate(360deg)}}
+#popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
+  z-index:999;align-items:center;justify-content:center;padding:24px;}
+#popup-overlay.show{display:flex;}
+.popup-box{background:white;border-radius:16px;padding:24px 22px;max-width:300px;
+  width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.18);animation:pop .2s ease;}
+@keyframes pop{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.popup-title{font-size:15px;font-weight:700;color:#1a73e8;margin-bottom:10px;}
+.popup-msg{font-size:14px;color:#333;line-height:1.6;margin-bottom:18px;}
+.popup-btn{background:#1a73e8;color:white;border:none;border-radius:10px;
+  padding:11px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%;}
+.popup-btn:hover{background:#1557b0;}
+#done{display:none;text-align:center;padding:8px 0;}
+#done.show{display:block;}
+.main.hide{display:none;}
+.r-emoji{font-size:56px;margin-bottom:8px;}
+.r-title{font-size:20px;font-weight:700;margin-bottom:14px;}
+.rows{background:#f8f9fa;border-radius:12px;padding:14px 16px;
+  text-align:left;margin-bottom:18px;}
+.row{display:flex;justify-content:space-between;padding:7px 0;
+  font-size:14px;border-bottom:1px solid #eee;}
+.row:last-child{border-bottom:none;}
+.row .l{color:#888;font-size:13px;flex-shrink:0;padding-right:8px;}
+.row .v{font-weight:600;color:#202124;text-align:right;word-break:break-all;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="main" id="main">
+    <div class="header">
+      <img src="${cfg.logoSrc}" alt="Logo"
+        style="max-width:240px;width:90%;object-fit:contain;margin-bottom:0px;">
+      ${cfg.addrLine}
+      <h1>${cfg.companyName}</h1>
+    </div>
+    <div class="clock-box">
+      <div class="time" id="clock">00:00:00</div>
+      <div class="date" id="date-d"></div>
+    </div>
+    <div class="email-block" id="email-block">
+      <label>👤 Họ tên CBNV</label>
+      <div class="email-saved">
+        <span class="addr" id="name-display">Đang tải...</span>
+      </div>
+      <div class="email-hint" id="name-hint"></div>
+    </div>
+    <div class="loc idle" id="loc">
+      <span class="li">📍</span>
+      <div class="lb">
+        <strong>Chưa xác định vị trí</strong>
+        <span>Đang khởi động GPS...</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>📝 Ghi chú (tuỳ chọn)</label>
+      <textarea id="note" rows="2" placeholder="Công tác, đi muộn, lý do khác..."></textarea>
+    </div>
+    <button class="btn blue" id="btn-gps" onclick="getGPS()" style="display:none">
+      🔄 Xác định lại vị trí
+    </button>
+    <button class="btn green" id="btn-send" onclick="send()" style="display:none">
+      ✅ Chấm công
+    </button>
+    ${cfg.footerLine}
+  </div>
+
+  <div id="popup-overlay">
+    <div class="popup-box">
+      <div class="popup-title" id="popup-title">${cfg.appName}</div>
+      <div class="popup-msg" id="popup-msg"></div>
+      <button class="popup-btn" onclick="closePopup()">OK</button>
+    </div>
+  </div>
+
+  <div id="done">
+    <div class="r-emoji" id="r-emoji"></div>
+    <div class="r-title" id="r-title"></div>
+    <div class="rows" id="r-rows"></div>
+    <button class="btn green" onclick="resetForm()">🔄 Chấm công tiếp</button>
+  </div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = '${cfg.appsUrl}';
+const OFFICES = ${cfg.officesJS};
+const MAX_DISTANCE = ${cfg.maxDist};
+const APP_NAME = '${cfg.appName}';
+const DAYS = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+let gpsCoords = null;
+
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('date-d').textContent=
+    DAYS[n.getDay()]+', '+n.getDate()+'/'+(n.getMonth()+1)+'/'+n.getFullYear();
+}
+window.onload=function(){tick();setInterval(tick,1000);};
+
+var employeeName='';
+function initEmail(){
+  var params=new URLSearchParams(window.location.search);
+  var n=params.get('name')||'';
+  n=decodeURIComponent(n).trim();
+  if(n){
+    employeeName=n;
+    localStorage.setItem('chamcong_name',n);
+    document.getElementById('name-display').textContent=n;
+    document.getElementById('name-hint').textContent='';
+  } else {
+    var s=localStorage.getItem('chamcong_name')||'';
+    if(s){
+      employeeName=s;
+      document.getElementById('name-display').textContent=s;
+      document.getElementById('name-hint').textContent='';
+    } else {
+      employeeName='';
+      document.getElementById('name-display').textContent='⚠️ Link không hợp lệ';
+      document.getElementById('name-hint').textContent='Vui lòng quét QR code được cấp';
+      document.getElementById('name-display').style.color='#c5221f';
+      document.getElementById('btn-gps').disabled=true;
+    }
+  }
+}
+function getEmail(){return employeeName;}
+
+function showPopup(msg,title){
+  document.getElementById('popup-title').textContent=title||APP_NAME;
+  document.getElementById('popup-msg').textContent=msg;
+  document.getElementById('popup-overlay').classList.add('show');
+}
+function closePopup(){document.getElementById('popup-overlay').classList.remove('show');}
+
+function haversine(a,b,c,d){
+  const R=6371000,r=x=>x*Math.PI/180,da=r(c-a),db=r(d-b);
+  const e=Math.sin(da/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(db/2)**2;
+  return R*2*Math.atan2(Math.sqrt(e),Math.sqrt(1-e));
+}
+function checkOffice(lat,lng){
+  let best=null,min=Infinity;
+  OFFICES.forEach(o=>{const d=haversine(lat,lng,o.lat,o.lng);if(d<min){min=d;best=o;}});
+  return {office:best,dist:min,inside:best&&min<=best.radius};
+}
+function setLoc(type,icon,title,lines){
+  var el=document.getElementById('loc');
+  el.className='loc '+type;
+  var spans='';
+  for(var i=0;i<lines.length;i++) spans+='<span>'+lines[i]+'</span>';
+  el.innerHTML='<span class="li">'+icon+'</span><div class="lb"><strong>'+title+'</strong>'+spans+'</div>';
+}
+
+function getGPS(){
+  const email=getEmail();
+  if(!email){showPopup('Vui lòng dùng đúng link QR được cấp.');return;}
+  const btn=document.getElementById('btn-gps');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span> Đang xác định...';
+  document.getElementById('btn-send').style.display='none';
+  setLoc('idle','📡','Đang xác định vị trí...','Vui lòng chờ'.split('|'));
+  navigator.geolocation.getCurrentPosition(
+    async pos=>{
+      gpsCoords={latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy};
+      const {latitude:lat,longitude:lng,accuracy:acc}=gpsCoords;
+      const {office,dist,inside}=checkOffice(lat,lng);
+      btn.disabled=false;btn.innerHTML='🔄 Xác định lại vị trí';
+      const overMax=MAX_DISTANCE>0&&dist>MAX_DISTANCE;
+      if(overMax){
+        setLoc('err','🚫','Không thể chấm công',[
+          '📏 Cách công ty: <b>'+(dist/1000).toFixed(1)+' km</b>',
+          '⛔ Giới hạn: '+(MAX_DISTANCE/1000).toFixed(0)+' km',
+          'Vui lòng đến gần công ty hơn.'
+        ]);
+      } else if(inside){
+        setLoc('ok','✅','Trong phạm vi: '+office.name,[
+          '📏 Khoảng cách: '+Math.round(dist)+' m',
+          '🎯 Độ chính xác: ±'+Math.round(acc)+' m'
+        ]);
+        btn.style.display='flex';
+        document.getElementById('btn-send').style.display='flex';
+      } else {
+        setLoc('warn','⚠️','Ngoài phạm vi công ty',[
+          '📏 Cách '+(office?office.name:'VP')+': '+Math.round(dist)+' m',
+          '🎯 Độ chính xác: ±'+Math.round(acc)+' m',
+          '⚠️ Vẫn có thể chấm công — Hãy lưu ý!'
+        ]);
+        btn.style.display='flex';
+        document.getElementById('btn-send').style.display='flex';
+      }
+    },
+    err=>{
+      gpsCoords=null;
+      btn.style.display='flex';btn.disabled=false;btn.innerHTML='🔄 Thử lại GPS';
+      const m={1:'Bạn từ chối GPS. Vào Cài đặt → Chrome → Vị trí → Cho phép.',
+               2:'Không bắt tín hiệu GPS. Ra chỗ thoáng thử lại.',
+               3:'Hết thời gian. Thử lại.'};
+      setLoc('err','❌','Không lấy được vị trí',[m[err.code]||'Lỗi GPS.','⛔ Bắt buộc có GPS để chấm công.']);
+    },
+    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+  );
+}
+
+function send(){
+  if(!gpsCoords){showPopup('Chưa có GPS.');return;}
+  doSend(gpsCoords.latitude,gpsCoords.longitude,gpsCoords.accuracy);
+}
+
+function doSend(lat,lng,accuracy){
+  var email=getEmail();
+  if(!email){showPopup('Vui lòng dùng đúng link QR.');return;}
+  var btnSend=document.getElementById('btn-send');
+  var btnGps=document.getElementById('btn-gps');
+  btnSend.disabled=true;btnGps.disabled=true;
+  btnSend.innerHTML='<span class="spin"></span> Đang gửi...';
+  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({
+    email:email,lat:lat,lng:lng,accuracy:accuracy,
+    note:document.getElementById('note').value.trim()
+  })})
+  .then(function(r){return r.json();})
+  .then(function(r){
+    btnSend.disabled=false;btnGps.disabled=false;
+    btnSend.innerHTML='✅ Chấm công';
+    showDone(r,email);
+  })
+  .catch(function(e){
+    btnSend.disabled=false;btnGps.disabled=false;
+    btnSend.innerHTML='✅ Chấm công';
+    showPopup('Lỗi kết nối: '+e.message,'Có lỗi xảy ra');
+  });
+}
+
+function showDone(r,email){
+  document.getElementById('main').classList.add('hide');
+  document.getElementById('done').classList.add('show');
+  if(r.success){
+    document.getElementById('r-emoji').textContent=r.isAllowed?'✅':'⚠️';
+    document.getElementById('r-title').textContent='Hoàn thành chấm công';
+    document.getElementById('r-rows').innerHTML=
+      '<div class="row"><span class="l">🕐 Thời gian</span><span class="v">'+r.time+'</span></div>'+
+      '<div class="row"><span class="l">👤 Họ tên</span><span class="v">'+email+'</span></div>'+
+      '<div class="row"><span class="l">📍 Checkin</span><span class="v">'+r.location+'</span></div>'+
+      (r.distance!=null?'<div class="row"><span class="l">📏 Khoảng cách</span><span class="v">'+r.distance+' m</span></div>':'')+
+      (r.address?'<div class="row" style="flex-direction:column;align-items:flex-start;gap:2px;"><span class="l">🗺 Vị trí chấm công</span><span class="v" style="text-align:left;">'+r.address+'</span></div>':'')+
+      '<div class="row"><span class="l">✔ Trạng thái</span><span class="v">'+(r.isAllowed?'✅ Hợp lệ':'⚠️ Ngoài phạm vi')+'</span></div>';
+  } else {
+    document.getElementById('r-emoji').textContent='❌';
+    document.getElementById('r-title').textContent='Có lỗi xảy ra';
+    document.getElementById('r-rows').innerHTML='<div class="row"><span class="v" style="color:#c5221f">'+r.error+'</span></div>';
+  }
+}
+
+function resetForm(){
+  gpsCoords=null;
+  document.getElementById('done').classList.remove('show');
+  document.getElementById('main').classList.remove('hide');
+  document.getElementById('note').value='';
+  document.getElementById('btn-send').style.display='none';
+  document.getElementById('btn-gps').style.display='none';
+  document.getElementById('btn-gps').disabled=false;
+  document.getElementById('btn-gps').innerHTML='🔄 Xác định lại vị trí';
+  setLoc('idle','📡','Đang xác định vị trí...','Vui lòng chờ'.split('|'));
+  getGPS();
+}
+
+initEmail();
+if(employeeName){getGPS();}
+<\/script>
+</body>
+</html>`;
+}
+
+// ── Khởi động ─────────────────────────────────────────────
+renderOffices();
+</script>
+</body>
+</html>
