@@ -641,6 +641,16 @@ function loadHistory(name) {
     });
 }
 
+// Định dạng giờ cho bảng lịch sử
+function fmtTime(t) {
+  if (!t || t === '' || t === ':' || t === ': :' || t === '--:--') {
+    return '<span style="color:#ccc;">: :</span>';
+  }
+  // Chỉ hiện HH:MM (bỏ giây)
+  var s = t.toString().trim();
+  return s.length >= 5 ? s.substring(0,5) : s;
+}
+
 function renderHistory(data) {
   var days     = data.days     || [];
   var todayStr = data.todayStr || '';
