@@ -200,6 +200,7 @@ textarea:focus{border-color:#1a73e8;}
     <button class="btn green" id="btn-send" onclick="send()" style="display:none">
       ✅ Chấm công
     </button>
+    <button class="btn" id="btn-history-main" style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;" onclick="showHistory('main')">📊 Dữ liệu chấm công trong tháng</button>
 
   <p style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
       Bản quyền © Công ty CP Siêu Thanh Hà Nội · v2026.05
@@ -249,7 +250,7 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxTa3mXpbmrKltwSmEbjuFUdcv29DXfcDDOm74DGVmVvW1KA1G8TP1OVS7h0SX1P6RD/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsRo_aGgQWwqJd4A2UGz-FV80y65QOEpvp3sY7FKcfoCHmp_OJmsYMGn7VFUqvGC_8/exec';
 
 const OFFICES = [
   { name: 'Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
@@ -529,6 +530,7 @@ function resetForm(){
   document.getElementById('history').style.display = 'none';
   document.getElementById('note').value = '';
   document.getElementById('btn-send').style.display = 'none';
+  document.getElementById('btn-history-main').style.display = 'none';
   document.getElementById('btn-gps').style.display = 'flex';
   document.getElementById('btn-gps').disabled = false;
   document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí';
@@ -574,14 +576,16 @@ if (employeeName) {
 // ── Lịch sử chấm công cá nhân ────────────────────────────────────────
 var histMonth = 0, histYear = 0;
 
-function showHistory() {
+function showHistory(from) {
   var name = getEmail();
   if (!name) { showPopup('Vui lòng xác nhận họ tên trước.'); return; }
+
+  _historyCalledFrom = from || 'done';
 
   var now = new Date();
   if (!histMonth) { histMonth = now.getMonth()+1; histYear = now.getFullYear(); }
 
-  // Ẩn màn hình done, hiện history
+  // Ẩn màn hình hiện tại, hiện history
   document.getElementById('done').classList.remove('show');
   document.getElementById('main').classList.add('hide');
   document.getElementById('history').style.display = 'block';
@@ -589,11 +593,17 @@ function showHistory() {
   loadHistory(name);
 }
 
+var _historyCalledFrom = 'done'; // 'main' hoặc 'done'
+
 function showMain() {
   document.getElementById('history').style.display = 'none';
-  // Quay về màn hình done (nơi gọi history)
-  document.getElementById('done').classList.add('show');
-  document.getElementById('main').classList.add('hide');
+  if (_historyCalledFrom === 'main') {
+    document.getElementById('main').classList.remove('hide');
+    document.getElementById('done').classList.remove('show');
+  } else {
+    document.getElementById('done').classList.add('show');
+    document.getElementById('main').classList.add('hide');
+  }
 }
 
 function changeMonth(delta) {
@@ -664,7 +674,11 @@ function renderHistory(data) {
   }
 
   function fmtTime(t) {
-    return t || '<span style="color:#ccc;">--:--</span>';
+    if (!t || t === '' || t === ':' || t === ': :') {
+      return '<span style="color:#ddd;">—</span>';
+    }
+    // Chỉ hiện HH:MM (bỏ giây)
+    return '<span style="font-size:12px;">' + t.substring(0,5) + '</span>';
   }
 
   function gradeSpan(g) {
@@ -712,6 +726,18 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 });
 
+
+// Hiện nút history trong main khi GPS thành công
+document.addEventListener('DOMContentLoaded', function() {
+  var _origSetLoc = window.setLoc;
+  if (_origSetLoc) {
+    window.setLoc = function(type, icon, title, lines) {
+      _origSetLoc(type, icon, title, lines);
+      var btn = document.getElementById('btn-history-main');
+      if (btn) btn.style.display = (type==='ok'||type==='warn') ? 'flex' : 'none';
+    };
+  }
+});
 </script>
 </body>
 </html>
