@@ -250,7 +250,7 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsRo_aGgQWwqJd4A2UGz-FV80y65QOEpvp3sY7FKcfoCHmp_OJmsYMGn7VFUqvGC_8/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHQkwxGUkVB8eKQ-clG3y57X4ZD91UoSUC8GWFr1D06RvRCpIfdLMsfhEbSr6GnSv2/exec';
 
 const OFFICES = [
   { name: 'Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
@@ -642,50 +642,43 @@ function loadHistory(name) {
 }
 
 function renderHistory(data) {
-  var days = data.days || [];
-
-  // Thống kê đã tính sẵn từ server
-  var fullDays    = data.fullDays    || 0;
-  var absentDays  = data.absentDays  || 0;
-  var partialDays = data.partialDays || 0;
-  var totalDays   = days.length;
+  var days     = data.days     || [];
+  var todayStr = data.todayStr || '';
 
   // Cập nhật label tháng
   document.getElementById('hist-month-label').textContent =
     'Tháng ' + data.month + '/' + data.year;
 
+  // Lọc chỉ hiển thị đến hôm nay
+  var daysToShow = days.filter(function(d) {
+    return compareDateClient(d.date, todayStr) <= 0;
+  });
+
+  // Thống kê từ server (đã tính đúng)
+  var workDays    = data.workDays    || 0;
+  var fullDays    = data.fullDays    || 0;
+  var absentDays  = data.absentDays  || 0;
+  var partialDays = data.partialDays || 0;
+
   // Summary cards
   document.getElementById('hist-summary').innerHTML =
-    '<div class="hist-stat"><div class="val">' + totalDays + '</div><div class="lbl">Ngày công</div></div>' +
+    '<div class="hist-stat"><div class="val">' + workDays + '</div><div class="lbl">Ngày công</div></div>' +
     '<div class="hist-stat"><div class="val" style="color:#137333;">' + fullDays + '</div><div class="lbl">Ngày đủ</div></div>' +
-    '<div class="hist-stat"><div class="val" style="color:#b45309;">' + partialDays + '</div><div class="lbl">Thiếu ca</div></div>' +
+    '<div class="hist-stat"><div class="val" style="color:#b45309;">' + partialDays + '</div><div class="lbl">Thiếu</div></div>' +
     '<div class="hist-stat"><div class="val" style="color:#c5221f;">' + absentDays + '</div><div class="lbl">Vắng</div></div>';
 
-  if (days.length === 0) {
+  if (daysToShow.length === 0) {
     document.getElementById('hist-content').innerHTML =
-      '<div class="hist-loading">Chưa có dữ liệu tháng này.</div>';
+      '<div class="hist-loading">Chưa có dữ liệu.</div>';
     return;
   }
 
-  function gradeClass(g) {
-    if (g === 'A') return 'grade-a';
-    if (g === 'B') return 'grade-b';
-    return 'grade-d';
-  }
-
-  function fmtTime(t) {
-    if (!t || t === '' || t === ':' || t === ': :') {
-      return '<span style="color:#ddd;">—</span>';
-    }
-    // Chỉ hiện HH:MM (bỏ giây)
-    return '<span style="font-size:12px;">' + t.substring(0,5) + '</span>';
-  }
-
   function gradeSpan(g) {
-    return '<span class="' + gradeClass(g) + '">' + g + '</span>';
+    var cls = g==='A'?'grade-a':g==='B'?'grade-b':'grade-d';
+    return '<span class="'+cls+'">'+g+'</span>';
   }
 
-  var html = '<table class="hist-table">'
+  var tableHtml = '<table class="hist-table">'
     + '<thead><tr>'
     + '<th>Ngày</th>'
     + '<th>Sáng IN</th><th>Sáng OUT</th>'
@@ -693,22 +686,28 @@ function renderHistory(data) {
     + '<th>Đánh giá</th>'
     + '</tr></thead><tbody>';
 
-  days.forEach(function(d) {
+  daysToShow.forEach(function(d) {
     var rowClass = d.hasAbsent ? 'absent' : d.allOk ? 'all-ok' : 'partial';
-    var grades   = d.grades.split(', ');
-    html += '<tr class="' + rowClass + '">'
-      + '<td style="font-weight:600;">' + d.date + '</td>'
+    tableHtml += '<tr class="' + rowClass + '">'
+      + '<td style="font-weight:600;white-space:nowrap;">' + d.date + '</td>'
       + '<td>' + fmtTime(d.morningIn)    + '</td>'
       + '<td>' + fmtTime(d.morningOut)   + '</td>'
       + '<td>' + fmtTime(d.afternoonIn)  + '</td>'
       + '<td>' + fmtTime(d.afternoonOut) + '</td>'
       + '<td style="white-space:nowrap;">'
-      + grades.map(function(g){ return gradeSpan(g.trim()); }).join(' ')
+      + gradeSpan(d.g1)+' '+gradeSpan(d.g2)+' '+gradeSpan(d.g3)+' '+gradeSpan(d.g4)
       + '</td></tr>';
   });
 
-  html += '</tbody></table>';
-  document.getElementById('hist-content').innerHTML = html;
+  tableHtml += '</tbody></table>';
+  document.getElementById('hist-content').innerHTML = tableHtml;
+}
+
+// So sánh ngày dd/MM/yyyy phía client
+function compareDateClient(a, b) {
+  function n(s){ var p=s.split('/'); return parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]); }
+  var na=n(a), nb=n(b);
+  return na<nb?-1:na>nb?1:0;
 }
 
 // Hiện nút history sau khi GPS thành công
