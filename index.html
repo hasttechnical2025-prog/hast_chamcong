@@ -105,6 +105,35 @@ textarea:focus{border-color:#1a73e8;}
   padding:11px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%;}
 .popup-btn:hover{background:#1557b0;}
 
+/* History screen */
+#history{display:none;padding:4px 0;}
+#history.show{display:block;}
+.hist-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;gap:8px;flex-wrap:wrap;}
+.hist-header h2{font-size:16px;font-weight:700;color:#1a73e8;margin:0;}
+.month-nav{display:flex;align-items:center;gap:8px;}
+.month-nav button{background:#f1f3f4;border:none;border-radius:8px;
+  padding:6px 12px;font-size:14px;cursor:pointer;font-weight:600;}
+.month-nav button:hover{background:#e0e0e0;}
+.month-nav span{font-size:14px;font-weight:600;color:#333;min-width:80px;text-align:center;}
+.hist-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.hist-stat{background:#f8f9fa;border-radius:10px;padding:10px;text-align:center;}
+.hist-stat .val{font-size:20px;font-weight:700;color:#1a73e8;}
+.hist-stat .lbl{font-size:11px;color:#888;margin-top:2px;}
+.hist-table{width:100%;border-collapse:collapse;font-size:12px;}
+.hist-table th{background:#1a73e8;color:white;padding:7px 4px;text-align:center;
+  position:sticky;top:0;font-size:11px;}
+.hist-table td{padding:6px 4px;text-align:center;border-bottom:1px solid #f0f0f0;}
+.hist-table tr.all-ok td{background:#f0fdf4;}
+.hist-table tr.absent td{background:#fef2f2;}
+.hist-table tr.partial td{background:#fefce8;}
+.grade-a{color:#137333;font-weight:700;}
+.grade-b{color:#b45309;font-weight:700;}
+.grade-d{color:#c5221f;font-weight:700;}
+.hist-loading{text-align:center;padding:30px;color:#888;font-size:14px;}
+.hist-scroll{overflow-x:auto;border-radius:10px;border:1px solid #eee;}
+
+/* Result */
 /* Result */
 #done{display:none;text-align:center;padding:8px 0;}
 #done.show{display:block;}
@@ -171,11 +200,35 @@ textarea:focus{border-color:#1a73e8;}
     <button class="btn green" id="btn-send" onclick="send()" style="display:none">
       ✅ Chấm công
     </button>
+    <button class="btn" id="btn-history"
+      style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;"
+      onclick="showHistory()">
+      📊 Dữ liệu chấm công trong tháng
+    </button>
   <p style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
       Bản quyền © Công ty CP Siêu Thanh Hà Nội · v2026.05
     </p>
   </div>
 
+<!-- History screen -->
+  <div id="history">
+    <div class="hist-header">
+      <h2>📊 Chấm công của tôi</h2>
+      <div class="month-nav">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span id="hist-month-label"></span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="hist-summary" id="hist-summary"></div>
+    <div class="hist-scroll">
+      <div id="hist-content" class="hist-loading">⏳ Đang tải...</div>
+    </div>
+    <button class="btn" style="background:#f1f3f4;color:#444;margin-top:12px;"
+      onclick="showMain()">← Quay lại</button>
+  </div>
+
+  <!-- Custom popup -->
   <!-- Custom popup -->
   <div id="popup-overlay">
     <div class="popup-box">
@@ -191,6 +244,8 @@ textarea:focus{border-color:#1a73e8;}
     <div class="r-title" id="r-title"></div>
     <div class="rows"    id="r-rows"></div>
     <button class="btn green" onclick="resetForm()">🔄 Quay lại Chấm công</button>
+    <button class="btn" style="background:#e8f0fe;color:#1a73e8;margin-top:0;"
+      onclick="showHistory()">📊 Dữ liệu chấm công trong tháng</button>
   </div>
   
 </div>
@@ -212,10 +267,12 @@ const MAX_DISTANCE = 0; //10000
 // ═══════════════════════════════════════════
 
 const DAYS = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+const GPS_EXPIRE_MS = 1 * 60 * 1000; // GPS hết hạn sau 1 phút
+var gpsTimestamp = 0;
 let gpsCoords = null;
 
 // GPS hết hạn sau 1 phút — phải lấy lại
-const GPS_EXPIRE_MS = 1 * 60 * 1000;
+// GPS_EXPIRE_MS already declared above
 var gpsTimestamp = 0; // thời điểm lấy GPS
   
 // ── Đồng hồ ──────────────────────────────────────────────
@@ -335,6 +392,7 @@ function getGPS(){
         longitude: pos.coords.longitude,
         accuracy:  pos.coords.accuracy
       };
+      gpsTimestamp = Date.now(); // lưu thời điểm lấy GPS
       gpsTimestamp = Date.now(); // lưu thời điểm lấy GPS
       const lat = gpsCoords.latitude;
       const lng = gpsCoords.longitude;
@@ -469,11 +527,13 @@ function showDone(r, email){
 }
 
 function resetForm(){
-  gpsCoords = null;
+  gpsCoords = null; gpsTimestamp = 0;
   document.getElementById('done').classList.remove('show');
   document.getElementById('main').classList.remove('hide');
+  document.getElementById('history').style.display = 'none';
   document.getElementById('note').value = '';
   document.getElementById('btn-send').style.display = 'none';
+  document.getElementById('btn-history').style.display = 'none';
   document.getElementById('btn-gps').style.display = 'flex';
   document.getElementById('btn-gps').disabled = false;
   document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí';
@@ -503,6 +563,159 @@ initEmail();
 if (employeeName) {
   getGPS();
 }
+
+// Khi người dùng quay lại app (từ background)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && gpsCoords) {
+      if (Date.now() - gpsTimestamp > GPS_EXPIRE_MS) {
+        gpsCoords = null; gpsTimestamp = 0;
+        document.getElementById('btn-send').style.display = 'none';
+        setLoc('warn','⏱️','Vị trí cần cập nhật',['Đang xác định lại vị trí...']);
+        if (employeeName) getGPS();
+      }
+    }
+  });
+
+// ── Lịch sử chấm công cá nhân ────────────────────────────────────────
+var histMonth = 0, histYear = 0;
+
+function showHistory() {
+  var name = getEmail();
+  if (!name) { showPopup('Vui lòng xác nhận họ tên trước.'); return; }
+
+  var now = new Date();
+  if (!histMonth) { histMonth = now.getMonth()+1; histYear = now.getFullYear(); }
+
+  // Ẩn màn hình khác
+  document.getElementById('main').classList.add('hide');
+  document.getElementById('done').classList.remove('show');
+  document.getElementById('history').style.display = 'block';
+
+  loadHistory(name);
+}
+
+function showMain() {
+  document.getElementById('history').style.display = 'none';
+  document.getElementById('main').classList.remove('hide');
+  // Hiện lại nút history nếu đã GPS
+  if (gpsCoords) {
+    document.getElementById('btn-history').style.display = 'flex';
+  }
+}
+
+function changeMonth(delta) {
+  histMonth += delta;
+  if (histMonth > 12) { histMonth = 1;  histYear++; }
+  if (histMonth < 1)  { histMonth = 12; histYear--; }
+  loadHistory(getEmail());
+}
+
+function loadHistory(name) {
+  var label = 'Tháng ' + histMonth + '/' + histYear;
+  document.getElementById('hist-month-label').textContent = label;
+  document.getElementById('hist-content').innerHTML =
+    '<div class="hist-loading">⏳ Đang tải dữ liệu...</div>';
+  document.getElementById('hist-summary').innerHTML = '';
+
+  var url = APPS_SCRIPT_URL
+    + '?action=history'
+    + '&name='  + encodeURIComponent(name)
+    + '&month=' + histMonth + '%2F' + histYear;
+
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (!data.success) {
+        document.getElementById('hist-content').innerHTML =
+          '<div class="hist-loading" style="color:#c5221f;">❌ ' + data.error + '</div>';
+        return;
+      }
+      renderHistory(data);
+    })
+    .catch(function(e){
+      document.getElementById('hist-content').innerHTML =
+        '<div class="hist-loading" style="color:#c5221f;">❌ Lỗi kết nối: ' + e.message + '</div>';
+    });
+}
+
+function renderHistory(data) {
+  var days = data.days || [];
+
+  // Tính thống kê
+  var totalDays   = days.length;
+  var fullDays    = days.filter(function(d){ return d.allOk; }).length;
+  var absentDays  = days.filter(function(d){ return d.hasAbsent; }).length;
+  var partialDays = totalDays - fullDays - absentDays;
+  var totalChecks = data.total;
+
+  // Summary cards
+  document.getElementById('hist-summary').innerHTML =
+    '<div class="hist-stat"><div class="val">' + totalChecks + '</div><div class="lbl">Lượt chấm</div></div>' +
+    '<div class="hist-stat"><div class="val" style="color:#137333;">' + fullDays + '</div><div class="lbl">Ngày đủ</div></div>' +
+    '<div class="hist-stat"><div class="val" style="color:#b45309;">' + partialDays + '</div><div class="lbl">Thiếu 1 ca</div></div>' +
+    '<div class="hist-stat"><div class="val" style="color:#c5221f;">' + absentDays + '</div><div class="lbl">Vắng</div></div>';
+
+  if (days.length === 0) {
+    document.getElementById('hist-content').innerHTML =
+      '<div class="hist-loading">Chưa có dữ liệu tháng này.</div>';
+    return;
+  }
+
+  function gradeClass(g) {
+    if (g === 'A') return 'grade-a';
+    if (g === 'B') return 'grade-b';
+    return 'grade-d';
+  }
+
+  function fmtTime(t) {
+    return t || '<span style="color:#ccc;">--:--</span>';
+  }
+
+  function gradeSpan(g) {
+    return '<span class="' + gradeClass(g) + '">' + g + '</span>';
+  }
+
+  var html = '<table class="hist-table">'
+    + '<thead><tr>'
+    + '<th>Ngày</th>'
+    + '<th>Sáng IN</th><th>Sáng OUT</th>'
+    + '<th>Chiều IN</th><th>Chiều OUT</th>'
+    + '<th>Đánh giá</th>'
+    + '</tr></thead><tbody>';
+
+  days.forEach(function(d) {
+    var rowClass = d.hasAbsent ? 'absent' : d.allOk ? 'all-ok' : 'partial';
+    var grades   = d.grades.split(', ');
+    html += '<tr class="' + rowClass + '">'
+      + '<td style="font-weight:600;">' + d.date + '</td>'
+      + '<td>' + fmtTime(d.morningIn)    + '</td>'
+      + '<td>' + fmtTime(d.morningOut)   + '</td>'
+      + '<td>' + fmtTime(d.afternoonIn)  + '</td>'
+      + '<td>' + fmtTime(d.afternoonOut) + '</td>'
+      + '<td style="white-space:nowrap;">'
+      + grades.map(function(g){ return gradeSpan(g.trim()); }).join(' ')
+      + '</td></tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('hist-content').innerHTML = html;
+}
+
+// Hiện nút history sau khi GPS thành công
+var _origGetGPSSuccess = null;
+// Thêm vào sau khi GPS thành công
+document.addEventListener('DOMContentLoaded', function() {
+  // Patch: hiện btn-history sau khi GPS có kết quả
+  var origSetLoc = setLoc;
+  window.setLoc = function(type, icon, title, lines) {
+    origSetLoc(type, icon, title, lines);
+    if (type === 'ok' || type === 'warn') {
+      var btn = document.getElementById('btn-history');
+      if (btn) btn.style.display = 'flex';
+    }
+  };
+});
+
 </script>
 </body>
 </html>
