@@ -198,15 +198,15 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzNRCw3MdgLRY4XGl8b8xYIOxioF9uWNrJe8PIJkQVPWfIIQj9nzQD968U_A6AY_x65/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsiZQJbewf8KrlstkKrZcGTx3ApDBiVSepA5BaeOtQy8eNoIxqCqYcLLOJrWW3W2Ql/exec';
 
 const OFFICES = [
-  { name: 'Công ty CP Siêu Thanh Hà Nội', lat: 21.0085950, lng: 105.8130050, radius: 200 },
+  { name: 'Công ty CP Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
 ];
 
 // Khoảng cách tối đa cho phép chấm công (mét). Vượt quá sẽ bị chặn hoàn toàn.
 // Ví dụ: 10000 = 10 km. Đặt 0 để tắt giới hạn này.
-const MAX_DISTANCE = 10000; //10000
+const MAX_DISTANCE = 0; //10000
 
 // Dùng OpenStreetMap Nominatim — miễn phí, không cần API key
 // ═══════════════════════════════════════════
@@ -336,7 +336,7 @@ function getGPS(){
         setLoc('warn','⚠️','Ngoài phạm vi Công ty',[
           `📏 Cách ${office?office.name:'VP'}: ${Math.round(dist)} m`,
           `🎯 Độ chính xác: ±${Math.round(acc)} m`,
-          '🙅‍♀️ A/C vẫn có thể chấm công. Hãy lưu ý lần Chấm công tiếp theo!'
+          '🙅‍♀️ Dữ liệu chấm công vẫn được ghi nhận. Lưu ý vị trí lần chấm công tiếp theo!'
         ]);
         //document.getElementById('btn-gps').style.display = 'none'; - ẩn nút chấm công
         document.getElementById('btn-send').style.display = 'flex';
@@ -348,7 +348,7 @@ function getGPS(){
       btn.disabled = false;
       btn.innerHTML = '🔄 Thử lại GPS';
       const m = {
-        1: 'Bạn đã từ chối quyền Chia sẻ vị trí. Vào Cài đặt → Chrome → Vị trí → Cho phép rồi thử lại.',
+        1: 'Bạn đã từ chối quyền Chia sẻ vị trí. Vào Cài đặt → Vị trí → Cho phép rồi thử lại.',
         2: 'Không bắt được tín hiệu GPS. Ra chỗ thoáng hoặc bật Wi-Fi rồi thử lại.',
         3: 'Hết thời gian chờ GPS. Kiểm tra kết nối rồi thử lại.'
       };
