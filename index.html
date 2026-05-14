@@ -200,11 +200,7 @@ textarea:focus{border-color:#1a73e8;}
     <button class="btn green" id="btn-send" onclick="send()" style="display:none">
       ✅ Chấm công
     </button>
-    <button class="btn" id="btn-history"
-      style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;"
-      onclick="showHistory()">
-      📊 Dữ liệu chấm công trong tháng
-    </button>
+
   <p style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
       Bản quyền © Công ty CP Siêu Thanh Hà Nội · v2026.05
     </p>
@@ -253,10 +249,10 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1GtNszllVFOC1lDXQuMlXPjZonTPoDWdzXik-C2mn1TmRbeC0CGyXbSaP-BTztyA1/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxTa3mXpbmrKltwSmEbjuFUdcv29DXfcDDOm74DGVmVvW1KA1G8TP1OVS7h0SX1P6RD/exec';
 
 const OFFICES = [
-  { name: 'Công ty CP Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
+  { name: 'Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
 ];
 
 // Khoảng cách tối đa cho phép chấm công (mét). Vượt quá sẽ bị chặn hoàn toàn.
@@ -533,7 +529,6 @@ function resetForm(){
   document.getElementById('history').style.display = 'none';
   document.getElementById('note').value = '';
   document.getElementById('btn-send').style.display = 'none';
-  document.getElementById('btn-history').style.display = 'none';
   document.getElementById('btn-gps').style.display = 'flex';
   document.getElementById('btn-gps').disabled = false;
   document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí';
@@ -586,9 +581,9 @@ function showHistory() {
   var now = new Date();
   if (!histMonth) { histMonth = now.getMonth()+1; histYear = now.getFullYear(); }
 
-  // Ẩn màn hình khác
-  document.getElementById('main').classList.add('hide');
+  // Ẩn màn hình done, hiện history
   document.getElementById('done').classList.remove('show');
+  document.getElementById('main').classList.add('hide');
   document.getElementById('history').style.display = 'block';
 
   loadHistory(name);
@@ -596,11 +591,9 @@ function showHistory() {
 
 function showMain() {
   document.getElementById('history').style.display = 'none';
-  document.getElementById('main').classList.remove('hide');
-  // Hiện lại nút history nếu đã GPS
-  if (gpsCoords) {
-    document.getElementById('btn-history').style.display = 'flex';
-  }
+  // Quay về màn hình done (nơi gọi history)
+  document.getElementById('done').classList.add('show');
+  document.getElementById('main').classList.add('hide');
 }
 
 function changeMonth(delta) {
@@ -617,10 +610,10 @@ function loadHistory(name) {
     '<div class="hist-loading">⏳ Đang tải dữ liệu...</div>';
   document.getElementById('hist-summary').innerHTML = '';
 
+  // Tháng/năm lấy từ sheet Tổng hợp (ô F2, H2) — không truyền tham số
   var url = APPS_SCRIPT_URL
     + '?action=history'
-    + '&name='  + encodeURIComponent(name)
-    + '&month=' + histMonth + '%2F' + histYear;
+    + '&name=' + encodeURIComponent(name);
 
   fetch(url)
     .then(function(r){ return r.json(); })
@@ -641,18 +634,21 @@ function loadHistory(name) {
 function renderHistory(data) {
   var days = data.days || [];
 
-  // Tính thống kê
+  // Thống kê đã tính sẵn từ server
+  var fullDays    = data.fullDays    || 0;
+  var absentDays  = data.absentDays  || 0;
+  var partialDays = data.partialDays || 0;
   var totalDays   = days.length;
-  var fullDays    = days.filter(function(d){ return d.allOk; }).length;
-  var absentDays  = days.filter(function(d){ return d.hasAbsent; }).length;
-  var partialDays = totalDays - fullDays - absentDays;
-  var totalChecks = data.total;
+
+  // Cập nhật label tháng
+  document.getElementById('hist-month-label').textContent =
+    'Tháng ' + data.month + '/' + data.year;
 
   // Summary cards
   document.getElementById('hist-summary').innerHTML =
-    '<div class="hist-stat"><div class="val">' + totalChecks + '</div><div class="lbl">Lượt chấm</div></div>' +
+    '<div class="hist-stat"><div class="val">' + totalDays + '</div><div class="lbl">Ngày công</div></div>' +
     '<div class="hist-stat"><div class="val" style="color:#137333;">' + fullDays + '</div><div class="lbl">Ngày đủ</div></div>' +
-    '<div class="hist-stat"><div class="val" style="color:#b45309;">' + partialDays + '</div><div class="lbl">Thiếu 1 ca</div></div>' +
+    '<div class="hist-stat"><div class="val" style="color:#b45309;">' + partialDays + '</div><div class="lbl">Thiếu ca</div></div>' +
     '<div class="hist-stat"><div class="val" style="color:#c5221f;">' + absentDays + '</div><div class="lbl">Vắng</div></div>';
 
   if (days.length === 0) {
