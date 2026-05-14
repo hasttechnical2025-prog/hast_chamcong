@@ -124,6 +124,7 @@ textarea:focus{border-color:#1a73e8;}
 .hist-table th{background:#1a73e8;color:white;padding:7px 4px;text-align:center;
   position:sticky;top:0;font-size:11px;}
 .hist-table td{padding:6px 4px;text-align:center;border-bottom:1px solid #f0f0f0;}
+.hist-table td:last-child{text-align:left;font-size:11px;color:#666;}
 .hist-table tr.all-ok td{background:#f0fdf4;}
 .hist-table tr.absent td{background:#fef2f2;}
 .hist-table tr.partial td{background:#fefce8;}
@@ -250,7 +251,7 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHQkwxGUkVB8eKQ-clG3y57X4ZD91UoSUC8GWFr1D06RvRCpIfdLMsfhEbSr6GnSv2/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT_S312Ujg-s5PEssHvPFwvgBGVeHcNicgArwbMvoDd4tKaL0doo9eKXoSuNQnX-vr/exec';
 
 const OFFICES = [
   { name: 'Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
@@ -664,18 +665,18 @@ function renderHistory(data) {
     return compareDateClient(d.date, todayStr) <= 0;
   });
 
-  // Thống kê từ server (đã tính đúng)
-  var workDays    = data.workDays    || 0;
-  var fullDays    = data.fullDays    || 0;
-  var absentDays  = data.absentDays  || 0;
-  var partialDays = data.partialDays || 0;
+  // Thống kê từ server
+  var congChuan  = data.congChuan  || 0;
+  var congThucTe = data.congThucTe || 0;
+  var congBD     = data.congBD     || 0;
+  var khongCham  = data.khongCham  || 0;
 
   // Summary cards
   document.getElementById('hist-summary').innerHTML =
-    '<div class="hist-stat"><div class="val">' + workDays + '</div><div class="lbl">Ngày công</div></div>' +
-    '<div class="hist-stat"><div class="val" style="color:#137333;">' + fullDays + '</div><div class="lbl">Ngày đủ</div></div>' +
-    '<div class="hist-stat"><div class="val" style="color:#b45309;">' + partialDays + '</div><div class="lbl">Thiếu</div></div>' +
-    '<div class="hist-stat"><div class="val" style="color:#c5221f;">' + absentDays + '</div><div class="lbl">Vắng</div></div>';
+    '<div class="hist-stat"><div class="val">'                                         + congChuan  + '</div><div class="lbl">Công chuẩn</div></div>' +
+    '<div class="hist-stat"><div class="val" style="color:#137333;">'                  + congThucTe + '</div><div class="lbl">Công T.tế</div></div>'  +
+    '<div class="hist-stat"><div class="val" style="color:#b45309;">'                  + congBD     + '</div><div class="lbl">Công B,D</div></div>'   +
+    '<div class="hist-stat"><div class="val" style="color:#c5221f;">'                  + khongCham  + '</div><div class="lbl">Không chấm</div></div>';
 
   if (daysToShow.length === 0) {
     document.getElementById('hist-content').innerHTML =
@@ -694,6 +695,7 @@ function renderHistory(data) {
     + '<th>Sáng IN</th><th>Sáng OUT</th>'
     + '<th>Chiều IN</th><th>Chiều OUT</th>'
     + '<th>Đánh giá</th>'
+    + '<th>Lý do</th>'
     + '</tr></thead><tbody>';
 
   daysToShow.forEach(function(d) {
@@ -706,7 +708,10 @@ function renderHistory(data) {
       + '<td>' + fmtTime(d.afternoonOut) + '</td>'
       + '<td style="white-space:nowrap;">'
       + gradeSpan(d.g1)+' '+gradeSpan(d.g2)+' '+gradeSpan(d.g3)+' '+gradeSpan(d.g4)
-      + '</td></tr>';
+      + '</td>'
+      + '<td style="font-size:11px;color:#666;max-width:80px;">'
+      + (d.reason || '') + '</td>'
+      + '</tr>';
   });
 
   tableHtml += '</tbody></table>';
