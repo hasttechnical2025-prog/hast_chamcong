@@ -255,7 +255,7 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZARqjek1Ec4rHuac8xeXjg8TBYMPz7rUETT0GvOnIdTIVDho6uQmJllPnJKxlGPS6/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvMlwCG1YEFoG4CZYozWNlzWARztMAWVErhFsUkqw6apOWbUGunaRSn_GSkIrxbuFS/exec';
 
 const OFFICES = [
   { name: 'Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
@@ -722,9 +722,18 @@ function renderHistory(data) {
     var dow       = getDayOfWeek(d.date);
     var isWeekend = (dow === 0 || dow === 6);
 
-    // Kiểm tra ngày lễ từ holidaysMap
-    var isHoliday    = !!holidaysMap[d.date];
-    var holidayLabel = holidaysMap[d.date] || '';
+    // Kiểm tra ngày lễ: từ holidaysMap hoặc từ cột Lý do trong sheet
+    var isHoliday    = !!holidaysMap[d.date] || d.isHoliday === true;
+    // Lấy nhãn lễ
+    var holidayLabel = holidaysMap[d.date] || d.holidayLabel || '';
+    // Fallback: nếu reasonRaw chứa "Nghỉ" và không có chấm công → coi là nghỉ lễ
+    if (!isHoliday && d.hasAbsent) {
+      var reasonLower = (d.reason || '').toLowerCase().replace(/\|+/g,'').trim();
+      if (reasonLower.indexOf('nghỉ') !== -1 || reasonLower.indexOf('nghi') !== -1) {
+        isHoliday    = true;
+        holidayLabel = (d.reason || '').replace(/\|+/g,'').trim() || 'Nghỉ lễ';
+      }
+    }
 
     // Lý do: lấy từ dữ liệu, ẩn nếu chỉ là ||||
     var reasonRaw = (d.reason || '').trim();
