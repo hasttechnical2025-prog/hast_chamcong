@@ -111,11 +111,7 @@ textarea:focus{border-color:#1a73e8;}
 .hist-header{display:flex;align-items:center;justify-content:space-between;
   margin-bottom:14px;gap:8px;flex-wrap:wrap;}
 .hist-header h2{font-size:16px;font-weight:700;color:#1a73e8;margin:0;}
-.month-nav{display:flex;align-items:center;gap:8px;}
-.month-nav button{background:#f1f3f4;border:none;border-radius:8px;
-  padding:6px 12px;font-size:14px;cursor:pointer;font-weight:600;}
-.month-nav button:hover{background:#e0e0e0;}
-.month-nav span{font-size:14px;font-weight:600;color:#333;min-width:80px;text-align:center;}
+/* month-nav removed */
 .hist-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
 .hist-stat{background:#f8f9fa;border-radius:10px;padding:10px;text-align:center;}
 .hist-stat .val{font-size:20px;font-weight:700;color:#1a73e8;}
@@ -123,8 +119,15 @@ textarea:focus{border-color:#1a73e8;}
 .hist-table{width:100%;border-collapse:collapse;font-size:12px;}
 .hist-table th{background:#1a73e8;color:white;padding:7px 4px;text-align:center;
   position:sticky;top:0;font-size:11px;}
-.hist-table td{padding:6px 4px;text-align:center;border-bottom:1px solid #f0f0f0;}
-.hist-table td:last-child{text-align:left;font-size:11px;color:#666;}
+.hist-table td{padding:6px 4px;text-align:center;border-bottom:1px solid #f0f0f0;font-size:12px;}
+.hist-table td:nth-child(1){min-width:86px;font-weight:600;}
+.hist-table td:nth-child(2){color:#888;font-size:11px;white-space:nowrap;}
+.hist-table td:last-child{text-align:left;font-size:12px;color:#555;min-width:86px;max-width:100px;word-break:break-word;}
+.hist-table th:last-child{min-width:86px;}
+.hist-table tr.weekend td{background:#f5f5f5 !important;color:#bbb;}
+.hist-table tr.weekend td:nth-child(1){color:#aaa;}
+.hist-table tr.weekend td:nth-child(2){color:#e0e0e0;font-weight:700;}
+.hist-table tr.no-reason td:last-child{color:transparent;}
 .hist-table tr.all-ok td{background:#f0fdf4;}
 .hist-table tr.absent td{background:#fef2f2;}
 .hist-table tr.partial td{background:#fefce8;}
@@ -212,15 +215,7 @@ textarea:focus{border-color:#1a73e8;}
   <div id="history">
     <div class="hist-header">
       <h2>📊 Chấm công của tôi</h2>
-      <div class="month-nav">
-        <button onclick="changeMonth(-1)">‹</button>
-        <span id="hist-month-label"></span>
-        <button onclick="changeMonth(1)">›</button>
-      </div>
-    </div>
-    <div class="hist-summary" id="hist-summary"></div>
-    <div class="hist-scroll">
-      <div id="hist-content" class="hist-loading">⏳ Đang tải...</div>
+      <span id="hist-month-label" style="font-size:14px;font-weight:600;color:#1a73e8;background:#e8f0fe;padding:4px 12px;border-radius:8px;"></span>
     </div>
     <button class="btn" style="background:#f1f3f4;color:#444;margin-top:12px;"
       onclick="showMain()">← Quay lại</button>
@@ -673,15 +668,24 @@ function renderHistory(data) {
 
   // Summary cards
   document.getElementById('hist-summary').innerHTML =
-    '<div class="hist-stat"><div class="val">'                                         + congChuan  + '</div><div class="lbl">Công chuẩn</div></div>' +
-    '<div class="hist-stat"><div class="val" style="color:#137333;">'                  + congThucTe + '</div><div class="lbl">Công T.tế</div></div>'  +
-    '<div class="hist-stat"><div class="val" style="color:#b45309;">'                  + congBD     + '</div><div class="lbl">Công B,D</div></div>'   +
-    '<div class="hist-stat"><div class="val" style="color:#c5221f;">'                  + khongCham  + '</div><div class="lbl">Không chấm</div></div>';
+    '<div class="hist-stat"><div class="val">'                        + congChuan  + '</div><div class="lbl">Công chuẩn</div></div>' +
+    '<div class="hist-stat"><div class="val" style="color:#137333;">' + congThucTe + '</div><div class="lbl">Công T.tế</div></div>'  +
+    '<div class="hist-stat"><div class="val" style="color:#b45309;">' + congBD     + '</div><div class="lbl">Công B,D</div></div>'   +
+    '<div class="hist-stat"><div class="val" style="color:#c5221f;">' + khongCham  + '</div><div class="lbl">Không chấm</div></div>';
 
   if (daysToShow.length === 0) {
     document.getElementById('hist-content').innerHTML =
       '<div class="hist-loading">Chưa có dữ liệu.</div>';
     return;
+  }
+
+  var DOW_LABEL = ['CN','2','3','4','5','6','7'];
+
+  function getDayOfWeek(dateStr) {
+    // dateStr: "dd/MM/yyyy"
+    var p = dateStr.split('/');
+    var dt = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+    return dt.getDay(); // 0=CN,1=T2,...,6=T7
   }
 
   function gradeSpan(g) {
@@ -692,6 +696,7 @@ function renderHistory(data) {
   var tableHtml = '<table class="hist-table">'
     + '<thead><tr>'
     + '<th>Ngày</th>'
+    + '<th>Thứ</th>'
     + '<th>Sáng IN</th><th>Sáng OUT</th>'
     + '<th>Chiều IN</th><th>Chiều OUT</th>'
     + '<th>Đánh giá</th>'
@@ -699,18 +704,38 @@ function renderHistory(data) {
     + '</tr></thead><tbody>';
 
   daysToShow.forEach(function(d) {
-    var rowClass = d.hasAbsent ? 'absent' : d.allOk ? 'all-ok' : 'partial';
-    tableHtml += '<tr class="' + rowClass + '">'
-      + '<td style="font-weight:600;white-space:nowrap;">' + d.date + '</td>'
+    var dow      = getDayOfWeek(d.date);
+    var isWeekend = (dow === 0 || dow === 6);
+    var dowLabel = DOW_LABEL[dow];
+
+    // Row class
+    var rowClass = isWeekend ? 'weekend'
+      : d.hasAbsent ? 'absent'
+      : d.allOk     ? 'all-ok'
+      : 'partial';
+
+    // Cột thứ: màu đặc biệt cho T7/CN
+    var dowStyle = isWeekend
+      ? 'font-weight:700;color:#e53935;'
+      : 'color:#888;';
+
+    // Cột Lý do: ẩn nếu chỉ chứa ||| hoặc rỗng
+    var reasonVal = (d.reason || '').trim();
+    var reasonDisplay = (reasonVal === '|||' || reasonVal === '' || !reasonVal)
+      ? '' : reasonVal;
+    var noReasonClass = reasonDisplay === '' ? ' no-reason' : '';
+
+    tableHtml += '<tr class="' + rowClass + noReasonClass + '">'
+      + '<td>' + d.date + '</td>'
+      + '<td style="' + dowStyle + '">' + (dow===0?'CN':'T'+dowLabel) + '</td>'
       + '<td>' + fmtTime(d.morningIn)    + '</td>'
       + '<td>' + fmtTime(d.morningOut)   + '</td>'
       + '<td>' + fmtTime(d.afternoonIn)  + '</td>'
       + '<td>' + fmtTime(d.afternoonOut) + '</td>'
       + '<td style="white-space:nowrap;">'
-      + gradeSpan(d.g1)+' '+gradeSpan(d.g2)+' '+gradeSpan(d.g3)+' '+gradeSpan(d.g4)
+      + (isWeekend ? '' : gradeSpan(d.g1)+' '+gradeSpan(d.g2)+' '+gradeSpan(d.g3)+' '+gradeSpan(d.g4))
       + '</td>'
-      + '<td style="font-size:11px;color:#666;max-width:80px;">'
-      + (d.reason || '') + '</td>'
+      + '<td>' + reasonDisplay + '</td>'
       + '</tr>';
   });
 
