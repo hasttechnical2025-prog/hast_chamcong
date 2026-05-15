@@ -105,6 +105,39 @@ textarea:focus{border-color:#1a73e8;}
   padding:11px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%;}
 .popup-btn:hover{background:#1557b0;}
 
+/* History screen */
+#history{display:none;padding:4px 0;}
+#history.show{display:block;}
+.hist-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;gap:8px;flex-wrap:wrap;}
+.hist-header h2{font-size:16px;font-weight:700;color:#1a73e8;margin:0;}
+/* month-nav removed */
+.hist-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.hist-stat{background:#f8f9fa;border-radius:10px;padding:10px;text-align:center;}
+.hist-stat .val{font-size:20px;font-weight:700;color:#1a73e8;}
+.hist-stat .lbl{font-size:11px;color:#888;margin-top:2px;}
+.hist-table{width:100%;border-collapse:collapse;font-size:12px;}
+.hist-table th{background:#1a73e8;color:white;padding:7px 4px;text-align:center;
+  position:sticky;top:0;font-size:11px;}
+.hist-table td{padding:6px 4px;text-align:center;border-bottom:1px solid #f0f0f0;font-size:12px;}
+.hist-table td:nth-child(1){min-width:86px;font-weight:600;}
+.hist-table td:nth-child(2){color:#888;font-size:11px;white-space:nowrap;}
+.hist-table td:last-child{text-align:left;font-size:12px;color:#555;min-width:86px;max-width:100px;word-break:break-word;}
+.hist-table th:last-child{min-width:86px;}
+.hist-table tr.weekend td{background:#f5f5f5 !important;color:#bbb;}
+.hist-table tr.weekend td:nth-child(1){color:#aaa;}
+.hist-table tr.weekend td:nth-child(2){color:#e0e0e0;font-weight:700;}
+.hist-table tr.no-reason td:last-child{color:transparent;}
+.hist-table tr.all-ok td{background:#f0fdf4;}
+.hist-table tr.absent td{background:#fef2f2;}
+.hist-table tr.partial td{background:#fefce8;}
+.grade-a{color:#137333;font-weight:700;}
+.grade-b{color:#b45309;font-weight:700;}
+.grade-d{color:#c5221f;font-weight:700;}
+.hist-loading{text-align:center;padding:30px;color:#888;font-size:14px;}
+.hist-scroll{overflow-x:auto;border-radius:10px;border:1px solid #eee;}
+
+/* Result */
 /* Result */
 #done{display:none;text-align:center;padding:8px 0;}
 #done.show{display:block;}
@@ -171,11 +204,28 @@ textarea:focus{border-color:#1a73e8;}
     <button class="btn green" id="btn-send" onclick="send()" style="display:none">
       ✅ Chấm công
     </button>
+    <button class="btn" id="btn-history-main" style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;" onclick="showHistory('main')">📊 Dữ liệu chấm công trong tháng</button>
+
   <p style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
       Bản quyền © Công ty CP Siêu Thanh Hà Nội · v2026.05
     </p>
   </div>
 
+<!-- History screen -->
+  <div id="history">
+    <div class="hist-header">
+      <h2>📊 Chấm công của tôi</h2>
+      <span id="hist-month-label" style="font-size:14px;font-weight:600;color:#1a73e8;background:#e8f0fe;padding:4px 12px;border-radius:8px;"></span>
+    </div>
+    <div class="hist-summary" id="hist-summary"></div>
+    <div class="hist-scroll">
+      <div id="hist-content" class="hist-loading">⏳ Đang tải...</div>
+    </div>
+    <button class="btn" style="background:#f1f3f4;color:#444;margin-top:12px;"
+      onclick="showMain()">← Quay lại</button>
+  </div>
+
+  <!-- Custom popup -->
   <!-- Custom popup -->
   <div id="popup-overlay">
     <div class="popup-box">
@@ -191,6 +241,8 @@ textarea:focus{border-color:#1a73e8;}
     <div class="r-title" id="r-title"></div>
     <div class="rows"    id="r-rows"></div>
     <button class="btn green" onclick="resetForm()">🔄 Quay lại Chấm công</button>
+    <button class="btn" style="background:#e8f0fe;color:#1a73e8;margin-top:0;"
+      onclick="showHistory()">📊 Dữ liệu chấm công trong tháng</button>
   </div>
   
 </div>
@@ -198,10 +250,10 @@ textarea:focus{border-color:#1a73e8;}
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsiZQJbewf8KrlstkKrZcGTx3ApDBiVSepA5BaeOtQy8eNoIxqCqYcLLOJrWW3W2Ql/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT_S312Ujg-s5PEssHvPFwvgBGVeHcNicgArwbMvoDd4tKaL0doo9eKXoSuNQnX-vr/exec';
 
 const OFFICES = [
-  { name: 'Công ty CP Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
+  { name: 'Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
 ];
 
 // Khoảng cách tối đa cho phép chấm công (mét). Vượt quá sẽ bị chặn hoàn toàn.
@@ -212,10 +264,12 @@ const MAX_DISTANCE = 0; //10000
 // ═══════════════════════════════════════════
 
 const DAYS = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+const GPS_EXPIRE_MS = 1 * 60 * 1000; // GPS hết hạn sau 1 phút
+var gpsTimestamp = 0;
 let gpsCoords = null;
 
 // GPS hết hạn sau 1 phút — phải lấy lại
-const GPS_EXPIRE_MS = 1 * 60 * 1000;
+// GPS_EXPIRE_MS already declared above
 var gpsTimestamp = 0; // thời điểm lấy GPS
   
 // ── Đồng hồ ──────────────────────────────────────────────
@@ -307,6 +361,7 @@ function getGPS(){
         longitude: pos.coords.longitude,
         accuracy:  pos.coords.accuracy
       };
+      gpsTimestamp = Date.now(); // lưu thời điểm lấy GPS
       gpsTimestamp = Date.now(); // lưu thời điểm lấy GPS
       const lat = gpsCoords.latitude;
       const lng = gpsCoords.longitude;
@@ -441,11 +496,13 @@ function showDone(r, email){
 }
 
 function resetForm(){
-  gpsCoords = null;
+  gpsCoords = null; gpsTimestamp = 0;
   document.getElementById('done').classList.remove('show');
   document.getElementById('main').classList.remove('hide');
+  document.getElementById('history').style.display = 'none';
   document.getElementById('note').value = '';
   document.getElementById('btn-send').style.display = 'none';
+  document.getElementById('btn-history-main').style.display = 'none';
   document.getElementById('btn-gps').style.display = 'flex';
   document.getElementById('btn-gps').disabled = false;
   document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí';
@@ -475,6 +532,227 @@ initEmail();
 if (employeeName) {
   getGPS();
 }
+
+// Khi người dùng quay lại app (từ background)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && gpsCoords) {
+      if (Date.now() - gpsTimestamp > GPS_EXPIRE_MS) {
+        gpsCoords = null; gpsTimestamp = 0;
+        document.getElementById('btn-send').style.display = 'none';
+        setLoc('warn','⏱️','Vị trí cần cập nhật',['Đang xác định lại vị trí...']);
+        if (employeeName) getGPS();
+      }
+    }
+  });
+
+// ── Lịch sử chấm công cá nhân ────────────────────────────────────────
+var histMonth = 0, histYear = 0;
+
+function showHistory(from) {
+  var name = getEmail();
+  if (!name) { showPopup('Vui lòng xác nhận họ tên trước.'); return; }
+
+  _historyCalledFrom = from || 'done';
+
+  var now = new Date();
+  if (!histMonth) { histMonth = now.getMonth()+1; histYear = now.getFullYear(); }
+
+  // Ẩn màn hình hiện tại, hiện history
+  document.getElementById('done').classList.remove('show');
+  document.getElementById('main').classList.add('hide');
+  document.getElementById('history').style.display = 'block';
+
+  loadHistory(name);
+}
+
+var _historyCalledFrom = 'done'; // 'main' hoặc 'done'
+
+function showMain() {
+  document.getElementById('history').style.display = 'none';
+  if (_historyCalledFrom === 'main') {
+    document.getElementById('main').classList.remove('hide');
+    document.getElementById('done').classList.remove('show');
+  } else {
+    document.getElementById('done').classList.add('show');
+    document.getElementById('main').classList.add('hide');
+  }
+}
+
+function changeMonth(delta) {
+  histMonth += delta;
+  if (histMonth > 12) { histMonth = 1;  histYear++; }
+  if (histMonth < 1)  { histMonth = 12; histYear--; }
+  loadHistory(getEmail());
+}
+
+function loadHistory(name) {
+  var label = 'Tháng ' + histMonth + '/' + histYear;
+  document.getElementById('hist-month-label').textContent = label;
+  document.getElementById('hist-content').innerHTML =
+    '<div class="hist-loading">⏳ Đang tải dữ liệu...</div>';
+  document.getElementById('hist-summary').innerHTML = '';
+
+  // Tháng/năm lấy từ sheet Tổng hợp (ô F2, H2) — không truyền tham số
+  var url = APPS_SCRIPT_URL
+    + '?action=history'
+    + '&name=' + encodeURIComponent(name);
+
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (!data.success) {
+        document.getElementById('hist-content').innerHTML =
+          '<div class="hist-loading" style="color:#c5221f;">❌ ' + data.error + '</div>';
+        return;
+      }
+      renderHistory(data);
+    })
+    .catch(function(e){
+      document.getElementById('hist-content').innerHTML =
+        '<div class="hist-loading" style="color:#c5221f;">❌ Lỗi kết nối: ' + e.message + '</div>';
+    });
+}
+
+// Định dạng giờ cho bảng lịch sử
+function fmtTime(t) {
+  if (!t || t === '' || t === ':' || t === ': :' || t === '--:--') {
+    return '<span style="color:#ccc;">: :</span>';
+  }
+  // Chỉ hiện HH:MM (bỏ giây)
+  var s = t.toString().trim();
+  return s.length >= 5 ? s.substring(0,5) : s;
+}
+
+function renderHistory(data) {
+  var days     = data.days     || [];
+  var todayStr = data.todayStr || '';
+
+  // Cập nhật label tháng
+  document.getElementById('hist-month-label').textContent =
+    'Tháng ' + data.month + '/' + data.year;
+
+  // Lọc chỉ hiển thị đến hôm nay
+  var daysToShow = days.filter(function(d) {
+    return compareDateClient(d.date, todayStr) <= 0;
+  });
+
+  // Thống kê từ server
+  var congChuan  = data.congChuan  || 0;
+  var congThucTe = data.congThucTe || 0;
+  var congBD     = data.congBD     || 0;
+  var khongCham  = data.khongCham  || 0;
+
+  // Summary cards
+  document.getElementById('hist-summary').innerHTML =
+    '<div class="hist-stat"><div class="val">'                        + congChuan  + '</div><div class="lbl">Công chuẩn</div></div>' +
+    '<div class="hist-stat"><div class="val" style="color:#137333;">' + congThucTe + '</div><div class="lbl">Công T.tế</div></div>'  +
+    '<div class="hist-stat"><div class="val" style="color:#b45309;">' + congBD     + '</div><div class="lbl">Công B,D</div></div>'   +
+    '<div class="hist-stat"><div class="val" style="color:#c5221f;">' + khongCham  + '</div><div class="lbl">Không chấm</div></div>';
+
+  if (daysToShow.length === 0) {
+    document.getElementById('hist-content').innerHTML =
+      '<div class="hist-loading">Chưa có dữ liệu.</div>';
+    return;
+  }
+
+  var DOW_LABEL = ['CN','2','3','4','5','6','7'];
+
+  function getDayOfWeek(dateStr) {
+    // dateStr: "dd/MM/yyyy"
+    var p = dateStr.split('/');
+    var dt = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+    return dt.getDay(); // 0=CN,1=T2,...,6=T7
+  }
+
+  function gradeSpan(g) {
+    var cls = g==='A'?'grade-a':g==='B'?'grade-b':'grade-d';
+    return '<span class="'+cls+'">'+g+'</span>';
+  }
+
+  var tableHtml = '<table class="hist-table">'
+    + '<thead><tr>'
+    + '<th>Ngày</th>'
+    + '<th>Thứ</th>'
+    + '<th>Sáng IN</th><th>Sáng OUT</th>'
+    + '<th>Chiều IN</th><th>Chiều OUT</th>'
+    + '<th>Đánh giá</th>'
+    + '<th>Lý do</th>'
+    + '</tr></thead><tbody>';
+
+  daysToShow.forEach(function(d) {
+    var dow      = getDayOfWeek(d.date);
+    var isWeekend = (dow === 0 || dow === 6);
+    var dowLabel = DOW_LABEL[dow];
+
+    // Row class
+    var rowClass = isWeekend ? 'weekend'
+      : d.hasAbsent ? 'absent'
+      : d.allOk     ? 'all-ok'
+      : 'partial';
+
+    // Cột thứ: màu đặc biệt cho T7/CN
+    var dowStyle = isWeekend
+      ? 'font-weight:700;color:#e53935;'
+      : 'color:#888;';
+
+    // Cột Lý do: ẩn nếu chỉ chứa ||| hoặc rỗng
+    var reasonVal = (d.reason || '').trim();
+    var reasonDisplay = (reasonVal === '|||' || reasonVal === '' || !reasonVal)
+      ? '' : reasonVal;
+    var noReasonClass = reasonDisplay === '' ? ' no-reason' : '';
+
+    tableHtml += '<tr class="' + rowClass + noReasonClass + '">'
+      + '<td>' + d.date + '</td>'
+      + '<td style="' + dowStyle + '">' + (dow===0?'CN':'T'+dowLabel) + '</td>'
+      + '<td>' + fmtTime(d.morningIn)    + '</td>'
+      + '<td>' + fmtTime(d.morningOut)   + '</td>'
+      + '<td>' + fmtTime(d.afternoonIn)  + '</td>'
+      + '<td>' + fmtTime(d.afternoonOut) + '</td>'
+      + '<td style="white-space:nowrap;">'
+      + (isWeekend ? '' : gradeSpan(d.g1)+' '+gradeSpan(d.g2)+' '+gradeSpan(d.g3)+' '+gradeSpan(d.g4))
+      + '</td>'
+      + '<td>' + reasonDisplay + '</td>'
+      + '</tr>';
+  });
+
+  tableHtml += '</tbody></table>';
+  document.getElementById('hist-content').innerHTML = tableHtml;
+}
+
+// So sánh ngày dd/MM/yyyy phía client
+function compareDateClient(a, b) {
+  function n(s){ var p=s.split('/'); return parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]); }
+  var na=n(a), nb=n(b);
+  return na<nb?-1:na>nb?1:0;
+}
+
+// Hiện nút history sau khi GPS thành công
+var _origGetGPSSuccess = null;
+// Thêm vào sau khi GPS thành công
+document.addEventListener('DOMContentLoaded', function() {
+  // Patch: hiện btn-history sau khi GPS có kết quả
+  var origSetLoc = setLoc;
+  window.setLoc = function(type, icon, title, lines) {
+    origSetLoc(type, icon, title, lines);
+    if (type === 'ok' || type === 'warn') {
+      var btn = document.getElementById('btn-history');
+      if (btn) btn.style.display = 'flex';
+    }
+  };
+});
+
+
+// Hiện nút history trong main khi GPS thành công
+document.addEventListener('DOMContentLoaded', function() {
+  var _origSetLoc = window.setLoc;
+  if (_origSetLoc) {
+    window.setLoc = function(type, icon, title, lines) {
+      _origSetLoc(type, icon, title, lines);
+      var btn = document.getElementById('btn-history-main');
+      if (btn) btn.style.display = (type==='ok'||type==='warn') ? 'flex' : 'none';
+    };
+  }
+});
 </script>
 </body>
 </html>
