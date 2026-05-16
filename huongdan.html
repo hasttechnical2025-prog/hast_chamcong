@@ -315,14 +315,12 @@ function showPage(id, tab) {
 }
 
 function goBack() {
-  // Nếu chạy trong iframe → gọi parent.closeGuide()
-  try {
-    if (window.parent && window.parent !== window && window.parent.closeGuide) {
-      window.parent.closeGuide();
-      return;
-    }
-  } catch(e) {}
-  // Fallback: mở tab thường
+  // Gửi postMessage lên parent (hoạt động trên mọi nền tảng)
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage('closeGuide', '*');
+    return;
+  }
+  // Fallback khi mở thẳng (không qua iframe)
   if (document.referrer) history.back();
   else window.location.href = 'index.html';
 }
