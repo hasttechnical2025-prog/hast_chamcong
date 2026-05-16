@@ -856,11 +856,17 @@ function openGuide(e) {
 
 function closeGuide() {
   document.getElementById('guide-overlay').style.display = 'none';
+  document.getElementById('guide-iframe').src = '';
   document.body.style.overflow = '';
 }
 
 function goBack() { closeGuide(); }
 function showPage() {}
+
+// Lắng nghe postMessage từ iframe huongdan.html
+window.addEventListener('message', function(e) {
+  if (e.data === 'closeGuide') closeGuide();
+});
 
 
 function closeGuide() {
