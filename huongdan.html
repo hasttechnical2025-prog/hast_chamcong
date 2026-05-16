@@ -189,7 +189,7 @@ strong{color:#202124;}
       <li><strong>Không chấm:</strong> số ngày không chấm công tính đến ngày hiện tại (trừ T7, CN, ngày lễ)</li>
     </ul>
     <div class="note">
-      ⚠️ <strong>Lưu ý:</strong> Các thông tin tổng hợp chỉ mang tính tham khảo, không dùng làm căn cứ tính lương, thưởng. Việc tính ngày Công chuẩn và Công Thực tế căn cứ theo quy định Công ty.
+      ⚠️ <strong>Lưu ý:</strong> Các thông tin tổng hợp chỉ mang tính tham khảo, không dùng làm căn cứ tính lương, thưởng. Việc tính ngày Công chuẩn và Công T.tế căn cứ theo quy định Công ty.
     </div>
   </div>
 
@@ -236,7 +236,6 @@ strong{color:#202124;}
         Tải từ Google Play hoặc App Store. Đăng ký / đăng nhập tài khoản cá nhân
       </div>
     </div>
-    
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-body">
@@ -316,13 +315,16 @@ function showPage(id, tab) {
 }
 
 function goBack() {
-  // Quay lại trang trước (index.html)
-  if (document.referrer && document.referrer !== '') {
-    history.back();
-  } else {
-    // Fallback nếu mở tab mới
-    window.location.href = 'index.html';
-  }
+  // Nếu chạy trong iframe → gọi parent.closeGuide()
+  try {
+    if (window.parent && window.parent !== window && window.parent.closeGuide) {
+      window.parent.closeGuide();
+      return;
+    }
+  } catch(e) {}
+  // Fallback: mở tab thường
+  if (document.referrer) history.back();
+  else window.location.href = 'index.html';
 }
 </script>
 </body>
