@@ -170,15 +170,140 @@ textarea:focus{border-color:#1a73e8;}
   gap:4px;flex-wrap:wrap;}
 
 
-/* ── Guide overlay iframe ────────────────────────────── */
-#guide-overlay{
-  display:none;
-  position:fixed;
-  top:0;left:0;right:0;bottom:0;
-  z-index:9999;
-  background:white;
+
+
+
+/* ── Guide overlay ──────────────────────────────────── */
+#guide-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 9999;
+  background: #f5f7fa;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
-#guide-overlay.show{display:block;}
+#guide-overlay.show { display: block; }
+
+/* Guide back bar */
+#guide-overlay .guide-back-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+#guide-overlay .guide-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #f1f3f4;
+  color: #444;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#guide-overlay .guide-back-btn:active { background: #1a73e8; color: white; }
+
+
+#guide-overlay * {box-sizing:border-box;margin:0;padding:0;}
+#guide-overlay body {font-family:'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#333;
+  padding:0 0 40px;}
+
+/* Header */
+#guide-overlay .header {background:linear-gradient(135deg,#1a73e8,#1557b0);
+  color:white;padding:24px 20px;text-align:center;}
+#guide-overlay .header img {height:52px;object-fit:contain;margin-bottom:8px;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));}
+#guide-overlay .header h1 {font-size:18px;font-weight:700;margin-bottom:4px;}
+#guide-overlay .header p {font-size:12px;opacity:.85;}
+
+/* Nav tabs */
+#guide-overlay .nav {display:flex;overflow-x:auto;background:white;
+  border-bottom:2px solid #e0e0e0;position:sticky;top:0;z-index:10;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);}
+#guide-overlay .nav-tab {flex-shrink:0;padding:12px 16px;font-size:13px;font-weight:600;
+  color:#666;cursor:pointer;border-bottom:2px solid transparent;
+  margin-bottom:-2px;white-space:nowrap;transition:all .2s;}
+#guide-overlay .nav-tab.active {color:#1a73e8;border-bottom-color:#1a73e8;}
+#guide-overlay .nav-tab:hover {color:#1a73e8;background:#f8f9fa;}
+
+/* Content */
+#guide-overlay .page {display:none;max-width:680px;margin:0 auto;padding:20px 16px;}
+#guide-overlay .page.active {display:block;}
+
+/* Section */
+#guide-overlay .section {background:white;border-radius:12px;padding:18px 16px;
+  margin-bottom:16px;box-shadow:0 1px 6px rgba(0,0,0,.07);}
+#guide-overlay .section-title {font-size:15px;font-weight:700;color:#1a73e8;
+  margin-bottom:12px;padding-bottom:8px;
+  border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:6px;}
+
+/* Text */
+#guide-overlay p {font-size:14px;line-height:1.7;color:#444;margin-bottom:10px;}
+#guide-overlay p:last-child {margin-bottom:0;}
+#guide-overlay ul, #guide-overlay ol {padding-left:20px;margin-bottom:10px;}
+#guide-overlay li {font-size:14px;line-height:1.8;color:#444;}
+#guide-overlay strong {color:#202124;}
+#guide-overlay .note {background:#fff3e0;border-left:3px solid #f9a825;border-radius:0 8px 8px 0;
+  padding:10px 14px;margin:10px 0;font-size:13px;color:#5d4037;}
+
+/* Step */
+#guide-overlay .step {display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+#guide-overlay .step-num {width:26px;height:26px;border-radius:50%;background:#1a73e8;
+  color:white;font-size:13px;font-weight:700;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;}
+#guide-overlay .step-body {flex:1;font-size:14px;line-height:1.6;color:#444;}
+#guide-overlay .step-body strong {display:block;color:#202124;margin-bottom:2px;}
+
+/* Status badge */
+#guide-overlay .badge {display:inline-block;padding:2px 9px;border-radius:10px;
+  font-size:12px;font-weight:600;margin:2px;}
+#guide-overlay .badge-green {background:#e6f4ea;color:#137333;}
+#guide-overlay .badge-yellow {background:#fff3e0;color:#8a4f00;}
+#guide-overlay .badge-red {background:#fce8e6;color:#c5221f;}
+
+/* Screen mockup */
+#guide-overlay .mockup {background:#f8f9fa;border:1px solid #e0e0e0;border-radius:10px;
+  padding:12px;margin:10px 0;font-size:12px;color:#666;text-align:center;}
+
+/* Edit hint */
+#guide-overlay .edit-hint {background:#e8f0fe;border-radius:8px;padding:10px 14px;
+  font-size:12px;color:#1a73e8;margin-top:12px;display:flex;
+  align-items:center;gap:6px;}
+
+/* Images */
+#guide-overlay .guide-img {max-width:100%;border-radius:10px;display:block;margin:10px auto;}
+#guide-overlay .guide-img-sm {max-width:200px;border-radius:10px;display:block;margin:10px auto;}
+#guide-overlay .img-caption {text-align:center;font-size:12px;color:#888;margin-top:4px;margin-bottom:10px;}
+#guide-overlay .img-wrap {text-align:center;margin:12px 0;}
+
+/* Back button */
+#guide-overlay .back-bar {position:sticky;top:0;z-index:20;background:rgba(255,255,255,.95);
+  backdrop-filter:blur(8px);padding:10px 16px;
+  display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid #e8e8e8;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);}
+#guide-overlay .back-btn {display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:20px;
+  background:#f1f3f4;color:#444;font-size:13px;font-weight:600;
+  text-decoration:none;border:none;cursor:pointer;
+  transition:all .2s;white-space:nowrap;}
+#guide-overlay .back-btn:hover {background:#1a73e8;color:white;}
+#guide-overlay .back-bar-title {font-size:14px;font-weight:700;color:#202124;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
 
 </style>
 </head>
@@ -838,35 +963,32 @@ document.addEventListener('DOMContentLoaded', function() {
 // Mở huongdan.html đúng đường dẫn dù file ở thư mục /nv/ hay thư mục gốc
 function openGuide(e) {
   if (e) e.preventDefault();
-  var overlay = document.getElementById('guide-overlay');
-  var iframe  = document.getElementById('guide-iframe');
-
-  // Tính URL huongdan.html đúng dù file ở /nv/ hay thư mục gốc
-  var base = window.location.href
-    .split('?')[0].split('#')[0]
-    .replace(/\/nv\/[^\/]+\.html$/,'')
-    .replace(/\/[^\/]+\.html$/,'')
-    .replace(/\/$/,'');
-  var guideUrl = base + '/huongdan.html';
-
-  iframe.src  = guideUrl;
-  overlay.style.display = 'block';
+  document.getElementById('guide-overlay').classList.add('show');
+  document.getElementById('guide-overlay').scrollTop = 0;
   document.body.style.overflow = 'hidden';
 }
 
 function closeGuide() {
-  document.getElementById('guide-overlay').style.display = 'none';
-  document.getElementById('guide-iframe').src = '';
+  document.getElementById('guide-overlay').classList.remove('show');
   document.body.style.overflow = '';
 }
 
 function goBack() { closeGuide(); }
-function showPage() {}
+function showPage(id, tab) {
+  var overlay = document.getElementById('guide-overlay');
+  overlay.querySelectorAll('.page').forEach(function(p){
+    p.classList.remove('active');
+  });
+  overlay.querySelectorAll('.nav-tab').forEach(function(t){
+    t.classList.remove('active');
+  });
+  var el = overlay.querySelector('#' + id);
+  if (el) el.classList.add('active');
+  if (tab) tab.classList.add('active');
+  overlay.scrollTop = 0;
+}
 
-// Lắng nghe postMessage từ iframe huongdan.html
-window.addEventListener('message', function(e) {
-  if (e.data === 'closeGuide') closeGuide();
-});
+
 
 
 function closeGuide() {
@@ -902,13 +1024,228 @@ function goBack() {
 
 </script>
 
-<!-- Guide overlay dùng iframe -->
+
+<!-- Guide overlay nhúng trực tiếp -->
 <div id="guide-overlay">
-  <iframe id="guide-iframe"
-    src=""
-    style="width:100%;height:100%;border:none;display:block;"
-    loading="lazy">
-  </iframe>
+  <div class="guide-back-bar">
+    <button class="guide-back-btn" onclick="closeGuide()">← Quay lại</button>
+    <span style="font-size:14px;font-weight:700;color:#202124;">📋 Hướng dẫn sử dụng</span>
+  </div>
+<!-- Header -->
+<div class="header">
+  <h1>📋 Hướng dẫn sử dụng</h1>
+  <p>Phần mềm Chấm Công — Công ty CP Siêu Thanh Hà Nội</p>
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <div class="nav-tab active" onclick="showPage('p1',this)">I. Chấm công</div>
+  <div class="nav-tab" onclick="showPage('p2',this)">II. Dữ liệu tháng</div>
+  <div class="nav-tab" onclick="showPage('p3',this)">III. Nhắc nhở Telegram</div>
+  <div class="nav-tab" onclick="showPage('p4',this)">IV. Lưu ý</div>
+</div>
+
+<!-- ══ TRANG 1: CHẤM CÔNG ══════════════════════════════════ -->
+<div class="page active" id="p1">
+
+  <div class="section">
+    <div class="section-title">📱 Giao diện chấm công</div>
+    <ul>
+      <li><strong>Đồng hồ:</strong> hiển thị thời gian thực để theo dõi khi chấm công</li>
+      <li><strong>Họ tên CBNV:</strong> hiển thị cố định với từng cán bộ nhân viên khi cài đặt phần mềm</li>
+      <li><strong>Thông tin vị trí:</strong> hiển thị vị trí tương đối so với công ty
+        <ul>
+          <li><span class="badge badge-green">Màu xanh</span> — trong phạm vi</li>
+          <li><span class="badge badge-yellow">Màu vàng</span> — ngoài phạm vi</li>
+          <li><span class="badge badge-red">Màu đỏ</span> — không thể chấm công</li>
+        </ul>
+      </li>
+      <li><strong>Ghi chú (tuỳ chọn):</strong> ghi thông tin nếu chấm công muộn hơn giờ quy định, đi công tác...</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🔘 Các nút chức năng</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>🔄 Xác định lại vị trí</strong>
+        Định vị lại vị trí hiện tại nếu thấy sai sót hoặc GPS chưa chính xác
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>✅ Chấm công</strong>
+        Thực hiện chấm công — ghi nhận thời gian và vị trí vào hệ thống
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>📊 Dữ liệu chấm công trong tháng</strong>
+        Xem lịch sử chấm công cá nhân trong tháng hiện tại
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">✅ Màn hình hoàn thành chấm công</div>
+    <p>Sau khi chấm công, màn hình hiển thị thông tin được ghi nhận:</p>
+    <ul>
+      <li><strong>Thời gian:</strong> thời điểm chấm công</li>
+      <li><strong>Họ tên:</strong> tên CBNV</li>
+      <li><strong>Checkin:</strong> địa điểm yêu cầu chấm công</li>
+      <li><strong>Khoảng cách:</strong> từ vị trí GPS đến địa điểm Checkin</li>
+      <li><strong>Vị trí chấm công:</strong> địa chỉ từ GPS của điện thoại</li>
+      <li><strong>Trạng thái:</strong> Hợp lệ / Ngoài phạm vi</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══ TRANG 2: DỮ LIỆU THÁNG ════════════════════════════ -->
+<div class="page" id="p2">
+
+  <div class="section">
+    <div class="section-title">📊 Các chỉ số tổng hợp</div>
+    <ul>
+      <li><strong>Công chuẩn:</strong> tổng số ngày trong tháng trừ Thứ 7 và Chủ Nhật</li>
+      <li><strong>Công T.tế:</strong> tổng số ngày có chấm công ít nhất 1 lần, tính đến ngày hiện tại</li>
+      <li><strong>Công B,D:</strong> số ngày công có xuất hiện đánh giá B hoặc D</li>
+      <li><strong>Không chấm:</strong> số ngày không chấm công tính đến ngày hiện tại (trừ T7, CN, ngày lễ)</li>
+    </ul>
+    <div class="note">
+      ⚠️ <strong>Lưu ý:</strong> Các thông tin tổng hợp chỉ mang tính tham khảo, không dùng làm căn cứ tính lương, thưởng. Việc tính ngày Công chuẩn và Công T.tế căn cứ theo quy định Công ty.
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📅 Bảng dữ liệu chấm công</div>
+    <p>Toàn bộ dữ liệu chấm công thực của CBNV tính đến ngày hiện tại:</p>
+    <ul>
+      <li>Hiển thị theo từng ngày: Sáng IN/OUT, Chiều IN/OUT</li>
+      <li>Cột <strong>Đánh giá</strong>: A (đúng giờ), B (trễ/sớm), D (không chấm)</li>
+      <li>Cột <strong>Lý do:</strong> ghi chú lý do nếu có (nghỉ lễ, công tác...)</li>
+      <li>Dữ liệu sẽ được duy trì đến ngày 10 tháng tiếp theo</li>
+    </ul>
+    <p>Màu sắc dòng:</p>
+    <ul>
+      <li><span class="badge badge-green">Nền xanh</span> — Ngày đủ công (A A A A)</li>
+      <li><span class="badge badge-yellow">Nền vàng</span> — Thiếu ca (có B hoặc D)</li>
+      <li><span class="badge badge-red">Nền đỏ</span> — Vắng (D D D D)</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══ TRANG 3: TELEGRAM ══════════════════════════════════ -->
+<div class="page" id="p3">
+
+  <div class="section">
+    <div class="section-title">🤖 Bot nhắc nhở Telegram</div>
+    <p>Bot Telegram <strong>HST Chấm công #reminder_bot</strong> sẽ tự động gửi tin nhắn nhắc nhở chấm công hàng ngày vào các khung giờ:</p>
+    <ul>
+      <li>⏰ <strong>07:30 – 08:00</strong> — Nhắc CHECKIN buổi sáng</li>
+      <li>⏰ <strong>12:00 – 12:30</strong> — Nhắc CHECKOUT buổi trưa</li>
+      <li>⏰ <strong>12:50 – 13:00</strong> — Nhắc CHECKIN buổi chiều</li>
+      <li>⏰ <strong>17:00 – 17:30</strong> — Nhắc CHECKOUT cuối ngày</li>
+    </ul>
+    <p>Bot chỉ gửi tin nhắn cho CBNV <strong>chưa chấm công</strong> tại thời điểm nhắc — ai đã chấm rồi sẽ không nhận được tin.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📲 Cách đăng ký nhận nhắc nhở</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Cài đặt Telegram</strong>
+        Tải từ Google Play hoặc App Store. Đăng ký / đăng nhập tài khoản cá nhân
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Nhắn tin cho bot</strong>
+        Gửi bất kỳ tin nhắn nào cho bot (ví dụ: "xin chào")
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Tìm bot HST Chấm công</strong>
+        Quét mã QR bên dưới hoặc tìm kiếm: <strong>@HAST_CHAM_CONG_REMINDER_BOT</strong>
+      </div>
+    </div>
+
+    <!-- ★ CHÈN ẢNH QR BOT:
+         Cách 1: dùng link ảnh trực tiếp
+           <img src="https://link-anh-cua-ban.png" class="guide-img-sm">
+
+         Cách 2: upload ảnh lên cùng thư mục GitHub rồi dùng đường dẫn tương đối
+           <img src="qr-bot.png" class="guide-img-sm">
+
+         Cách 3: chèn base64 (không cần host) - paste vào src bên dưới
+    -->
+    <div class="img-wrap">
+      <img src="qr-bot.png"
+           alt="QR Bot Telegram"
+           class="guide-img-sm"
+           onerror="this.style.display='none'">
+      <div class="img-caption">Quét QR để tìm bot @HAST_CHAM_CONG_REMINDER_BOT</div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Nhắn tin cho bot</strong>
+        Gửi bất kỳ tin nhắn nào cho bot (ví dụ: "xin chào")
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Thông báo Phòng Kỹ thuật</strong>
+        Liên hệ Phòng Kỹ thuật để được kích hoạt nhắc nhở chấm công hàng ngày
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ TRANG 4: LƯU Ý ════════════════════════════════════ -->
+<div class="page" id="p4">
+
+  <div class="section">
+    <div class="section-title">⚠️ Lưu ý khi sử dụng</div>
+    <ul>
+      <li>Chấm công <strong>4 lần/ngày</strong>: sáng IN, sáng OUT, chiều IN, chiều OUT</li>
+      <li>Bật <strong>GPS/Vị trí</strong> trên điện thoại trước khi chấm công</li>
+      <li>Chấm công tại hoặc gần vị trí Công ty để đảm bảo hợp lệ</li>
+      <li>Nếu chấm ngoài phạm vi, vui lòng ghi lý do vào ô Ghi chú</li>
+      <li>Không chấm công giúp người khác</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📞 Liên hệ hỗ trợ</div>
+    <p>Mọi vấn đề kỹ thuật, vui lòng liên hệ <strong>Phòng Kỹ thuật</strong> để được hỗ trợ.</p>
+    <p>Địa chỉ: Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, TP Hà Nội</p>
+  </div>
+
+</div>
+
+<script>
+function showPage(id, tab) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  tab.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+
+</script>
 </div>
 
 </body>
