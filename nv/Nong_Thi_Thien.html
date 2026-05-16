@@ -168,6 +168,18 @@ textarea:focus{border-color:#1a73e8;}
 .guide-btn:hover{background:#1a73e8;color:white;border-color:#1a73e8;}
 .footer-row{display:flex;align-items:center;justify-content:center;
   gap:4px;flex-wrap:wrap;}
+
+
+/* ── Guide overlay iframe ────────────────────────────── */
+#guide-overlay{
+  display:none;
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  z-index:9999;
+  background:white;
+}
+#guide-overlay.show{display:block;}
+
 </style>
 </head>
 <body>
@@ -271,6 +283,8 @@ textarea:focus{border-color:#1a73e8;}
   </div>
   
 </div>
+
+
 <script>
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
@@ -796,13 +810,72 @@ document.addEventListener('DOMContentLoaded', function() {
 // Mở huongdan.html đúng đường dẫn dù file ở thư mục /nv/ hay thư mục gốc
 function openGuide(e) {
   if (e) e.preventDefault();
-  var href = window.location.href.split('?')[0].split('#')[0];
-  var base = href
-    .replace(/\/nv\/[^\/]+\.html$/, '')  // /nv/TenFile.html → bỏ cả /nv/TenFile.html
-    .replace(/\/[^\/]+\.html$/, '');       // /index.html → bỏ file
-  base = base.replace(/\/$/, '');
-  window.open(base + '/huongdan.html', '_blank');
+  var overlay = document.getElementById('guide-overlay');
+  var iframe  = document.getElementById('guide-iframe');
+
+  // Tính URL huongdan.html đúng dù file ở /nv/ hay thư mục gốc
+  var base = window.location.href
+    .split('?')[0].split('#')[0]
+    .replace(/\/nv\/[^\/]+\.html$/,'')
+    .replace(/\/[^\/]+\.html$/,'')
+    .replace(/\/$/,'');
+  var guideUrl = base + '/huongdan.html';
+
+  iframe.src  = guideUrl;
+  overlay.style.display = 'block';
+  document.body.style.overflow = 'hidden';
 }
+
+function closeGuide() {
+  document.getElementById('guide-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function goBack() { closeGuide(); }
+function showPage() {}
+
+
+function closeGuide() {
+  document.getElementById('guide-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function goBack() {
+  closeGuide();
+}
+function showPage(id, tab) {} // placeholder - dùng trong iframe
+
+
+function closeGuide() {
+  var overlay = document.getElementById('guide-overlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+// Guide tab navigation (scope trong overlay)
+function showPage(id, tab) {
+  var overlay = document.getElementById('guide-overlay');
+  overlay.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  overlay.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+  var el = overlay.querySelector('#'+id);
+  if (el) el.classList.add('active');
+  if (tab) tab.classList.add('active');
+  overlay.scrollTo({top:0, behavior:'smooth'});
+}
+
+function goBack() {
+  closeGuide();
+}
+
 </script>
+
+<!-- Guide overlay dùng iframe -->
+<div id="guide-overlay">
+  <iframe id="guide-iframe"
+    src=""
+    style="width:100%;height:100%;border:none;display:block;"
+    loading="lazy">
+  </iframe>
+</div>
+
 </body>
 </html>
