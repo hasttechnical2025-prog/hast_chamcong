@@ -213,8 +213,9 @@ textarea:focus{border-color:#1a73e8;}
     <div class="field">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
         <label style="margin-bottom:0;">📝 Ghi chú (tuỳ chọn)</label>
-        <a href="huongdan.html" target="_blank"
+        <a href="#" target="_blank"
           title="Hướng dẫn sử dụng"
+          onclick="openGuide(event)"
           style="font-size:18px;text-decoration:none;line-height:1;opacity:.6;transition:opacity .2s;"
           onmouseover="this.style.opacity='1'"
           onmouseout="this.style.opacity='.6'">📖</a>
@@ -791,6 +792,17 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 });
+
+// Mở huongdan.html đúng đường dẫn dù file ở thư mục /nv/ hay thư mục gốc
+function openGuide(e) {
+  if (e) e.preventDefault();
+  var href = window.location.href.split('?')[0].split('#')[0];
+  var base = href
+    .replace(/\/nv\/[^\/]+\.html$/, '')  // /nv/TenFile.html → bỏ cả /nv/TenFile.html
+    .replace(/\/[^\/]+\.html$/, '');       // /index.html → bỏ file
+  base = base.replace(/\/$/, '');
+  window.open(base + '/huongdan.html', '_blank');
+}
 </script>
 </body>
 </html>
