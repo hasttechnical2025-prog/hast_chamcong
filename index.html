@@ -1031,18 +1031,18 @@ function goBack() {
     <button class="guide-back-btn" onclick="closeGuide()">← Quay lại</button>
     <span style="font-size:14px;font-weight:700;color:#202124;">📋 Hướng dẫn sử dụng</span>
   </div>
-<!-- Header -->
+<!-- Header 
 <div class="header">
   <h1>📋 Hướng dẫn sử dụng</h1>
   <p>Phần mềm Chấm Công — Công ty CP Siêu Thanh Hà Nội</p>
 </div>
-
+-->
 <!-- Navigation -->
 <div class="nav">
-  <div class="nav-tab active" onclick="showPage('p1',this)">I. Chấm công</div>
-  <div class="nav-tab" onclick="showPage('p2',this)">II. Dữ liệu tháng</div>
-  <div class="nav-tab" onclick="showPage('p3',this)">III. Nhắc nhở Telegram</div>
-  <div class="nav-tab" onclick="showPage('p4',this)">IV. Lưu ý</div>
+  <div class="nav-tab active" onclick="showPage('p1',this)">Chấm công</div>
+  <div class="nav-tab" onclick="showPage('p2',this)">Dữ liệu tháng</div>
+  <div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở Telegram</div>
+  <div class="nav-tab" onclick="showPage('p4',this)">Lưu ý</div>
 </div>
 
 <!-- ══ TRANG 1: CHẤM CÔNG ══════════════════════════════════ -->
@@ -1170,14 +1170,7 @@ function goBack() {
         Gửi bất kỳ tin nhắn nào cho bot (ví dụ: "xin chào")
       </div>
     </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-body">
-        <strong>Tìm bot HST Chấm công</strong>
-        Quét mã QR bên dưới hoặc tìm kiếm: <strong>@HAST_CHAM_CONG_REMINDER_BOT</strong>
-      </div>
-    </div>
-
+    
     <!-- ★ CHÈN ẢNH QR BOT:
          Cách 1: dùng link ảnh trực tiếp
            <img src="https://link-anh-cua-ban.png" class="guide-img-sm">
@@ -1187,6 +1180,7 @@ function goBack() {
 
          Cách 3: chèn base64 (không cần host) - paste vào src bên dưới
     -->
+    
     <div class="img-wrap">
       <img src="qr-bot.png"
            alt="QR Bot Telegram"
@@ -1218,8 +1212,12 @@ function goBack() {
 
   <div class="section">
     <div class="section-title">⚠️ Lưu ý khi sử dụng</div>
+    <p>Chấm công <strong>4 lần/ngày</strong>:</p>
     <ul>
-      <li>Chấm công <strong>4 lần/ngày</strong>: sáng IN, sáng OUT, chiều IN, chiều OUT</li>
+      <li>⏰ Check In sáng - <strong> trước 08:05</strong></li>
+      <li>⏰ Check Out sáng - <strong> từ 12:00 đến 12:45</strong></li>
+      <li>⏰ Check In chiều - <strong>từ 12:46 đến 13:05</strong></li>
+      <li>⏰ Check Out chiều - <strong>từ 17:00</strong></li>
       <li>Bật <strong>GPS/Vị trí</strong> trên điện thoại trước khi chấm công</li>
       <li>Chấm công tại hoặc gần vị trí Công ty để đảm bảo hợp lệ</li>
       <li>Nếu chấm ngoài phạm vi, vui lòng ghi lý do vào ô Ghi chú</li>
