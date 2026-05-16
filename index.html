@@ -169,15 +169,14 @@ textarea:focus{border-color:#1a73e8;}
 .footer-row{display:flex;align-items:center;justify-content:center;
   gap:4px;flex-wrap:wrap;}
 
-/* ── Guide overlay ──────────────────────────────────── */
+
+/* ── Guide overlay iframe ────────────────────────────── */
 #guide-overlay{
   display:none;
   position:fixed;
   top:0;left:0;right:0;bottom:0;
   z-index:9999;
-  background:#f5f7fa;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
+  background:white;
 }
 #guide-overlay.show{display:block;}
 
@@ -839,20 +838,41 @@ document.addEventListener('DOMContentLoaded', function() {
 // Mở huongdan.html đúng đường dẫn dù file ở thư mục /nv/ hay thư mục gốc
 function openGuide(e) {
   if (e) e.preventDefault();
-  // iOS PWA: hiển thị overlay thay vì mở tab mới
   var overlay = document.getElementById('guide-overlay');
-  if (overlay) {
-    overlay.classList.add('show');
-    overlay.scrollTop = 0;
-  } else {
-    // Fallback cho browser thường
-    var base = window.location.href.split('?')[0].split('#')[0]
-      .replace(/\/nv\/[^\/]+\.html$/, '')
-      .replace(/\/[^\/]+\.html$/, '')
-      .replace(/\/$/, '');
-    window.open(base + '/huongdan.html', '_blank');
-  }
+  var iframe  = document.getElementById('guide-iframe');
+
+  // Tính URL huongdan.html đúng dù file ở /nv/ hay thư mục gốc
+  var base = window.location.href
+    .split('?')[0].split('#')[0]
+    .replace(/\/nv\/[^\/]+\.html$/,'')
+    .replace(/\/[^\/]+\.html$/,'')
+    .replace(/\/$/,'');
+  var guideUrl = base + '/huongdan.html';
+
+  iframe.src  = guideUrl;
+  overlay.style.display = 'block';
+  document.body.style.overflow = 'hidden';
 }
+
+function closeGuide() {
+  document.getElementById('guide-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function goBack() { closeGuide(); }
+function showPage() {}
+
+
+function closeGuide() {
+  document.getElementById('guide-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function goBack() {
+  closeGuide();
+}
+function showPage(id, tab) {} // placeholder - dùng trong iframe
+
 
 function closeGuide() {
   var overlay = document.getElementById('guide-overlay');
@@ -875,235 +895,15 @@ function goBack() {
 }
 
 </script>
-  <!-- ══ Guide overlay — full screen trong PWA ══ -->
-  <div id="guide-overlay">
-    <div class="back-bar">
-      <button class="back-btn" onclick="goBack()">← Quay lại</button>
-      <span class="back-bar-title">📋 Hướng dẫn sử dụng</span>
-    </div>
-<!-- Header -->
-<div class="header">
-  <h1>📋 Hướng dẫn sử dụng</h1>
-  <p>Phần mềm Chấm Công — Công ty CP Siêu Thanh Hà Nội</p>
+
+<!-- Guide overlay dùng iframe -->
+<div id="guide-overlay">
+  <iframe id="guide-iframe"
+    src=""
+    style="width:100%;height:100%;border:none;display:block;"
+    loading="lazy">
+  </iframe>
 </div>
 
-<!-- Navigation -->
-<div class="nav">
-  <div class="nav-tab active" onclick="showPage('p1',this)">I. Chấm công</div>
-  <div class="nav-tab" onclick="showPage('p2',this)">II. Dữ liệu tháng</div>
-  <div class="nav-tab" onclick="showPage('p3',this)">III. Nhắc nhở Telegram</div>
-  <div class="nav-tab" onclick="showPage('p4',this)">IV. Lưu ý</div>
-</div>
-
-<!-- ══ TRANG 1: CHẤM CÔNG ══════════════════════════════════ -->
-<div class="page active" id="p1">
-
-  <div class="section">
-    <div class="section-title">📱 Giao diện chấm công</div>
-    <ul>
-      <li><strong>Đồng hồ:</strong> hiển thị thời gian thực để theo dõi khi chấm công</li>
-      <li><strong>Họ tên CBNV:</strong> hiển thị cố định với từng cán bộ nhân viên khi cài đặt phần mềm</li>
-      <li><strong>Thông tin vị trí:</strong> hiển thị vị trí tương đối so với công ty
-        <ul>
-          <li><span class="badge badge-green">Màu xanh</span> — trong phạm vi</li>
-          <li><span class="badge badge-yellow">Màu vàng</span> — ngoài phạm vi</li>
-          <li><span class="badge badge-red">Màu đỏ</span> — không thể chấm công</li>
-        </ul>
-      </li>
-      <li><strong>Ghi chú (tuỳ chọn):</strong> ghi thông tin nếu chấm công muộn hơn giờ quy định, đi công tác...</li>
-    </ul>
-  </div>
-
-  <div class="section">
-    <div class="section-title">🔘 Các nút chức năng</div>
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-body">
-        <strong>🔄 Xác định lại vị trí</strong>
-        Định vị lại vị trí hiện tại nếu thấy sai sót hoặc GPS chưa chính xác
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-body">
-        <strong>✅ Chấm công</strong>
-        Thực hiện chấm công — ghi nhận thời gian và vị trí vào hệ thống
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-body">
-        <strong>📊 Dữ liệu chấm công trong tháng</strong>
-        Xem lịch sử chấm công cá nhân trong tháng hiện tại
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">✅ Màn hình hoàn thành chấm công</div>
-    <p>Sau khi chấm công, màn hình hiển thị thông tin được ghi nhận:</p>
-    <ul>
-      <li><strong>Thời gian:</strong> thời điểm chấm công</li>
-      <li><strong>Họ tên:</strong> tên CBNV</li>
-      <li><strong>Checkin:</strong> địa điểm yêu cầu chấm công</li>
-      <li><strong>Khoảng cách:</strong> từ vị trí GPS đến địa điểm Checkin</li>
-      <li><strong>Vị trí chấm công:</strong> địa chỉ từ GPS của điện thoại</li>
-      <li><strong>Trạng thái:</strong> Hợp lệ / Ngoài phạm vi</li>
-    </ul>
-  </div>
-
-</div>
-
-<!-- ══ TRANG 2: DỮ LIỆU THÁNG ════════════════════════════ -->
-<div class="page" id="p2">
-
-  <div class="section">
-    <div class="section-title">📊 Các chỉ số tổng hợp</div>
-    <ul>
-      <li><strong>Công chuẩn:</strong> tổng số ngày trong tháng trừ Thứ 7 và Chủ Nhật</li>
-      <li><strong>Công T.tế:</strong> tổng số ngày có chấm công ít nhất 1 lần, tính đến ngày hiện tại</li>
-      <li><strong>Công B,D:</strong> số ngày công có xuất hiện đánh giá B hoặc D</li>
-      <li><strong>Không chấm:</strong> số ngày không chấm công tính đến ngày hiện tại (trừ T7, CN, ngày lễ)</li>
-    </ul>
-    <div class="note">
-      ⚠️ <strong>Lưu ý:</strong> Các thông tin tổng hợp chỉ mang tính tham khảo, không dùng làm căn cứ tính lương, thưởng. Việc tính ngày Công chuẩn và Công T.tế căn cứ theo quy định Công ty.
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">📅 Bảng dữ liệu chấm công</div>
-    <p>Toàn bộ dữ liệu chấm công thực của CBNV tính đến ngày hiện tại:</p>
-    <ul>
-      <li>Hiển thị theo từng ngày: Sáng IN/OUT, Chiều IN/OUT</li>
-      <li>Cột <strong>Đánh giá</strong>: A (đúng giờ), B (trễ/sớm), D (không chấm)</li>
-      <li>Cột <strong>Lý do:</strong> ghi chú lý do nếu có (nghỉ lễ, công tác...)</li>
-      <li>Dữ liệu sẽ được duy trì đến ngày 10 tháng tiếp theo</li>
-    </ul>
-    <p>Màu sắc dòng:</p>
-    <ul>
-      <li><span class="badge badge-green">Nền xanh</span> — Ngày đủ công (A A A A)</li>
-      <li><span class="badge badge-yellow">Nền vàng</span> — Thiếu ca (có B hoặc D)</li>
-      <li><span class="badge badge-red">Nền đỏ</span> — Vắng (D D D D)</li>
-    </ul>
-  </div>
-
-</div>
-
-<!-- ══ TRANG 3: TELEGRAM ══════════════════════════════════ -->
-<div class="page" id="p3">
-
-  <div class="section">
-    <div class="section-title">🤖 Bot nhắc nhở Telegram</div>
-    <p>Bot Telegram <strong>HST Chấm công #reminder_bot</strong> sẽ tự động gửi tin nhắn nhắc nhở chấm công hàng ngày vào các khung giờ:</p>
-    <ul>
-      <li>⏰ <strong>07:30 – 08:00</strong> — Nhắc CHECKIN buổi sáng</li>
-      <li>⏰ <strong>12:00 – 12:30</strong> — Nhắc CHECKOUT buổi trưa</li>
-      <li>⏰ <strong>12:50 – 13:00</strong> — Nhắc CHECKIN buổi chiều</li>
-      <li>⏰ <strong>17:00 – 17:30</strong> — Nhắc CHECKOUT cuối ngày</li>
-    </ul>
-    <p>Bot chỉ gửi tin nhắn cho CBNV <strong>chưa chấm công</strong> tại thời điểm nhắc — ai đã chấm rồi sẽ không nhận được tin.</p>
-  </div>
-
-  <div class="section">
-    <div class="section-title">📲 Cách đăng ký nhận nhắc nhở</div>
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-body">
-        <strong>Cài đặt Telegram</strong>
-        Tải từ Google Play hoặc App Store. Đăng ký / đăng nhập tài khoản cá nhân
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-body">
-        <strong>Nhắn tin cho bot</strong>
-        Gửi bất kỳ tin nhắn nào cho bot (ví dụ: "xin chào")
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-body">
-        <strong>Tìm bot HST Chấm công</strong>
-        Quét mã QR bên dưới hoặc tìm kiếm: <strong>@HAST_CHAM_CONG_REMINDER_BOT</strong>
-      </div>
-    </div>
-
-    <!-- ★ CHÈN ẢNH QR BOT:
-         Cách 1: dùng link ảnh trực tiếp
-           <img src="https://link-anh-cua-ban.png" class="guide-img-sm">
-
-         Cách 2: upload ảnh lên cùng thư mục GitHub rồi dùng đường dẫn tương đối
-           <img src="qr-bot.png" class="guide-img-sm">
-
-         Cách 3: chèn base64 (không cần host) - paste vào src bên dưới
-    -->
-    <div class="img-wrap">
-      <img src="qr-bot.png"
-           alt="QR Bot Telegram"
-           class="guide-img-sm"
-           onerror="this.style.display='none'">
-      <div class="img-caption">Quét QR để tìm bot @HAST_CHAM_CONG_REMINDER_BOT</div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-body">
-        <strong>Nhắn tin cho bot</strong>
-        Gửi bất kỳ tin nhắn nào cho bot (ví dụ: "xin chào")
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">4</div>
-      <div class="step-body">
-        <strong>Thông báo Phòng Kỹ thuật</strong>
-        Liên hệ Phòng Kỹ thuật để được kích hoạt nhắc nhở chấm công hàng ngày
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ══ TRANG 4: LƯU Ý ════════════════════════════════════ -->
-<div class="page" id="p4">
-
-  <div class="section">
-    <div class="section-title">⚠️ Lưu ý khi sử dụng</div>
-    <ul>
-      <li>Chấm công <strong>4 lần/ngày</strong>: sáng IN, sáng OUT, chiều IN, chiều OUT</li>
-      <li>Bật <strong>GPS/Vị trí</strong> trên điện thoại trước khi chấm công</li>
-      <li>Chấm công tại hoặc gần vị trí Công ty để đảm bảo hợp lệ</li>
-      <li>Nếu chấm ngoài phạm vi, vui lòng ghi lý do vào ô Ghi chú</li>
-      <li>Không chấm công giúp người khác</li>
-    </ul>
-  </div>
-
-  <div class="section">
-    <div class="section-title">📞 Liên hệ hỗ trợ</div>
-    <p>Mọi vấn đề kỹ thuật, vui lòng liên hệ <strong>Phòng Kỹ thuật</strong> để được hỗ trợ.</p>
-    <p>Địa chỉ: Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, TP Hà Nội</p>
-  </div>
-
-</div>
-
-<script>
-function showPage(id, tab) {
-  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
-  tab.classList.add('active');
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-
-function goBack() {
-  // Quay lại trang trước (index.html)
-  if (document.referrer && document.referrer !== '') {
-    history.back();
-  } else {
-    // Fallback nếu mở tab mới
-    window.location.href = 'index.html';
-  }
-}
-</script>
-  </div>
 </body>
 </html>
