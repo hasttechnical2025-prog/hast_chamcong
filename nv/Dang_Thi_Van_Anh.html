@@ -156,6 +156,18 @@ textarea:focus{border-color:#1a73e8;}
 .hist-table tr.holiday td:nth-child(1){color:#2e7d32;font-weight:600;}
 .hist-table tr.holiday td:nth-child(2){color:#2e7d32;font-weight:700;}
 .hist-table tr.holiday td:last-child{color:#2e7d32;font-style:italic;font-weight:600;}
+.help-btn{display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;background:#e8e8e8;color:#999;
+  font-size:12px;font-weight:700;text-decoration:none;margin-left:6px;
+  vertical-align:middle;transition:all .2s;border:1px solid #ddd;cursor:pointer;}
+.help-btn:hover{background:#1a73e8;color:white;border-color:#1a73e8;}
+.guide-btn{display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:10px;background:#f1f3f4;color:#666;
+  font-size:11px;font-weight:600;text-decoration:none;margin-left:6px;
+  vertical-align:middle;transition:all .2s;border:1px solid #e0e0e0;}
+.guide-btn:hover{background:#1a73e8;color:white;border-color:#1a73e8;}
+.footer-row{display:flex;align-items:center;justify-content:center;
+  gap:4px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -199,7 +211,14 @@ textarea:focus{border-color:#1a73e8;}
 
     <!-- Ghi chú -->
     <div class="field">
-      <label>📝 Ghi chú (tuỳ chọn)</label>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <label style="margin-bottom:0;">📝 Ghi chú (tuỳ chọn)</label>
+        <a href="huongdan.html" target="_blank"
+          title="Hướng dẫn sử dụng"
+          style="font-size:18px;text-decoration:none;line-height:1;opacity:.6;transition:opacity .2s;"
+          onmouseover="this.style.opacity='1'"
+          onmouseout="this.style.opacity='.6'">📖</a>
+      </div>
       <textarea id="note" rows="2" placeholder="Công tác, đi muộn, lý do khác..."></textarea>
     </div>
 
@@ -211,9 +230,9 @@ textarea:focus{border-color:#1a73e8;}
     </button>
     <button class="btn" id="btn-history-main" style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;" onclick="showHistory('main')">📊 Dữ liệu chấm công trong tháng</button>
 
-  <p style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
+  <div style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
       Bản quyền © Công ty CP Siêu Thanh Hà Nội · v2026.05
-    </p>
+    </div>
   </div>
 
 <!-- History screen -->
