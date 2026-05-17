@@ -209,10 +209,13 @@ textarea:focus{border-color:#1a73e8;}
   min-height: 52px;
 }
 #guide-overlay > .nav {
-  margin-top: 52px;   /* đúng bằng chiều cao back-bar */
+  margin-top: 0;
 }
 #guide-overlay > .header {
-  margin-top: 52px;
+  margin-top: 0px;
+}
+#guide-overlay > *:nth-child(2) {
+  margin-top: 52px;  /* đúng bằng chiều cao back-bar */
 }
 #guide-overlay .g-back-btn {
   display: inline-flex;
