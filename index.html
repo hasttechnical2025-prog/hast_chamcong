@@ -1062,69 +1062,24 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Mở huongdan.html đúng đường dẫn dù file ở thư mục /nv/ hay thư mục gốc
-
 // ════════════════════════════════════════════════
 // GUIDE OVERLAY FUNCTIONS
 // ════════════════════════════════════════════════
+
 function openGuide(e) {
   if (e) e.preventDefault();
-
-  // Tính base URL cho ảnh
-  var base = '';
-  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-    base = window.location.origin + window.location.pathname
-      .replace(/\/nv\/[^\/]+\.html$/, '')
-      .replace(/\/[^\/]+\.html$/, '')
-      .replace(/\/$/, '');
-  }
-  if (base) {
-    document.querySelectorAll('#guide-overlay img[data-src]').forEach(function(img) {
-      var ds = img.getAttribute('data-src');
-      if (ds && (!img.src || img.src === window.location.href)) {
-        img.src = base + '/img/' + ds;
-        img.onerror = function() { this.style.display = 'none'; };
-      }
-    });
-  }
-
-  var overlay = document.getElementById('guide-overlay');
-
-  // Reset mọi style inline trước
-  overlay.removeAttribute('style');
-
-  // Dùng class 'show' để hiện overlay
-  overlay.classList.add('show');
-  overlay.scrollTop = 0;
-
-  // Chỉ khóa scroll, KHÔNG set position:fixed trên body (gây vỡ layout)
-  document.documentElement.classList.add('guide-open');
-  document.documentElement.style.overflow = 'hidden';
+  document.getElementById('guide-overlay').classList.add('show');
+  document.getElementById('guide-overlay').scrollTop = 0;
   document.body.style.overflow = 'hidden';
 }
 
 function closeGuide() {
   var overlay = document.getElementById('guide-overlay');
-  overlay.classList.remove('show');
-  // Restore scroll
-  document.documentElement.classList.remove('guide-open');
-  document.documentElement.style.overflow = '';
-  document.body.style.overflow = '';
+  if (overlay) overlay.classList.remove('show');
 }
 
-// showPage cho guide tabs (scoped trong #guide-overlay)
-function showPage(id, tab) {
-  var overlay = document.getElementById('guide-overlay');
-  overlay.querySelectorAll('.page').forEach(function(p) {
-    p.classList.remove('active');
-  });
-  overlay.querySelectorAll('.nav-tab').forEach(function(t) {
-    t.classList.remove('active');
-  });
-  var el = overlay.querySelector('#' + id);
-  if (el) el.classList.add('active');
-  if (tab) tab.classList.add('active');
-  overlay.scrollTop = 0;
+function goBack() {
+  closeGuide();
 }
 
 function showPage(id, tab) {
@@ -1134,15 +1089,16 @@ function showPage(id, tab) {
   tab.classList.add('active');
   window.scrollTo({top:0, behavior:'smooth'});
 }
+
 </script>
 
-<!-- ════ GUIDE OVERLAY ════ -->
+
 <!-- Guide overlay nhúng trực tiếp -->
 <div id="guide-overlay">
   <div class="guide-back-bar">
     <button class="guide-back-btn" onclick="closeGuide()">← Quay lại</button>
     <span style="font-size:14px;font-weight:700;color:#202124;">📋 Hướng dẫn sử dụng</span>
-
+  </div>
 <!-- Header 
 <div class="header">
   <h1>📋 Hướng dẫn sử dụng</h1>
@@ -1352,5 +1308,6 @@ function showPage(id, tab) {
 </div>
 
 </div>
+
 </body>
 </html>
