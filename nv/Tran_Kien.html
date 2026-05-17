@@ -20,14 +20,36 @@
 
 <!-- Web App Manifest nhúng inline -->
 <link rel="manifest" href="manifest.json">
-<style>
+<style>#guide-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: #f5f7fa;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* Đảm bảo không bị ảnh hưởng bởi body flex */
+  margin: 0;
+  padding: 0;
+  padding-top: 0 !important
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#guide-overlay.show {
+  display: block;
+}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
   min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
 .card{background:white;border-radius:18px;box-shadow:0 4px 28px rgba(0,0,0,.12);
   padding:28px 22px;max-width:420px;width:100%;}
 
-.header{text-align:center;margin-bottom:20px;}
+.header{text-align:center;margin-bottom:0px;}
 .header h1{color:#1a73e8;font-size:21px;font-weight:700;margin-top:6px;}
 .header p{color:#777;font-size:13px;margin-top:3px;}
 
@@ -138,7 +160,6 @@ textarea:focus{border-color:#1a73e8;}
 .hist-scroll{overflow-x:auto;border-radius:10px;border:1px solid #eee;}
 
 /* Result */
-/* Result */
 #done{display:none;text-align:center;padding:8px 0;}
 #done.show{display:block;}
 .main.hide{display:none;}
@@ -172,32 +193,30 @@ textarea:focus{border-color:#1a73e8;}
 /* ════════════════════════════════════════════════
    GUIDE OVERLAY — full screen, không cần iframe
    ════════════════════════════════════════════════ */
-#guide-overlay {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 9999;
-  background: #f5f7fa;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
-#guide-overlay.show { display: block; }
 
 /* Back bar sticky */
 #guide-overlay .g-back-bar {
-  position: sticky;
+  position: fixed;       /* thay sticky → fixed */
   top: 0;
-  z-index: 10;
-  background: rgba(255,255,255,.97);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 10px 16px;
+  left: 0;
+  right: 0;
+  z-index: 10000;        /* cao hơn overlay (9999) */
+  background: #1a73e8;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid #e8e8e8;
-  box-shadow: 0 1px 6px rgba(0,0,0,.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  min-height: 52px;
+}
+#guide-overlay > .nav {
+  margin-top: 0;
+}
+#guide-overlay > .header {
+  margin-top: 0px;
+}
+#guide-overlay > *:nth-child(2) {
+  margin-top: 52px;  /* đúng bằng chiều cao back-bar */
 }
 #guide-overlay .g-back-btn {
   display: inline-flex;
@@ -214,26 +233,53 @@ textarea:focus{border-color:#1a73e8;}
   -webkit-tap-highlight-color: transparent;
   transition: background .15s;
 }
-#guide-overlay .g-back-btn:active,
-#guide-overlay .g-back-btn:hover { background: #1a73e8; color: white; }
-
+#guide-overlay .g-back-btn:active {
+  background: rgba(255,255,255,.35);
+}
+#guide-overlay .g-back-bar > span {
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#guide-overlay .g-back-btn:hover { 
+  background: #1a73e8; color: white; 
+}
 
 *{box-sizing:border-box;margin:0;padding:0;}
 #guide-overlay body {font-family:'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#333;
   padding:0 0 40px;}
 
 /* Header */
-#guide-overlay .header {background:linear-gradient(135deg,#1a73e8,#1557b0);
-  color:white;padding:24px 20px;text-align:center;}
+#guide-overlay .header {
+  background:linear-gradient(135deg,#1a73e8,#1557b0);
+  color:white;padding:24px 20px;text-align:center;margin-bottom: 0;
+  padding-bottom: 0;
+}
 #guide-overlay .header img {height:52px;object-fit:contain;margin-bottom:8px;
   filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));}
-#guide-overlay .header h1 {font-size:18px;font-weight:700;margin-bottom:4px;}
-#guide-overlay .header p {font-size:12px;opacity:.85;}
+#guide-overlay .header h1 {
+  color: white !important;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+#guide-overlay .header p {
+  color: rgba(255,255,255,.85) !important;
+  font-size: 13px;
+}
 
 /* Nav tabs */
-#guide-overlay .nav {display:flex;overflow-x:auto;background:white;
+#guide-overlay .nav {
+  display:flex;overflow-x:auto;background:white;
   border-bottom:2px solid #e0e0e0;position:sticky;top:0;z-index:10;
-  box-shadow:0 2px 6px rgba(0,0,0,.08);}
+  box-shadow:0 2px 6px rgba(0,0,0,.08);margin-top: 0 !important;
+  padding-top: 0;
+}
 #guide-overlay .nav-tab {flex-shrink:0;padding:12px 16px;font-size:13px;font-weight:600;
   color:#666;cursor:pointer;border-bottom:2px solid transparent;
   margin-bottom:-2px;white-space:nowrap;transition:all .2s;}
@@ -303,9 +349,7 @@ textarea:focus{border-color:#1a73e8;}
   transition:all .2s;white-space:nowrap;}
 #guide-overlay .back-btn:hover {background:#1a73e8;color:white;}
 #guide-overlay .back-bar-title {font-size:14px;font-weight:700;color:#202124;flex:1;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-
-
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}html.guide-open, html.guide-open body { overflow: hidden !important; }
 </style>
 </head>
 <body>
@@ -368,6 +412,11 @@ textarea:focus{border-color:#1a73e8;}
       ✅ Chấm công
     </button>
     <button class="btn" id="btn-history-main" style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;" onclick="showHistory('main')">📊 Dữ liệu chấm công trong tháng</button>
+    <button class="btn" id="btn-install"
+      style="background:#e6f4ea;color:#137333;font-size:14px;display:none;margin-top:0;"
+      onclick="installApp()">
+      📲 Thêm vào màn hình chính
+    </button>
 
   <div style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
       Bản quyền © Công ty CP Siêu Thanh Hà Nội · <span id="app-ver"></span>
@@ -388,7 +437,6 @@ textarea:focus{border-color:#1a73e8;}
       onclick="showMain()">← Quay lại</button>
   </div>
 
-  <!-- Custom popup -->
   <!-- Custom popup -->
   <div id="popup-overlay">
     <div class="popup-box">
@@ -432,7 +480,21 @@ if ('serviceWorker' in navigator) {
             }
           });
         });
-      }).catch(function(e){ console.log('[SW]',e); });
+      }).catch(function(e){ console.log('[SW]',e);
+
+      // Android Chrome: bắt sự kiện cài app
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window._installPrompt = e;
+        var btn = document.getElementById('btn-install');
+        if (btn) btn.style.display = 'flex';
+      });
+
+      window.addEventListener('appinstalled', function() {
+        window._installPrompt = null;
+        var btn = document.getElementById('btn-install');
+        if (btn) btn.style.display = 'none';
+      }); });
 
     var refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
@@ -555,8 +617,6 @@ function showPopup(msg, title) {
 function closePopup() {
   document.getElementById('popup-overlay').classList.remove('show');
 }
-
-
 
 // ── GPS ───────────────────────────────────────────────────
 function haversine(a,b,c,d){
@@ -1011,54 +1071,24 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Mở huongdan.html đúng đường dẫn dù file ở thư mục /nv/ hay thư mục gốc
-
 // ════════════════════════════════════════════════
 // GUIDE OVERLAY FUNCTIONS
 // ════════════════════════════════════════════════
+
 function openGuide(e) {
   if (e) e.preventDefault();
-
-  // Tính base URL — hoạt động từ /nv/ và thư mục gốc, iOS PWA và Android
-  var base = window.location.href
-    .split('?')[0].split('#')[0]
-    .replace(/\/nv\/[^\/]+\.html$/, '')
-    .replace(/\/[^\/]+\.html$/, '')
-    .replace(/\/$/, '');
-
-  // Lazy-load tất cả ảnh có data-src từ thư mục /img/
-  document.querySelectorAll('#guide-overlay img[data-src]').forEach(function(img) {
-    var ds = img.getAttribute('data-src');
-    if (ds && (!img.src || img.src === window.location.href)) {
-      img.src = base + '/img/' + ds;
-      img.onerror = function() { this.style.display = 'none'; };
-    }
-  });
-
-  var overlay = document.getElementById('guide-overlay');
-  overlay.classList.add('show');
-  overlay.scrollTop = 0;
+  document.getElementById('guide-overlay').classList.add('show');
+  document.getElementById('guide-overlay').scrollTop = 0;
   document.body.style.overflow = 'hidden';
 }
 
 function closeGuide() {
-  document.getElementById('guide-overlay').classList.remove('show');
-  document.body.style.overflow = '';
+  var overlay = document.getElementById('guide-overlay');
+  if (overlay) overlay.classList.remove('show');
 }
 
-// showPage cho guide tabs (scoped trong #guide-overlay)
-function showPage(id, tab) {
-  var overlay = document.getElementById('guide-overlay');
-  overlay.querySelectorAll('.page').forEach(function(p) {
-    p.classList.remove('active');
-  });
-  overlay.querySelectorAll('.nav-tab').forEach(function(t) {
-    t.classList.remove('active');
-  });
-  var el = overlay.querySelector('#' + id);
-  if (el) el.classList.add('active');
-  if (tab) tab.classList.add('active');
-  overlay.scrollTop = 0;
+function goBack() {
+  closeGuide();
 }
 
 function showPage(id, tab) {
@@ -1069,41 +1099,40 @@ function showPage(id, tab) {
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-
 </script>
 
-<!-- ════ GUIDE OVERLAY ════ -->
+<!-- Guide overlay nhúng trực tiếp -->
 <div id="guide-overlay">
   <div class="g-back-bar">
-    <button class="g-back-btn" onclick="closeGuide()">← Quay lại</button>
-    <span style="font-size:14px;font-weight:700;color:#202124;flex:1;">📋 Hướng dẫn sử dụng</span>
+    <button class="g-back-btn" onclick="closeGuide()">⤺ Trở về</button>
+    <span style="font-size:14px;font-weight:700;color:#202124;">📋 Hướng dẫn</span>
   </div>
-<!-- Header -->
+  
+<!-- Header --> 
 <div class="header">
-  <h1>📋 Hướng dẫn sử dụng</h1>
-  <p>Phần mềm Chấm Công — Công ty CP Siêu Thanh Hà Nội</p>
+  <h1>Hướng dẫn sử dụng</h1>
+  <p>App Chấm công</p>
 </div>
 
 <!-- Navigation -->
 <div class="nav">
   <div class="nav-tab active" onclick="showPage('p1',this)">Chấm công</div>
   <div class="nav-tab" onclick="showPage('p2',this)">Dữ liệu tháng</div>
-  <div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở Tele</div>
+  <div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở Telegram</div>
   <div class="nav-tab" onclick="showPage('p4',this)">Lưu ý</div>
 </div>
 
 <!-- ══ TRANG 1: CHẤM CÔNG ══════════════════════════════════ -->
 <div class="page active" id="p1">
-	<div class="page active" id="p1">
-	  <div class="img-wrap">
-		<img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/chamcong.jpg" class="guide-img-sm">
-      <div class="img-caption">CHẤM CÔNG</div>
+  <div class="img-wrap">
+      <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/chamcong.jpg" class="guide-img-sm">
+      <div class="img-caption">GIAO DIỆN CHẤM CÔNG</div>
     </div>
   <div class="section">
     <div class="section-title">📱 Giao diện chấm công</div>
     <ul>
       <li><strong>Đồng hồ:</strong> hiển thị thời gian thực để theo dõi khi chấm công</li>
-      <li><strong>Họ tên CBNV:</strong> hiển thị cố định với từng cán bộ nhân viên khi cài đặt phần mềm</li>
+      <li><strong>Họ tên CBNV:</strong> hiển thị cố định với từng cán bộ nhân viên khi cài đặt app</li>
       <li><strong>Thông tin vị trí:</strong> hiển thị vị trí tương đối so với công ty
         <ul>
           <li><span class="badge badge-green">Màu xanh</span> — trong phạm vi</li>
@@ -1139,9 +1168,9 @@ function showPage(id, tab) {
       </div>
     </div>
   </div>
-	<div class="img-wrap">
+  <div class="img-wrap">
       <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/hoanthanhcc.jpg" class="guide-img-sm">
-      <div class="img-caption">HOÀN THÀNH CHẤM CÔNG</div>
+      <div class="img-caption">GIAO DIỆN HOÀN THÀNH CHẤM CÔNG</div>
     </div>
   <div class="section">
     <div class="section-title">✅ Màn hình hoàn thành chấm công</div>
@@ -1160,9 +1189,9 @@ function showPage(id, tab) {
 
 <!-- ══ TRANG 2: DỮ LIỆU THÁNG ════════════════════════════ -->
 <div class="page" id="p2">
-	<div class="img-wrap">
+  <div class="img-wrap">
       <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/monthlydata.jpg" class="guide-img-sm">
-      <div class="img-caption">DỮ LIỆU CHẤM CÔNG</div>
+      <div class="img-caption">GIAO DIỆN DỮ LIỆU CHẤM CÔNG</div>
     </div>
   <div class="section">
     <div class="section-title">📊 Các chỉ số tổng hợp</div>
@@ -1220,15 +1249,14 @@ function showPage(id, tab) {
         Tải từ Google Play hoặc App Store. Đăng ký / đăng nhập tài khoản cá nhân
       </div>
     </div>
-    
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-body">
         <strong>Tìm bot HST Chấm công</strong>
-        Quét mã QR bên dưới hoặc tìm kiếm: <strong>@HAST_CHAM_CONG_REMINDER_BOT</strong>
+        Mở Telegram, bấm <strong>Danh bạ -> Thêm -> Thêm bằng mã QR</strong>strong> và quét mã QR bên dưới để mở bot <strong>@HAST_CHAM_CONG_REMINDER_BOT</strong>
       </div>
     </div>
-
+    
     <!-- ★ CHÈN ẢNH QR BOT:
          Cách 1: dùng link ảnh trực tiếp
            <img src="https://link-anh-cua-ban.png" class="guide-img-sm">
@@ -1238,6 +1266,7 @@ function showPage(id, tab) {
 
          Cách 3: chèn base64 (không cần host) - paste vào src bên dưới
     -->
+    
     <div class="img-wrap">
       <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/qr-bot.png" class="guide-img-sm">
       <div class="img-caption">Quét QR để tìm bot @HAST_CHAM_CONG_REMINDER_BOT</div>
@@ -1283,34 +1312,11 @@ function showPage(id, tab) {
     <div class="section-title">📞 Liên hệ hỗ trợ</div>
     <p>Mọi vấn đề kỹ thuật, vui lòng liên hệ <strong>Phòng Kỹ thuật</strong> để được hỗ trợ.</p>
     <p>Địa chỉ: Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, TP Hà Nội</p>
+    <p>-----</p>
+    <p>Bản quyền (c) Công ty CP Siêu Thanh Hà Nội</p>
   </div>
 
-</div>
 
-<script>
-function showPage(id, tab) {
-  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
-  tab.classList.add('active');
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-
-// Tự động load ảnh từ thư mục /img/ khi mở trang độc lập (không qua overlay)
-document.addEventListener('DOMContentLoaded', function() {
-  var base = window.location.href
-    .split('?')[0].split('#')[0]
-    .replace(/\/[^\/]+\.html$/, '')
-    .replace(/\/$/, '');
-  document.querySelectorAll('img[data-src]').forEach(function(img) {
-    img.src = base + '/img/' + img.getAttribute('data-src');
-    img.onerror = function(){ this.style.display='none'; };
-  });
-});
-
-
-</script>
-</div>
 
 </body>
 </html>
