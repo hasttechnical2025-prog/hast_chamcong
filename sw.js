@@ -2,7 +2,7 @@
 // SERVICE WORKER — HSTC Chấm Công
 // Đổi VERSION mỗi khi deploy file mới lên GitHub
 // ============================================================
-const VERSION = 'v2026.05.18'; // ====== SỬA Ở ĐÂY ======
+const VERSION = 'v2026.05.17'; // ====== SỬA Ở ĐÂY ======
 const CACHE   = 'hstc-cc-' + VERSION;
 
 // File cần cache để dùng offline
