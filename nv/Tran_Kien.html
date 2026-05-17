@@ -169,11 +169,9 @@ textarea:focus{border-color:#1a73e8;}
 .footer-row{display:flex;align-items:center;justify-content:center;
   gap:4px;flex-wrap:wrap;}
 
-
-
-
-
-/* ── Guide overlay ──────────────────────────────────── */
+/* ════════════════════════════════════════════════
+   GUIDE OVERLAY — full screen, không cần iframe
+   ════════════════════════════════════════════════ */
 #guide-overlay {
   display: none;
   position: fixed;
@@ -182,25 +180,26 @@ textarea:focus{border-color:#1a73e8;}
   background: #f5f7fa;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 #guide-overlay.show { display: block; }
 
-/* Guide back bar */
-#guide-overlay .guide-back-bar {
+/* Back bar sticky */
+#guide-overlay .g-back-bar {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(255,255,255,.96);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   padding: 10px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid #e8e8e8;
-  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  box-shadow: 0 1px 6px rgba(0,0,0,.08);
 }
-#guide-overlay .guide-back-btn {
+#guide-overlay .g-back-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -213,11 +212,13 @@ textarea:focus{border-color:#1a73e8;}
   border: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
 }
-#guide-overlay .guide-back-btn:active { background: #1a73e8; color: white; }
+#guide-overlay .g-back-btn:active,
+#guide-overlay .g-back-btn:hover { background: #1a73e8; color: white; }
 
 
-#guide-overlay * {box-sizing:border-box;margin:0;padding:0;}
+*{box-sizing:border-box;margin:0;padding:0;}
 #guide-overlay body {font-family:'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#333;
   padding:0 0 40px;}
 
@@ -369,7 +370,7 @@ textarea:focus{border-color:#1a73e8;}
     <button class="btn" id="btn-history-main" style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;" onclick="showHistory('main')">📊 Dữ liệu chấm công trong tháng</button>
 
   <div style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
-      Bản quyền © Công ty CP Siêu Thanh Hà Nội · v2026.05
+      Bản quyền © Công ty CP Siêu Thanh Hà Nội · <span id="app-ver"></span>
     </div>
   </div>
 
@@ -411,6 +412,84 @@ textarea:focus{border-color:#1a73e8;}
 
 
 <script>
+// ============================================================
+// VERSION & SERVICE WORKER
+// ============================================================
+// APP_VERSION: đọc động từ sw.js — không cần khai báo cứng
+var APP_VERSION = '';
+
+// Đăng ký Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js')
+      .then(function(reg) {
+        if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+        reg.addEventListener('updatefound', function() {
+          var sw = reg.installing;
+          sw.addEventListener('statechange', function() {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              sw.postMessage('skipWaiting');
+            }
+          });
+        });
+      }).catch(function(e){ console.log('[SW]',e); });
+
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (!refreshing) { refreshing = true; window.location.reload(); }
+    });
+  });
+}
+
+// ── Version check: đọc VERSION từ sw.js ──────────────────
+// Chỉ cần đổi VERSION trong sw.js khi deploy → mọi thứ tự cập nhật
+(function checkVersion() {
+  var base = window.location.href
+    .split('?')[0].split('#')[0]
+    .replace(/\/nv\/[^\/]+\.html$/, '')
+    .replace(/\/[^\/]+\.html$/, '')
+    .replace(/\/$/, '');
+
+  fetch(base + '/sw.js?t=' + Date.now(), { cache: 'no-store' })
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      var m = text.match(/const VERSION\s*=\s*['"]([^'"]+)['"]/);
+      if (!m) return;
+      var sv = m[1].trim();
+
+      // Gán APP_VERSION và hiển thị footer ngay
+      APP_VERSION = sv;
+      var el = document.getElementById('app-ver');
+      if (el) el.textContent = sv;
+
+      // So sánh với version đã lưu
+      var lv = localStorage.getItem('hstc_ver');
+      localStorage.setItem('hstc_ver', sv);
+
+      if (lv && lv !== sv) {
+        // Version mới → xóa toàn bộ cache → reload
+        console.log('[Ver] Update:', lv, '→', sv);
+        if ('caches' in window) {
+          caches.keys().then(function(ks) {
+            Promise.all(ks.map(function(k) { return caches.delete(k); }))
+              .then(function() { window.location.reload(true); });
+          });
+        } else {
+          window.location.reload(true);
+        }
+      }
+    })
+    .catch(function() {
+      // Offline: dùng version đã lưu trong localStorage
+      var cached = localStorage.getItem('hstc_ver');
+      if (cached) {
+        APP_VERSION = cached;
+        var el = document.getElementById('app-ver');
+        if (el) el.textContent = cached;
+      }
+    });
+})();
+
 // ═══════════════════════════════════════════
 // ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
 // ═══════════════════════════════════════════
@@ -933,10 +1012,32 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Mở huongdan.html đúng đường dẫn dù file ở thư mục /nv/ hay thư mục gốc
+
+// ════════════════════════════════════════════════
+// GUIDE OVERLAY FUNCTIONS
+// ════════════════════════════════════════════════
 function openGuide(e) {
   if (e) e.preventDefault();
-  document.getElementById('guide-overlay').classList.add('show');
-  document.getElementById('guide-overlay').scrollTop = 0;
+
+  // Tính base URL — hoạt động từ /nv/ và thư mục gốc, iOS PWA và Android
+  var base = window.location.href
+    .split('?')[0].split('#')[0]
+    .replace(/\/nv\/[^\/]+\.html$/, '')
+    .replace(/\/[^\/]+\.html$/, '')
+    .replace(/\/$/, '');
+
+  // Lazy-load tất cả ảnh có data-src từ thư mục /img/
+  document.querySelectorAll('#guide-overlay img[data-src]').forEach(function(img) {
+    var ds = img.getAttribute('data-src');
+    if (ds && (!img.src || img.src === window.location.href)) {
+      img.src = base + '/img/' + ds;
+      img.onerror = function() { this.style.display = 'none'; };
+    }
+  });
+
+  var overlay = document.getElementById('guide-overlay');
+  overlay.classList.add('show');
+  overlay.scrollTop = 0;
   document.body.style.overflow = 'hidden';
 }
 
@@ -945,13 +1046,13 @@ function closeGuide() {
   document.body.style.overflow = '';
 }
 
-function goBack() { closeGuide(); }
+// showPage cho guide tabs (scoped trong #guide-overlay)
 function showPage(id, tab) {
   var overlay = document.getElementById('guide-overlay');
-  overlay.querySelectorAll('.page').forEach(function(p){
+  overlay.querySelectorAll('.page').forEach(function(p) {
     p.classList.remove('active');
   });
-  overlay.querySelectorAll('.nav-tab').forEach(function(t){
+  overlay.querySelectorAll('.nav-tab').forEach(function(t) {
     t.classList.remove('active');
   });
   var el = overlay.querySelector('#' + id);
@@ -960,68 +1061,43 @@ function showPage(id, tab) {
   overlay.scrollTop = 0;
 }
 
-
-
-
-function closeGuide() {
-  document.getElementById('guide-overlay').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-function goBack() {
-  closeGuide();
-}
-function showPage(id, tab) {} // placeholder - dùng trong iframe
-
-
-function closeGuide() {
-  var overlay = document.getElementById('guide-overlay');
-  if (overlay) overlay.classList.remove('show');
-}
-
-// Guide tab navigation (scope trong overlay)
 function showPage(id, tab) {
-  var overlay = document.getElementById('guide-overlay');
-  overlay.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  overlay.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
-  var el = overlay.querySelector('#'+id);
-  if (el) el.classList.add('active');
-  if (tab) tab.classList.add('active');
-  overlay.scrollTo({top:0, behavior:'smooth'});
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  tab.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
-function goBack() {
-  closeGuide();
-}
 
 </script>
 
-
-<!-- Guide overlay nhúng trực tiếp -->
+<!-- ════ GUIDE OVERLAY ════ -->
 <div id="guide-overlay">
-  <div class="guide-back-bar">
-    <button class="guide-back-btn" onclick="closeGuide()">← Quay lại</button>
-    <span style="font-size:14px;font-weight:700;color:#202124;">📋 Hướng dẫn sử dụng</span>
+  <div class="g-back-bar">
+    <button class="g-back-btn" onclick="closeGuide()">← Quay lại</button>
+    <span style="font-size:14px;font-weight:700;color:#202124;flex:1;">📋 Hướng dẫn sử dụng</span>
   </div>
-<!-- Header 
+<!-- Header -->
 <div class="header">
   <h1>📋 Hướng dẫn sử dụng</h1>
   <p>Phần mềm Chấm Công — Công ty CP Siêu Thanh Hà Nội</p>
 </div>
--->
+
 <!-- Navigation -->
 <div class="nav">
   <div class="nav-tab active" onclick="showPage('p1',this)">Chấm công</div>
   <div class="nav-tab" onclick="showPage('p2',this)">Dữ liệu tháng</div>
-  <div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở Telegram</div>
+  <div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở Tele</div>
   <div class="nav-tab" onclick="showPage('p4',this)">Lưu ý</div>
 </div>
 
 <!-- ══ TRANG 1: CHẤM CÔNG ══════════════════════════════════ -->
 <div class="page active" id="p1">
-  <div class="img-wrap">
-      <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/chamcong.jpg" class="guide-img-sm">
-      <div class="img-caption">GIAO DIỆN CHẤM CÔNG</div>
+	<div class="page active" id="p1">
+	  <div class="img-wrap">
+		<img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/chamcong.jpg" class="guide-img-sm">
+      <div class="img-caption">CHẤM CÔNG</div>
     </div>
   <div class="section">
     <div class="section-title">📱 Giao diện chấm công</div>
@@ -1063,9 +1139,9 @@ function goBack() {
       </div>
     </div>
   </div>
-  <div class="img-wrap">
+	<div class="img-wrap">
       <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/hoanthanhcc.jpg" class="guide-img-sm">
-      <div class="img-caption">GIAO DIỆN HOÀN THÀNH CHẤM CÔNG</div>
+      <div class="img-caption">HOÀN THÀNH CHẤM CÔNG</div>
     </div>
   <div class="section">
     <div class="section-title">✅ Màn hình hoàn thành chấm công</div>
@@ -1084,9 +1160,9 @@ function goBack() {
 
 <!-- ══ TRANG 2: DỮ LIỆU THÁNG ════════════════════════════ -->
 <div class="page" id="p2">
-  <div class="img-wrap">
+	<div class="img-wrap">
       <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/monthlydata.jpg" class="guide-img-sm">
-      <div class="img-caption">GIAO DIỆN DỮ LIỆU CHẤM CÔNG</div>
+      <div class="img-caption">DỮ LIỆU CHẤM CÔNG</div>
     </div>
   <div class="section">
     <div class="section-title">📊 Các chỉ số tổng hợp</div>
@@ -1144,6 +1220,7 @@ function goBack() {
         Tải từ Google Play hoặc App Store. Đăng ký / đăng nhập tài khoản cá nhân
       </div>
     </div>
+    
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-body">
@@ -1151,7 +1228,7 @@ function goBack() {
         Quét mã QR bên dưới hoặc tìm kiếm: <strong>@HAST_CHAM_CONG_REMINDER_BOT</strong>
       </div>
     </div>
-    
+
     <!-- ★ CHÈN ẢNH QR BOT:
          Cách 1: dùng link ảnh trực tiếp
            <img src="https://link-anh-cua-ban.png" class="guide-img-sm">
@@ -1161,7 +1238,6 @@ function goBack() {
 
          Cách 3: chèn base64 (không cần host) - paste vào src bên dưới
     -->
-    
     <div class="img-wrap">
       <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/qr-bot.png" class="guide-img-sm">
       <div class="img-caption">Quét QR để tìm bot @HAST_CHAM_CONG_REMINDER_BOT</div>
@@ -1219,6 +1295,18 @@ function showPage(id, tab) {
   tab.classList.add('active');
   window.scrollTo({top:0, behavior:'smooth'});
 }
+
+// Tự động load ảnh từ thư mục /img/ khi mở trang độc lập (không qua overlay)
+document.addEventListener('DOMContentLoaded', function() {
+  var base = window.location.href
+    .split('?')[0].split('#')[0]
+    .replace(/\/[^\/]+\.html$/, '')
+    .replace(/\/$/, '');
+  document.querySelectorAll('img[data-src]').forEach(function(img) {
+    img.src = base + '/img/' + img.getAttribute('data-src');
+    img.onerror = function(){ this.style.display='none'; };
+  });
+});
 
 
 </script>
