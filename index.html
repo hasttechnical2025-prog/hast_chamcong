@@ -1381,46 +1381,7 @@ function showPage(id, tab) {
 
 </div>
 
-<script>
-function showPage(id, tab) {
-  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
-  tab.classList.add('active');
-  window.scrollTo({top:0, behavior:'smooth'});
-}
 
-// Tự động load ảnh từ thư mục /img/ khi mở trang độc lập (không qua overlay)
-document.addEventListener('DOMContentLoaded', function() {
-  var base = window.location.href
-    .split('?')[0].split('#')[0]
-    .replace(/\/[^\/]+\.html$/, '')
-    .replace(/\/$/, '');
-  document.querySelectorAll('img[data-src]').forEach(function(img) {
-    img.src = base + '/img/' + img.getAttribute('data-src');
-    img.onerror = function(){ this.style.display='none'; };
-  });
-});
-
-function installApp() {
-  if (window._installPrompt) {
-    window._installPrompt.prompt();
-    window._installPrompt.userChoice.then(function(r) {
-      window._installPrompt = null;
-    });
-  } else {
-    var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    var isAndroid = /Android/i.test(navigator.userAgent);
-    if (isIOS) {
-      showPopup('📱 Cài app trên iPhone/iPad:\n\n1. Bấm nút Share ⬆️ ở thanh dưới Safari\n2. Chọn "Thêm vào màn hình chính"\n3. Bấm "Thêm" để xác nhận');
-    } else if (isAndroid) {
-      showPopup('📱 Cài app trên Android:\n\n1. Bấm menu ⋮ (3 chấm) góc trên phải Chrome\n2. Chọn "Thêm vào màn hình chính"\n3. Bấm "Thêm" để xác nhận');
-    } else {
-      showPopup('📱 Để cài app:\n\nTrên Chrome: menu ⋮ → "Cài đặt ứng dụng"\nTrên Safari: Share ⬆️ → "Thêm vào màn hình chính"');
-    }
-  }
-}
-</script>
 </div>
 
 </div>
