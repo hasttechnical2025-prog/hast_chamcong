@@ -195,18 +195,24 @@ textarea:focus{border-color:#1a73e8;}
 
 /* Back bar sticky */
 #guide-overlay .g-back-bar {
-  position: sticky;
+  position: fixed;       /* thay sticky → fixed */
   top: 0;
-  z-index: 10;
-  background: rgba(255,255,255,.97);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 10px 16px;
+  left: 0;
+  right: 0;
+  z-index: 10000;        /* cao hơn overlay (9999) */
+  background: #1a73e8;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid #e8e8e8;
-  box-shadow: 0 1px 6px rgba(0,0,0,.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  min-height: 52px;
+}
+#guide-overlay > .nav {
+  margin-top: 52px;   /* đúng bằng chiều cao back-bar */
+}
+#guide-overlay > .header {
+  margin-top: 52px;
 }
 #guide-overlay .g-back-btn {
   display: inline-flex;
@@ -223,9 +229,21 @@ textarea:focus{border-color:#1a73e8;}
   -webkit-tap-highlight-color: transparent;
   transition: background .15s;
 }
-#guide-overlay .g-back-btn:active,
-#guide-overlay .g-back-btn:hover { background: #1a73e8; color: white; }
-
+#guide-overlay .g-back-btn:active {
+  background: rgba(255,255,255,.35);
+}
+#guide-overlay .g-back-bar > span {
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#guide-overlay .g-back-btn:hover { 
+  background: #1a73e8; color: white; 
+}
 
 *{box-sizing:border-box;margin:0;padding:0;}
 #guide-overlay body {font-family:'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#333;
@@ -236,8 +254,17 @@ textarea:focus{border-color:#1a73e8;}
   color:white;padding:24px 20px;text-align:center;}
 #guide-overlay .header img {height:52px;object-fit:contain;margin-bottom:8px;
   filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));}
-#guide-overlay .header h1 {font-size:18px;font-weight:700;margin-bottom:4px;}
-#guide-overlay .header p {font-size:12px;opacity:.85;}
+#guide-overlay .header h1 {
+  color: white !important;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+#guide-overlay .header p {
+  color: rgba(255,255,255,.85) !important;
+  font-size: 13px;
+}
 
 /* Nav tabs */
 #guide-overlay .nav {display:flex;overflow-x:auto;background:white;
