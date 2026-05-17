@@ -20,7 +20,28 @@
 
 <!-- Web App Manifest nhúng inline -->
 <link rel="manifest" href="manifest.json">
-<style>
+<style>#guide-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: #f5f7fa;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* Đảm bảo không bị ảnh hưởng bởi body flex */
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#guide-overlay.show {
+  display: block;
+}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
   min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
@@ -172,17 +193,8 @@ textarea:focus{border-color:#1a73e8;}
 /* ════════════════════════════════════════════════
    GUIDE OVERLAY — full screen, không cần iframe
    ════════════════════════════════════════════════ */
-#guide-overlay {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 9999;
-  background: #f5f7fa;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
-#guide-overlay.show { display: block; }
+
+
 
 /* Back bar sticky */
 #guide-overlay .g-back-bar {
@@ -303,9 +315,7 @@ textarea:focus{border-color:#1a73e8;}
   transition:all .2s;white-space:nowrap;}
 #guide-overlay .back-btn:hover {background:#1a73e8;color:white;}
 #guide-overlay .back-bar-title {font-size:14px;font-weight:700;color:#202124;flex:1;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-
-
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}html.guide-open, html.guide-open body { overflow: hidden !important; }
 </style>
 </head>
 <body>
@@ -1066,30 +1076,45 @@ document.addEventListener('DOMContentLoaded', function() {
 function openGuide(e) {
   if (e) e.preventDefault();
 
-  // Tính base URL — hoạt động từ /nv/ và thư mục gốc, iOS PWA và Android
-  var base = window.location.href
-    .split('?')[0].split('#')[0]
-    .replace(/\/nv\/[^\/]+\.html$/, '')
-    .replace(/\/[^\/]+\.html$/, '')
-    .replace(/\/$/, '');
-
-  // Lazy-load tất cả ảnh có data-src từ thư mục /img/
-  document.querySelectorAll('#guide-overlay img[data-src]').forEach(function(img) {
-    var ds = img.getAttribute('data-src');
-    if (ds && (!img.src || img.src === window.location.href)) {
-      img.src = base + '/img/' + ds;
-      img.onerror = function() { this.style.display = 'none'; };
-    }
-  });
+  // Tính base URL cho ảnh
+  var base = '';
+  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+    base = window.location.origin + window.location.pathname
+      .replace(/\/nv\/[^\/]+\.html$/, '')
+      .replace(/\/[^\/]+\.html$/, '')
+      .replace(/\/$/, '');
+  }
+  if (base) {
+    document.querySelectorAll('#guide-overlay img[data-src]').forEach(function(img) {
+      var ds = img.getAttribute('data-src');
+      if (ds && (!img.src || img.src === window.location.href)) {
+        img.src = base + '/img/' + ds;
+        img.onerror = function() { this.style.display = 'none'; };
+      }
+    });
+  }
 
   var overlay = document.getElementById('guide-overlay');
+
+  // Reset mọi style inline trước
+  overlay.removeAttribute('style');
+
+  // Dùng class 'show' để hiện overlay
   overlay.classList.add('show');
   overlay.scrollTop = 0;
+
+  // Chỉ khóa scroll, KHÔNG set position:fixed trên body (gây vỡ layout)
+  document.documentElement.classList.add('guide-open');
+  document.documentElement.style.overflow = 'hidden';
   document.body.style.overflow = 'hidden';
 }
 
 function closeGuide() {
-  document.getElementById('guide-overlay').classList.remove('show');
+  var overlay = document.getElementById('guide-overlay');
+  overlay.classList.remove('show');
+  // Restore scroll
+  document.documentElement.classList.remove('guide-open');
+  document.documentElement.style.overflow = '';
   document.body.style.overflow = '';
 }
 
@@ -1334,48 +1359,7 @@ function showPage(id, tab) {
 
 </div>
 
-<script>
-function showPage(id, tab) {
-  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
-  tab.classList.add('active');
-  window.scrollTo({top:0, behavior:'smooth'});
-}
 
-// Tự động load ảnh từ thư mục /img/ khi mở trang độc lập (không qua overlay)
-document.addEventListener('DOMContentLoaded', function() {
-  var base = window.location.href
-    .split('?')[0].split('#')[0]
-    .replace(/\/[^\/]+\.html$/, '')
-    .replace(/\/$/, '');
-  document.querySelectorAll('img[data-src]').forEach(function(img) {
-    img.src = base + '/img/' + img.getAttribute('data-src');
-    img.onerror = function(){ this.style.display='none'; };
-  });
-});
-
-
-
-function installApp() {
-  if (window._installPrompt) {
-    // Android: dùng native prompt
-    window._installPrompt.prompt();
-    window._installPrompt.userChoice.then(function(r) {
-      if (r.outcome === 'accepted') {
-        document.getElementById('btn-install').style.display = 'none';
-      }
-      window._installPrompt = null;
-    });
-  } else {
-    // iOS hoặc chưa có prompt: hướng dẫn thủ công
-    var msg = navigator.userAgent.match(/iPhone|iPad|iPod/i)
-      ? '📱 Trên iOS Safari:\n1. Bấm nút Share (⬆️)\n2. Chọn "Thêm vào màn hình chính"'
-      : '📱 Trên Android Chrome:\n1. Bấm menu ⋮ (3 chấm)\n2. Chọn "Thêm vào màn hình chính"';
-    alert(msg);
-  }
-}
-</script>
 </div>
 
 </div>
