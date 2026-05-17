@@ -369,7 +369,7 @@ textarea:focus{border-color:#1a73e8;}
     </button>
     <button class="btn" id="btn-history-main" style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;" onclick="showHistory('main')">📊 Dữ liệu chấm công trong tháng</button>
     <button class="btn" id="btn-install"
-      style="background:#e6f4ea;color:#137333;font-size:14px;display:none;margin-top:0;"
+      style="background:#e6f4ea;color:#137333;font-size:14px;display:flex;margin-top:0;"
       onclick="installApp()">
       📲 Thêm vào màn hình chính
     </button>
@@ -1359,20 +1359,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function installApp() {
   if (window._installPrompt) {
-    // Android: dùng native prompt
     window._installPrompt.prompt();
     window._installPrompt.userChoice.then(function(r) {
-      if (r.outcome === 'accepted') {
-        document.getElementById('btn-install').style.display = 'none';
-      }
       window._installPrompt = null;
     });
   } else {
-    // iOS hoặc chưa có prompt: hướng dẫn thủ công
-    var msg = navigator.userAgent.match(/iPhone|iPad|iPod/i)
-      ? '📱 Trên iOS Safari:\n1. Bấm nút Share (⬆️)\n2. Chọn "Thêm vào màn hình chính"'
-      : '📱 Trên Android Chrome:\n1. Bấm menu ⋮ (3 chấm)\n2. Chọn "Thêm vào màn hình chính"';
-    alert(msg);
+    var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    var isAndroid = /Android/i.test(navigator.userAgent);
+    if (isIOS) {
+      showPopup('📱 Cài app trên iPhone/iPad:\n\n1. Bấm nút Share ⬆️ ở thanh dưới Safari\n2. Chọn "Thêm vào màn hình chính"\n3. Bấm "Thêm" để xác nhận');
+    } else if (isAndroid) {
+      showPopup('📱 Cài app trên Android:\n\n1. Bấm menu ⋮ (3 chấm) góc trên phải Chrome\n2. Chọn "Thêm vào màn hình chính"\n3. Bấm "Thêm" để xác nhận');
+    } else {
+      showPopup('📱 Để cài app:\n\nTrên Chrome: menu ⋮ → "Cài đặt ứng dụng"\nTrên Safari: Share ⬆️ → "Thêm vào màn hình chính"');
+    }
   }
 }
 </script>
