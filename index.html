@@ -370,7 +370,7 @@ textarea:focus{border-color:#1a73e8;}
     <button class="btn" id="btn-history-main" style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;" onclick="showHistory('main')">📊 Dữ liệu chấm công trong tháng</button>
 
   <div style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
-      Bản quyền © Công ty CP Siêu Thanh Hà Nội · v2026.05
+      Bản quyền © Công ty CP Siêu Thanh Hà Nội · <span id="app-ver"></span>
     </div>
   </div>
 
@@ -415,7 +415,8 @@ textarea:focus{border-color:#1a73e8;}
 // ============================================================
 // VERSION & SERVICE WORKER
 // ============================================================
-const APP_VERSION = 'v2026.05.16';
+// APP_VERSION: đọc động từ sw.js — không cần khai báo cứng
+var APP_VERSION = '';
 
 // Đăng ký Service Worker
 if ('serviceWorker' in navigator) {
@@ -440,28 +441,53 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Version check — backup cho iOS Safari PWA
+// ── Version check: đọc VERSION từ sw.js ──────────────────
+// Chỉ cần đổi VERSION trong sw.js khi deploy → mọi thứ tự cập nhật
 (function checkVersion() {
   var base = window.location.href
     .split('?')[0].split('#')[0]
     .replace(/\/nv\/[^\/]+\.html$/, '')
     .replace(/\/[^\/]+\.html$/, '')
     .replace(/\/$/, '');
-  fetch(base + '/version.txt?t=' + Date.now(), { cache: 'no-store' })
-    .then(function(r){ return r.text(); })
-    .then(function(sv) {
-      sv = sv.trim();
+
+  fetch(base + '/sw.js?t=' + Date.now(), { cache: 'no-store' })
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      var m = text.match(/const VERSION\s*=\s*['"]([^'"]+)['"]/);
+      if (!m) return;
+      var sv = m[1].trim();
+
+      // Gán APP_VERSION và hiển thị footer ngay
+      APP_VERSION = sv;
+      var el = document.getElementById('app-ver');
+      if (el) el.textContent = sv;
+
+      // So sánh với version đã lưu
       var lv = localStorage.getItem('hstc_ver');
+      localStorage.setItem('hstc_ver', sv);
+
       if (lv && lv !== sv) {
-        localStorage.setItem('hstc_ver', sv);
+        // Version mới → xóa toàn bộ cache → reload
+        console.log('[Ver] Update:', lv, '→', sv);
         if ('caches' in window) {
-          caches.keys().then(function(ks){
-            Promise.all(ks.map(function(k){ return caches.delete(k); }))
-              .then(function(){ window.location.reload(true); });
+          caches.keys().then(function(ks) {
+            Promise.all(ks.map(function(k) { return caches.delete(k); }))
+              .then(function() { window.location.reload(true); });
           });
-        } else { window.location.reload(true); }
-      } else { localStorage.setItem('hstc_ver', sv); }
-    }).catch(function(){});
+        } else {
+          window.location.reload(true);
+        }
+      }
+    })
+    .catch(function() {
+      // Offline: dùng version đã lưu trong localStorage
+      var cached = localStorage.getItem('hstc_ver');
+      if (cached) {
+        APP_VERSION = cached;
+        var el = document.getElementById('app-ver');
+        if (el) el.textContent = cached;
+      }
+    });
 })();
 
 // ═══════════════════════════════════════════
@@ -1090,14 +1116,15 @@ function showPage(id, tab) {
 <div class="nav">
   <div class="nav-tab active" onclick="showPage('p1',this)">Chấm công</div>
   <div class="nav-tab" onclick="showPage('p2',this)">Dữ liệu tháng</div>
-  <div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở Telegram</div>
+  <div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở Tele</div>
   <div class="nav-tab" onclick="showPage('p4',this)">Lưu ý</div>
 </div>
 
 <!-- ══ TRANG 1: CHẤM CÔNG ══════════════════════════════════ -->
 <div class="page active" id="p1">
-	<div class="img-wrap">
-      <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/chamcong.jpg" class="guide-img-sm">
+	<div class="page active" id="p1">
+	  <div class="img-wrap">
+		<img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/chamcong.jpg" class="guide-img-sm">
       <div class="img-caption">CHẤM CÔNG</div>
     </div>
   <div class="section">
@@ -1221,13 +1248,7 @@ function showPage(id, tab) {
         Tải từ Google Play hoặc App Store. Đăng ký / đăng nhập tài khoản cá nhân
       </div>
     </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-body">
-        <strong>Nhắn tin cho bot</strong>
-        Gửi bất kỳ tin nhắn nào cho bot (ví dụ: "xin chào")
-      </div>
-    </div>
+    
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-body">
@@ -1272,7 +1293,6 @@ function showPage(id, tab) {
 <div class="page" id="p4">
 
   <div class="section">
-    <div class="section-title">⚠️ Lưu ý khi sử dụng</div>
     <div class="section-title">⚠️ Lưu ý khi sử dụng</div>
     <p>Chấm công <strong>4 lần/ngày</strong>:</p>
     <ul>
