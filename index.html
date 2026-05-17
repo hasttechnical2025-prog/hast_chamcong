@@ -19,7 +19,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
 <!-- Web App Manifest nhúng inline -->
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" id="pwa-manifest" href="manifest.json">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
@@ -412,6 +412,19 @@ textarea:focus{border-color:#1a73e8;}
 
 
 <script>
+// Fix đường dẫn manifest cho /nv/ subfolder
+(function() {
+  if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') return;
+  var base = window.location.origin +
+    window.location.pathname
+      .replace(/\/nv\/[^\/]+\.html$/, '')
+      .replace(/\/[^\/]+\.html$/, '')
+      .replace(/\/$/, '');
+  var el = document.getElementById('pwa-manifest');
+  if (el) el.setAttribute('href', base + '/manifest.json');
+})();
+
+
 // ============================================================
 // VERSION & SERVICE WORKER
 // ============================================================
@@ -421,18 +434,44 @@ var APP_VERSION = '';
 // Đăng ký Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js')
-      .then(function(reg) {
-        if (reg.waiting) reg.waiting.postMessage('skipWaiting');
-        reg.addEventListener('updatefound', function() {
-          var sw = reg.installing;
-          sw.addEventListener('statechange', function() {
-            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-              sw.postMessage('skipWaiting');
-            }
+    // Chỉ đăng ký SW trên http/https (không chạy trong preview/iframe)
+    if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
+      console.log('[SW] Skipped: not http/https');
+    } else {
+      // Tính base URL đúng cho cả /nv/ subfolder và thư mục gốc
+      var swBase = window.location.origin +
+        window.location.pathname
+          .replace(/\/nv\/[^\/]+\.html$/, '')
+          .replace(/\/[^\/]+\.html$/, '')
+          .replace(/\/$/, '');
+
+      navigator.serviceWorker.register(swBase + '/sw.js', { scope: swBase + '/' })
+        .then(function(reg) {
+          if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+          reg.addEventListener('updatefound', function() {
+            var sw = reg.installing;
+            sw.addEventListener('statechange', function() {
+              if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                sw.postMessage('skipWaiting');
+              }
+            });
           });
-        });
-      }).catch(function(e){ console.log('[SW]',e); });
+        }).catch(function(e) { console.log('[SW]', e); });
+
+      // Android Chrome: bắt sự kiện cài app
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window._installPrompt = e;
+        var btn = document.getElementById('btn-install');
+        if (btn) btn.style.display = 'flex';
+      });
+
+      window.addEventListener('appinstalled', function() {
+        window._installPrompt = null;
+        var btn = document.getElementById('btn-install');
+        if (btn) btn.style.display = 'none';
+      });
+    }
 
     var refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
@@ -1336,7 +1375,18 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-
+function installApp() {
+  if (window._installPrompt) {
+    window._installPrompt.prompt();
+    window._installPrompt.userChoice.then(function(result) {
+      if (result.outcome === 'accepted') {
+        var btn = document.getElementById('btn-install');
+        if (btn) btn.style.display = 'none';
+      }
+      window._installPrompt = null;
+    });
+  }
+}
 </script>
 </div>
 
