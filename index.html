@@ -19,7 +19,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
 <!-- Web App Manifest nhúng inline -->
-<link rel="manifest" id="pwa-manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
@@ -368,6 +368,11 @@ textarea:focus{border-color:#1a73e8;}
       ✅ Chấm công
     </button>
     <button class="btn" id="btn-history-main" style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;" onclick="showHistory('main')">📊 Dữ liệu chấm công trong tháng</button>
+    <button class="btn" id="btn-install"
+      style="background:#e6f4ea;color:#137333;font-size:14px;display:none;margin-top:0;"
+      onclick="installApp()">
+      📲 Thêm vào màn hình chính
+    </button>
 
   <div style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
       Bản quyền © Công ty CP Siêu Thanh Hà Nội · <span id="app-ver"></span>
@@ -412,19 +417,6 @@ textarea:focus{border-color:#1a73e8;}
 
 
 <script>
-// Fix đường dẫn manifest cho /nv/ subfolder
-(function() {
-  if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') return;
-  var base = window.location.origin +
-    window.location.pathname
-      .replace(/\/nv\/[^\/]+\.html$/, '')
-      .replace(/\/[^\/]+\.html$/, '')
-      .replace(/\/$/, '');
-  var el = document.getElementById('pwa-manifest');
-  if (el) el.setAttribute('href', base + '/manifest.json');
-})();
-
-
 // ============================================================
 // VERSION & SERVICE WORKER
 // ============================================================
@@ -434,29 +426,18 @@ var APP_VERSION = '';
 // Đăng ký Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    // Chỉ đăng ký SW trên http/https (không chạy trong preview/iframe)
-    if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
-      console.log('[SW] Skipped: not http/https');
-    } else {
-      // Tính base URL đúng cho cả /nv/ subfolder và thư mục gốc
-      var swBase = window.location.origin +
-        window.location.pathname
-          .replace(/\/nv\/[^\/]+\.html$/, '')
-          .replace(/\/[^\/]+\.html$/, '')
-          .replace(/\/$/, '');
-
-      navigator.serviceWorker.register(swBase + '/sw.js', { scope: swBase + '/' })
-        .then(function(reg) {
-          if (reg.waiting) reg.waiting.postMessage('skipWaiting');
-          reg.addEventListener('updatefound', function() {
-            var sw = reg.installing;
-            sw.addEventListener('statechange', function() {
-              if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-                sw.postMessage('skipWaiting');
-              }
-            });
+    navigator.serviceWorker.register('./sw.js')
+      .then(function(reg) {
+        if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+        reg.addEventListener('updatefound', function() {
+          var sw = reg.installing;
+          sw.addEventListener('statechange', function() {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              sw.postMessage('skipWaiting');
+            }
           });
-        }).catch(function(e) { console.log('[SW]', e); });
+        });
+      }).catch(function(e){ console.log('[SW]',e);
 
       // Android Chrome: bắt sự kiện cài app
       window.addEventListener('beforeinstallprompt', function(e) {
@@ -470,8 +451,7 @@ if ('serviceWorker' in navigator) {
         window._installPrompt = null;
         var btn = document.getElementById('btn-install');
         if (btn) btn.style.display = 'none';
-      });
-    }
+      }); });
 
     var refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
@@ -1144,7 +1124,7 @@ function showPage(id, tab) {
   <div class="g-back-bar">
     <button class="g-back-btn" onclick="closeGuide()">← Quay lại</button>
     <span style="font-size:14px;font-weight:700;color:#202124;flex:1;">📋 Hướng dẫn sử dụng</span>
-  </div>
+  
 <!-- Header -->
 <div class="header">
   <h1>📋 Hướng dẫn sử dụng</h1>
@@ -1375,20 +1355,30 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
+
+
 function installApp() {
   if (window._installPrompt) {
+    // Android: dùng native prompt
     window._installPrompt.prompt();
-    window._installPrompt.userChoice.then(function(result) {
-      if (result.outcome === 'accepted') {
-        var btn = document.getElementById('btn-install');
-        if (btn) btn.style.display = 'none';
+    window._installPrompt.userChoice.then(function(r) {
+      if (r.outcome === 'accepted') {
+        document.getElementById('btn-install').style.display = 'none';
       }
       window._installPrompt = null;
     });
+  } else {
+    // iOS hoặc chưa có prompt: hướng dẫn thủ công
+    var msg = navigator.userAgent.match(/iPhone|iPad|iPod/i)
+      ? '📱 Trên iOS Safari:\n1. Bấm nút Share (⬆️)\n2. Chọn "Thêm vào màn hình chính"'
+      : '📱 Trên Android Chrome:\n1. Bấm menu ⋮ (3 chấm)\n2. Chọn "Thêm vào màn hình chính"';
+    alert(msg);
   }
 }
 </script>
 </div>
 
+</div>
+</div>
 </body>
 </html>
