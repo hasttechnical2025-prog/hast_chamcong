@@ -1137,31 +1137,31 @@ function showPage(id, tab) {
 </script>
 
 <!-- ════ GUIDE OVERLAY ════ -->
+<!-- Guide overlay nhúng trực tiếp -->
 <div id="guide-overlay">
-  <div class="g-back-bar">
-    <button class="g-back-btn" onclick="closeGuide()">← Quay lại</button>
-    <span style="font-size:14px;font-weight:700;color:#202124;flex:1;">📋 Hướng dẫn sử dụng</span>
+  <div class="guide-back-bar">
+    <button class="guide-back-btn" onclick="closeGuide()">← Quay lại</button>
+    <span style="font-size:14px;font-weight:700;color:#202124;">📋 Hướng dẫn sử dụng</span>
   </div>
-<!-- Header -->
+<!-- Header 
 <div class="header">
   <h1>📋 Hướng dẫn sử dụng</h1>
   <p>Phần mềm Chấm Công — Công ty CP Siêu Thanh Hà Nội</p>
 </div>
-
+-->
 <!-- Navigation -->
 <div class="nav">
   <div class="nav-tab active" onclick="showPage('p1',this)">Chấm công</div>
   <div class="nav-tab" onclick="showPage('p2',this)">Dữ liệu tháng</div>
-  <div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở Tele</div>
+  <div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở Telegram</div>
   <div class="nav-tab" onclick="showPage('p4',this)">Lưu ý</div>
 </div>
 
 <!-- ══ TRANG 1: CHẤM CÔNG ══════════════════════════════════ -->
 <div class="page active" id="p1">
-	<div class="page active" id="p1">
-	  <div class="img-wrap">
-		<img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/chamcong.jpg" class="guide-img-sm">
-      <div class="img-caption">CHẤM CÔNG</div>
+  <div class="img-wrap">
+      <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/chamcong.jpg" class="guide-img-sm">
+      <div class="img-caption">GIAO DIỆN CHẤM CÔNG</div>
     </div>
   <div class="section">
     <div class="section-title">📱 Giao diện chấm công</div>
@@ -1203,9 +1203,9 @@ function showPage(id, tab) {
       </div>
     </div>
   </div>
-	<div class="img-wrap">
+  <div class="img-wrap">
       <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/hoanthanhcc.jpg" class="guide-img-sm">
-      <div class="img-caption">HOÀN THÀNH CHẤM CÔNG</div>
+      <div class="img-caption">GIAO DIỆN HOÀN THÀNH CHẤM CÔNG</div>
     </div>
   <div class="section">
     <div class="section-title">✅ Màn hình hoàn thành chấm công</div>
@@ -1224,9 +1224,9 @@ function showPage(id, tab) {
 
 <!-- ══ TRANG 2: DỮ LIỆU THÁNG ════════════════════════════ -->
 <div class="page" id="p2">
-	<div class="img-wrap">
+  <div class="img-wrap">
       <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/monthlydata.jpg" class="guide-img-sm">
-      <div class="img-caption">DỮ LIỆU CHẤM CÔNG</div>
+      <div class="img-caption">GIAO DIỆN DỮ LIỆU CHẤM CÔNG</div>
     </div>
   <div class="section">
     <div class="section-title">📊 Các chỉ số tổng hợp</div>
@@ -1284,7 +1284,6 @@ function showPage(id, tab) {
         Tải từ Google Play hoặc App Store. Đăng ký / đăng nhập tài khoản cá nhân
       </div>
     </div>
-    
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-body">
@@ -1292,7 +1291,7 @@ function showPage(id, tab) {
         Quét mã QR bên dưới hoặc tìm kiếm: <strong>@HAST_CHAM_CONG_REMINDER_BOT</strong>
       </div>
     </div>
-
+    
     <!-- ★ CHÈN ẢNH QR BOT:
          Cách 1: dùng link ảnh trực tiếp
            <img src="https://link-anh-cua-ban.png" class="guide-img-sm">
@@ -1302,6 +1301,7 @@ function showPage(id, tab) {
 
          Cách 3: chèn base64 (không cần host) - paste vào src bên dưới
     -->
+    
     <div class="img-wrap">
       <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/qr-bot.png" class="guide-img-sm">
       <div class="img-caption">Quét QR để tìm bot @HAST_CHAM_CONG_REMINDER_BOT</div>
