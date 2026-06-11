@@ -270,7 +270,7 @@ textarea:focus{border-color:#1a73e8;}
 
 
 /* ── Header (app bar cố định) ── */
-.header{background:linear-gradient(135deg,#1a73e8,#1557b0);
+#main-screen .header{background:linear-gradient(135deg,#1a73e8,#1557b0);
   color:white;padding:14px 22px;
   display:flex;align-items:center;justify-content:space-between;
   box-shadow:0 2px 12px rgba(26,115,232,.25);
@@ -279,8 +279,8 @@ textarea:focus{border-color:#1a73e8;}
 .header-title .badge{width:38px;height:38px;border-radius:10px;
   background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;
   font-size:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);}
-.header h1{font-size:18px;font-weight:700;}
-.header .sub{font-size:12px;opacity:.85;margin-top:3px;font-weight:500;}
+#main-screen .header h1{font-size:18px;font-weight:700;}
+#main-screen .header .sub{font-size:12px;opacity:.85;margin-top:3px;font-weight:500;}
 .logout-btn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.45);
   color:white;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;
   transition:all .18s;}
