@@ -111,6 +111,15 @@ document.addEventListener('DOMContentLoaded', () => {
   initPWA();
   initClock();
 
+  // Kiểm tra chặn Desktop (máy tính)
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (!isMobile) {
+    const blocker = document.getElementById('desktop-blocker');
+    if (blocker) blocker.style.display = 'flex';
+    document.getElementById('main').style.display = 'none';
+    return; // Khóa toàn bộ tính năng bên dưới nếu mở trên PC
+  }
+
   // 2. Load và xác thực tên nhân viên qua Token
   initEmail();
 
