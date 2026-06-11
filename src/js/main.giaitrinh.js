@@ -5,6 +5,10 @@ import { setSupabaseToken } from './supabaseClient.js';
 
 
 // Khởi tạo biến toàn cục
+let _pw = '';
+let _isAdmin = false;
+let _tbpDept = '';
+
 window._isClientReady = false;
 window.supabaseClient = supabaseClient;
 window.SUPABASE_KEY = SUPABASE_KEY;
@@ -1395,3 +1399,21 @@ document.addEventListener('click', function(e) {
     fnMap[action]();
   }
 });
+
+
+
+  }
+});
+\n
+// Bắt sự kiện phím Enter trên ô mật khẩu (Chạy trực tiếp vì ES Module đã defer)
+{
+  const pwInput = document.getElementById('pw-input');
+  if (pwInput) {
+    pwInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        login();
+      }
+    });
+  }
+}

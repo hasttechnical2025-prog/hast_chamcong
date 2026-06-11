@@ -18,6 +18,22 @@
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#f0f4f8; display:flex; align-items:center; justify-content:center; z-index:9999;">
+  <div class="card" style="width:100%; max-width:360px; padding:30px; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+    <span style="font-size: 48px;">🏢</span>
+    <h2 style="margin-top:10px; margin-bottom:5px; color:#1a73e8;">HSTC Admin Portal</h2>
+    <p style="font-size:12px; color:#5f6368; margin-bottom:20px;">Đăng nhập để quản trị hệ thống</p>
+    <div class="form-group" style="text-align:left;">
+      <label>Mật khẩu quản trị</label>
+      <input type="password" id="admin-pw-input" placeholder="Nhập mật khẩu..." style="width:100%; padding:10px; box-sizing:border-box;">
+    </div>
+    <div id="login-err" style="color:#c5221f; font-size:12px; margin-top:8px; display:none;"></div>
+    <button class="btn btn-blue" id="btn-admin-login" style="width:100%; margin-top:15px; padding:10px;" data-action="adminLogin">🔐 Đăng nhập</button>
+  </div>
+</div>
+
+
 <!-- NAVIGATION BAR -->
 <div class="navbar">
   <div class="nav-logo">

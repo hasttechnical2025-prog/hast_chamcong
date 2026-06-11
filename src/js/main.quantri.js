@@ -1,6 +1,7 @@
 import { supabaseClient, recreateSupabaseClient } from './supabaseClient.js';
 import { SUPABASE_KEY } from './config.js';
-import { adminWrite } from './api.js';
+import { adminWrite, loginAdmin } from './api.js';
+import { setSupabaseToken } from './supabaseClient.js';
 
 
 // Khởi tạo biến toàn cục
@@ -31,12 +32,13 @@ function initSupabase() {
 }
 
 // Chuyển đổi các tab giao diện
-function switchTab(tabId) {
+function switchTab(tabId, tabElement) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
 
   // Active tab mới
-  event.target.classList.add('active');
+  const targetTab = tabElement || document.querySelector(`.nav-tab[data-tab="${tabId}"]`);
+  if (targetTab) targetTab.classList.add('active');
   document.getElementById('panel-' + tabId).classList.add('active');
 
   // Tải dữ liệu tương ứng của tab đó nếu Supabase đã sẵn sàng
@@ -1521,7 +1523,8 @@ document.addEventListener('click', function(e) {
   // Vì chúng ta xài module, các hàm không nằm trên window. Ta dùng eval gián tiếp qua hàm wrap,
   // hoặc gọi trực tiếp vì ta biết tên hàm.
   const fnMap = {
-    switchTab: () => switchTab(args[0]),
+    switchTab: () => switchTab(args[0], target),
+    adminLogin: () => adminLogin(),
     startDeployTestProcess: () => startDeployTestProcess(),
     startDeployProcess: () => startDeployProcess(),
     clearConsole: () => clearConsole(),
@@ -1576,3 +1579,16 @@ document.addEventListener('click', function(e) {
     fnMap[action]();
   }
 });
+\n
+// Bắt sự kiện phím Enter trên ô mật khẩu (Chạy trực tiếp vì ES Module đã defer)
+{
+  const pwInput = document.getElementById('admin-pw-input');
+  if (pwInput) {
+    pwInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        adminLogin();
+      }
+    });
+  }
+}
