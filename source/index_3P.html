@@ -1,0 +1,2187 @@
+<!DOCTYPE html>
+<html lang="vi">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chấm Công - Siêu Thanh Hà Nội</title>
+
+<!-- PWA: Add to Home Screen -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Chấm Công">
+<meta name="application-name" content="Chấm Công">
+<meta name="theme-color" content="#1a73e8">
+
+<!-- Icons nhúng thẳng (không cần file ngoài) -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<!-- Web App Manifest nhúng inline -->
+<link rel="manifest" href="manifest.json">
+<style>#guide-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: #f5f7fa;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* Đảm bảo không bị ảnh hưởng bởi body flex */
+  margin: 0;
+  padding: 0;
+  padding-top: 0 !important
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#guide-overlay.show {
+  display: block;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+.card{background:white;border-radius:18px;box-shadow:0 4px 28px rgba(0,0,0,.12);
+  padding:28px 22px;max-width:420px;width:100%;}
+
+.header{text-align:center;margin-bottom:0px;}
+.header h1{color:#1a73e8;font-size:21px;font-weight:700;margin-top:6px;}
+.header p{color:#777;font-size:13px;margin-top:3px;}
+
+.clock-box{background:#f8f9fa;border-radius:12px;padding:12px;
+  text-align:center;margin-bottom:18px;}
+.clock-box .time{font-size:30px;font-weight:700;color:#202124;letter-spacing:2px;}
+.clock-box .date{font-size:13px;color:#666;margin-top:3px;}
+
+/* Email block */
+.email-block{margin-bottom:14px;}
+label{display:block;font-size:13px;color:#555;font-weight:600;margin-bottom:5px;}
+
+/* Email đã lưu */
+.email-saved{display:flex;align-items:center;justify-content:space-between;
+  border:1.5px solid #1a73e8;border-radius:10px;padding:10px 14px;
+  background:#e8f0fe;cursor:pointer;}
+.email-saved .addr{font-size:15px;font-weight:600;color:#1a73e8;word-break:break-all;}
+
+/* Input email */
+.email-input-wrap{display:flex;gap:8px;align-items:stretch;}
+.email-input-wrap input{flex:1;border:1.5px solid #dadce0;border-radius:10px;
+  padding:11px 13px;font-size:15px;outline:none;
+  transition:border-color .2s;font-family:inherit;}
+.email-input-wrap input:focus{border-color:#1a73e8;}
+.btn-confirm-email{background:#1a73e8;color:white;border:none;border-radius:10px;
+  padding:0 16px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-confirm-email:hover{background:#1557b0;}
+
+.email-hint{font-size:12px;color:#888;margin-top:5px;}
+
+textarea{width:100%;border:1.5px solid #dadce0;border-radius:10px;
+  padding:10px 12px;font-size:14px;resize:none;outline:none;
+  transition:border-color .2s;font-family:inherit;}
+textarea:focus{border-color:#1a73e8;}
+.field{margin-bottom:14px;}
+
+/* Location */
+.loc{border-radius:12px;padding:13px 15px;font-size:13px;
+  display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;}
+.loc.idle {background:#f1f3f4;color:#555;}
+.loc.ok   {background:#e6f4ea;color:#137333;}
+.loc.warn {background:#fef7e0;color:#8a4f00;}
+.loc.err  {background:#fce8e6;color:#c5221f;}
+.loc .li{font-size:20px;flex-shrink:0;margin-top:1px;}
+.loc .lb strong{display:block;font-size:14px;margin-bottom:2px;}
+.loc .lb span{display:block;line-height:1.7;}
+
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;
+  font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:8px;transition:all .2s;margin-bottom:10px;}
+.btn:last-child{margin-bottom:0;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.blue {background:#1a73e8;color:#fff;}
+.blue:hover:not(:disabled){background:#1557b0;}
+.green{background:#34a853;color:#fff;}
+.green:hover:not(:disabled){background:#137333;}
+.gray {background:#f1f3f4;color:#444;font-size:14px;font-weight:500;}
+.gray:hover:not(:disabled){background:#e0e0e0;}
+
+.spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Custom popup */
+#popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
+  z-index:999;align-items:center;justify-content:center;padding:24px;}
+#popup-overlay.show{display:flex;}
+.popup-box{background:white;border-radius:16px;padding:24px 22px;
+  max-width:300px;width:100%;text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.18);animation:pop .2s ease;}
+@keyframes pop{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.popup-title{font-size:15px;font-weight:700;color:#1a73e8;margin-bottom:10px;}
+.popup-msg{font-size:14px;color:#333;line-height:1.6;margin-bottom:18px;}
+.popup-btn{background:#1a73e8;color:white;border:none;border-radius:10px;
+  padding:11px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%;}
+.popup-btn:hover{background:#1557b0;}
+
+/* History screen */
+#history{display:none;padding:4px 0;}
+#history.show{display:block;}
+.hist-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;gap:8px;flex-wrap:wrap;}
+.hist-header h2{font-size:16px;font-weight:700;color:#1a73e8;margin:0;}
+/* month-nav removed */
+.hist-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.hist-stat{background:#f8f9fa;border-radius:10px;padding:10px;text-align:center;}
+.hist-stat .val{font-size:20px;font-weight:700;color:#1a73e8;}
+.hist-stat .lbl{font-size:11px;color:#888;margin-top:2px;}
+.hist-table{width:100%;border-collapse:collapse;font-size:12px;}
+.hist-table th{background:#1a73e8;color:white;padding:7px 4px;text-align:center;
+  position:sticky;top:0;font-size:11px;}
+.hist-table td{padding:6px 4px;text-align:center;border-bottom:1px solid #f0f0f0;font-size:12px;}
+.hist-table td:nth-child(1){min-width:86px;font-weight:600;}
+.hist-table td:nth-child(2){color:#888;font-size:11px;white-space:nowrap;}
+.hist-table td:last-child{text-align:left;font-size:12px;color:#555;min-width:86px;max-width:100px;word-break:break-word;}
+.hist-table th:last-child{min-width:86px;}
+.hist-table tr.weekend td{background:#f5f5f5 !important;color:#bbb;}
+.hist-table tr.weekend td:nth-child(1){color:#aaa;}
+.hist-table tr.weekend td:nth-child(2){color:#e0e0e0;font-weight:700;}
+.hist-table tr.no-reason td:last-child{color:transparent;}
+.hist-table tr.all-ok td{background:#f0fdf4;}
+.hist-table tr.absent td{background:#fef2f2;}
+.hist-table tr.partial td{background:#fefce8;}
+.grade-a{color:#137333;font-weight:700;}
+.grade-b{color:#b45309;font-weight:700;}
+.grade-d{color:#c5221f;font-weight:700;}
+.hist-loading{text-align:center;padding:30px;color:#888;font-size:14px;}
+.hist-scroll {
+  max-height: 500px;  /* ~15 dòng */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Result */
+#done{display:none;text-align:center;padding:8px 0;}
+#done.show{display:block;}
+.main.hide{display:none;}
+.r-emoji{font-size:56px;margin-bottom:8px;}
+.r-title{font-size:20px;font-weight:700;margin-bottom:14px;}
+.rows{background:#f8f9fa;border-radius:12px;padding:14px 16px;
+  text-align:left;margin-bottom:18px;}
+.row{display:flex;justify-content:space-between;padding:7px 0;
+  font-size:14px;border-bottom:1px solid #eee;}
+.row:last-child{border-bottom:none;}
+.row .l{color:#888;font-size:13px;flex-shrink:0;padding-right:8px;}
+.row .v{font-weight:600;color:#202124;text-align:right;word-break:break-all;}
+
+.hist-table tr.holiday td{background:#e8f5e9 !important;}
+.hist-table tr.holiday td:nth-child(1){color:#2e7d32;font-weight:600;}
+.hist-table tr.holiday td:nth-child(2){color:#2e7d32;font-weight:700;}
+.hist-table tr.holiday td:last-child{color:#2e7d32;font-style:italic;font-weight:600;}
+.help-btn{display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;background:#e8e8e8;color:#999;
+  font-size:12px;font-weight:700;text-decoration:none;margin-left:6px;
+  vertical-align:middle;transition:all .2s;border:1px solid #ddd;cursor:pointer;}
+.help-btn:hover{background:#1a73e8;color:white;border-color:#1a73e8;}
+.guide-btn{display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:10px;background:#f1f3f4;color:#666;
+  font-size:11px;font-weight:600;text-decoration:none;margin-left:6px;
+  vertical-align:middle;transition:all .2s;border:1px solid #e0e0e0;}
+.guide-btn:hover{background:#1a73e8;color:white;border-color:#1a73e8;}
+.footer-row{display:flex;align-items:center;justify-content:center;
+  gap:4px;flex-wrap:wrap;}
+
+/* ════════════════════════════════════════════════
+   GUIDE OVERLAY — full screen, không cần iframe
+   ════════════════════════════════════════════════ */
+
+/* Back bar sticky */
+#guide-overlay .g-back-bar {
+  position: fixed;       /* thay sticky → fixed */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;        /* cao hơn overlay (9999) */
+  background: #1a73e8;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  min-height: 52px;
+}
+#guide-overlay > .nav {
+  margin-top: 0;
+}
+#guide-overlay > .header {
+  margin-top: 0px;
+}
+#guide-overlay > *:nth-child(2) {
+  margin-top: 52px;  /* đúng bằng chiều cao back-bar */
+}
+#guide-overlay .g-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #f1f3f4;
+  color: #444;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+}
+#guide-overlay .g-back-btn:active {
+  background: rgba(255,255,255,.35);
+}
+#guide-overlay .g-back-bar > span {
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#guide-overlay .g-back-btn:hover {
+  background: #1a73e8; color: white;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+#guide-overlay body {font-family:'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#333;
+  padding:0 0 40px;}
+
+/* Header */
+#guide-overlay .header {
+  display: none; /* Bỏ header */
+}
+#guide-overlay .header img {height:52px;object-fit:contain;margin-bottom:8px;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));}
+#guide-overlay .header h1 {
+  color: white !important;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+#guide-overlay .header p {
+  color: rgba(255,255,255,.85) !important;
+  font-size: 13px;
+}
+
+/* Nav tabs */
+#guide-overlay .nav {
+  display:flex;overflow-x:auto;background:white;
+  border-bottom:2px solid #e0e0e0;position:fixed;top:52px;left:0;right:0;z-index:9999;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);margin-top: 0 !important;
+  padding-top: 0;
+  height: 44px;
+}
+#guide-overlay .nav-tab {flex-shrink:0;padding:12px 16px;font-size:13px;font-weight:600;
+  color:#666;cursor:pointer;border-bottom:2px solid transparent;
+  margin-bottom:-2px;white-space:nowrap;transition:all .2s;}
+#guide-overlay .nav-tab.active {color:#1a73e8;border-bottom-color:#1a73e8;}
+#guide-overlay .nav-tab:hover {color:#1a73e8;background:#f8f9fa;}
+
+/* Content */
+#guide-overlay .page {display:none;max-width:680px;margin:96px auto 0;padding:20px 16px;}
+#guide-overlay .page.active {display:block;}
+
+/* Section */
+#guide-overlay .section {background:white;border-radius:12px;padding:18px 16px;
+  margin-bottom:16px;box-shadow:0 1px 6px rgba(0,0,0,.07);}
+#guide-overlay .section-title {font-size:15px;font-weight:700;color:#1a73e8;
+  margin-bottom:12px;padding-bottom:8px;
+  border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:6px;}
+
+/* Text */
+#guide-overlay p {font-size:14px;line-height:1.7;color:#444;margin-bottom:10px;}
+#guide-overlay p:last-child {margin-bottom:0;}
+#guide-overlay ul, #guide-overlay ol {padding-left:20px;margin-bottom:10px;}
+#guide-overlay li {font-size:14px;line-height:1.8;color:#444;}
+#guide-overlay strong {color:#202124;}
+#guide-overlay .note {background:#fff3e0;border-left:3px solid #f9a825;border-radius:0 8px 8px 0;
+  padding:10px 14px;margin:10px 0;font-size:13px;color:#5d4037;}
+
+/* Step */
+#guide-overlay .step {display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+#guide-overlay .step-num {width:26px;height:26px;border-radius:50%;background:#1a73e8;
+  color:white;font-size:13px;font-weight:700;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;}
+#guide-overlay .step-body {flex:1;font-size:14px;line-height:1.6;color:#444;}
+#guide-overlay .step-body strong {display:block;color:#202124;margin-bottom:2px;}
+
+/* Status badge */
+#guide-overlay .badge {display:inline-block;padding:2px 9px;border-radius:10px;
+  font-size:12px;font-weight:600;margin:2px;}
+#guide-overlay .badge-green {background:#e6f4ea;color:#137333;}
+#guide-overlay .badge-yellow {background:#fff3e0;color:#8a4f00;}
+#guide-overlay .badge-red {background:#fce8e6;color:#c5221f;}
+
+/* Screen mockup */
+#guide-overlay .mockup {background:#f8f9fa;border:1px solid #e0e0e0;border-radius:10px;
+  padding:12px;margin:10px 0;font-size:12px;color:#666;text-align:center;}
+
+/* Edit hint */
+#guide-overlay .edit-hint {background:#e8f0fe;border-radius:8px;padding:10px 14px;
+  font-size:12px;color:#1a73e8;margin-top:12px;display:flex;
+  align-items:center;gap:6px;}
+
+/* Images */
+#guide-overlay .guide-img {max-width:100%;border-radius:10px;display:block;margin:10px auto;}
+#guide-overlay .guide-img-sm {max-width:200px;border-radius:10px;display:block;margin:10px auto;}
+#guide-overlay .img-caption {text-align:center;font-size:12px;color:#888;margin-top:4px;margin-bottom:10px;}
+#guide-overlay .img-wrap {text-align:center;margin:12px 0;}
+
+/* Back button */
+#guide-overlay .back-bar {position:sticky;top:0;z-index:20;background:rgba(255,255,255,.95);
+  backdrop-filter:blur(8px);padding:10px 16px;
+  display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid #e8e8e8;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);}
+#guide-overlay .back-btn {display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:20px;
+  background:#f1f3f4;color:#444;font-size:13px;font-weight:600;
+  text-decoration:none;border:none;cursor:pointer;
+  transition:all .2s;white-space:nowrap;}
+#guide-overlay .back-btn:hover {background:#1a73e8;color:white;}
+#guide-overlay .back-bar-title {font-size:14px;font-weight:700;color:#202124;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}html.guide-open, html.guide-open body { overflow: hidden !important; }
+
+/* ── Popup cảnh báo chấm công trùng ── */
+#checkin-warn-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(0,0,0,.5);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#checkin-warn-overlay.show { display: flex; }
+.checkin-warn-box {
+  background: white;
+  border-radius: 16px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.checkin-warn-icon { font-size: 36px; text-align: center; margin-bottom: 10px; }
+.checkin-warn-title {
+  font-size: 16px; font-weight: 700; color: #e65100;
+  text-align: center; margin-bottom: 8px;
+}
+.checkin-warn-msg {
+  font-size: 14px; color: #444; line-height: 1.6;
+  text-align: center; margin-bottom: 18px;
+}
+.checkin-warn-detail {
+  background: #fff3e0; border-radius: 10px;
+  padding: 10px 14px; margin-bottom: 18px;
+  font-size: 13px; color: #8a4f00;
+}
+.checkin-warn-detail div { margin: 3px 0; }
+.checkin-warn-actions { display: flex; gap: 10px; }
+.checkin-warn-actions button {
+  flex: 1; padding: 13px; border-radius: 10px;
+  font-size: 15px; font-weight: 700; border: none; cursor: pointer;
+}
+.btn-warn-cancel   { background: #f1f3f4; color: #444; }
+.btn-warn-continue { background: #1a73e8; color: white; }
+
+/* ── SOFT PROMPT (THÔNG BÁO MỒI XIN QUYỀN GPS) ── */
+#gps-prompt-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10005; /* Phải cao hơn tất cả popup khác */
+  background: rgba(0,0,0,0.55);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#gps-prompt-overlay.show { display: flex; animation: fadeIn 0.25s ease-out; }
+@keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+
+.gps-prompt-box {
+  background: white;
+  border-radius: 18px;
+  padding: 26px 20px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.25);
+  text-align: center;
+  animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes slideUp { from {transform: translateY(30px) scale(0.95); opacity: 0;} to {transform: translateY(0) scale(1); opacity: 1;} }
+
+.gps-prompt-icon {
+  width: 64px;
+  height: 64px;
+  background: #e8f0fe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 16px auto;
+  color: #1a73e8;
+  box-shadow: 0 4px 10px rgba(26,115,232,.15);
+}
+.gps-prompt-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a73e8;
+  margin-bottom: 12px;
+}
+.gps-prompt-msg {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.5;
+  margin-bottom: 24px;
+  text-align: left;
+  background: #f8f9fa;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+}
+.gps-prompt-actions { display: flex; gap: 10px; }
+.gps-prompt-actions button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-prompt-cancel { background: #f1f3f4; color: #444; }
+.btn-prompt-cancel:active { background: #e0e0e0; }
+.btn-prompt-continue { background: #1a73e8; color: white; box-shadow: 0 4px 12px rgba(26,115,232,.25); }
+.btn-prompt-continue:active { background: #1557b0; }
+
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Màn hình chính -->
+  <div class="main" id="main">
+    <div class="header">
+      <img
+        src="data:image/jpeg;base64,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"
+        alt="Logo HSTC - Siêu Thanh Hà Nội"
+        style="max-width:240px;width:90%;object-fit:contain;margin-bottom:0px;">
+      <p style="font-size:12px;color:#555;margin-top:-4px;margin-bottom:20px;">
+        📍 Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, TP Hà Nội</p>
+      <h1>CHẤM CÔNG CBNV</h1>
+    </div>
+
+    <div class="clock-box">
+      <div class="time" id="clock">00:00:00</div>
+      <div class="date" id="date-d"></div>
+    </div>
+
+    <!-- Tên nhân viên từ URL -->
+    <div class="email-block" id="email-block">
+      <label>👤 Họ tên CBNV</label>
+      <div class="email-saved">
+        <span class="addr" id="name-display">Đang tải...</span>
+      </div>
+      <div class="email-hint" id="name-hint"></div>
+    </div>
+
+    <!-- GPS -->
+    <div class="loc idle" id="loc">
+      <span class="li">📍</span>
+      <div class="lb">
+        <strong>Chưa xác định vị trí</strong>
+        <span>Bấm nút bên dưới để xác định vị trí</span>
+      </div>
+    </div>
+
+    <!-- Ghi chú -->
+    <div class="field">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <label style="margin-bottom:0;">📝 Ghi chú (tuỳ chọn)</label>
+        <a href="#" target="_blank"
+          title="Hướng dẫn sử dụng"
+          onclick="openGuide(event)"
+          style="font-size:18px;text-decoration:none;line-height:1;opacity:.6;transition:opacity .2s;"
+          onmouseover="this.style.opacity='1'"
+          onmouseout="this.style.opacity='.6'">📖</a>
+      </div>
+      <textarea id="note" rows="2" placeholder="Công tác, đi muộn, lý do khác..."></textarea>
+    </div>
+
+    <button class="btn blue" id="btn-gps" onclick="getGPS()">
+      📡 Xác định vị trí
+    </button>
+    <button class="btn green" id="btn-send" onclick="send()" style="display:none">
+      ✅ Chấm công
+    </button>
+    <button class="btn" id="btn-history-main" style="background:#e8f0fe;color:#1a73e8;font-size:14px;display:none;" onclick="showHistory('main')">📊 Dữ liệu chấm công trong tháng</button>
+    <button class="btn" id="btn-install"
+      style="background:#e6f4ea;color:#137333;font-size:14px;display:none;margin-top:0;"
+      onclick="installApp()">
+      📲 Thêm vào màn hình chính
+    </button>
+
+  <div style="text-align:center;font-size:11px;color:#bbb;margin-top:14px;">
+      Bản quyền © Công ty CP Siêu Thanh Hà Nội · <span id="app-ver"></span>
+    </div>
+  </div>
+
+<!-- History screen -->
+  <div id="history">
+    <div class="hist-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <h2>📊 Chấm công của tôi</h2>
+      <div style="display:flex; align-items:center; gap:5px;">
+        <button class="help-btn" style="width:28px; height:28px; margin:0;" onclick="changeMonth(-1)">◀</button>
+        <span id="hist-month-label" style="font-size:13px;font-weight:700;color:#1a73e8;background:#e8f0fe;padding:4px 8px;border-radius:8px; min-width:110px; text-align:center;"></span>
+        <button class="help-btn" style="width:28px; height:28px; margin:0;" onclick="changeMonth(1)">▶</button>
+      </div>
+    </div>
+    <div class="hist-summary" id="hist-summary"></div>
+    <div class="hist-scroll">
+      <div id="hist-content" class="hist-loading">⏳ Đang tải...</div>
+    </div>
+    <button class="btn" style="background:#f1f3f4;color:#444;margin-top:12px;"
+      onclick="showMain()">← Quay lại</button>
+  </div>
+
+  <!-- Custom popup -->
+  <div id="popup-overlay">
+    <div class="popup-box">
+      <div class="popup-title" id="popup-title">HAST Chấm công</div>
+      <div class="popup-msg"   id="popup-msg"></div>
+      <button class="popup-btn" onclick="closePopup()">OK</button>
+    </div>
+  </div>
+
+  <!-- Màn hình kết quả -->
+  <div id="done">
+    <div class="r-emoji" id="r-emoji"></div>
+    <div class="r-title" id="r-title"></div>
+    <div class="rows"    id="r-rows"></div>
+    <button class="btn green" onclick="resetForm()">🔄 Quay lại Chấm công</button>
+    <button class="btn" style="background:#e8f0fe;color:#1a73e8;margin-top:0;"
+      onclick="showHistory()">📊 Dữ liệu chấm công trong tháng</button>
+  </div>
+  
+</div>
+
+
+<script>
+// ============================================================
+// VERSION & SERVICE WORKER
+// ============================================================
+// APP_VERSION: đọc động từ sw.js — không cần khai báo cứng
+var APP_VERSION = '';
+
+// Đăng ký Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js')
+      .then(function(reg) {
+        if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+        reg.addEventListener('updatefound', function() {
+          var sw = reg.installing;
+          sw.addEventListener('statechange', function() {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              sw.postMessage('skipWaiting');
+            }
+          });
+        });
+      }).catch(function(e){ console.log('[SW]',e);
+
+      // Android Chrome: bắt sự kiện cài app
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window._installPrompt = e;
+        var btn = document.getElementById('btn-install');
+        if (btn) btn.style.display = 'flex';
+      });
+
+      window.addEventListener('appinstalled', function() {
+        window._installPrompt = null;
+        var btn = document.getElementById('btn-install');
+        if (btn) btn.style.display = 'none';
+      }); });
+
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (!refreshing) { refreshing = true; window.location.reload(); }
+    });
+  });
+}
+
+// ── Version check: đọc VERSION từ sw.js ──────────────────
+// Chỉ cần đổi VERSION trong sw.js khi deploy → mọi thứ tự cập nhật
+(function checkVersion() {
+  var base = window.location.href
+    .split('?')[0].split('#')[0]
+    .replace(/\/nv\/[^\/]+\.html$/, '')
+    .replace(/\/[^\/]+\.html$/, '')
+    .replace(/\/$/, '');
+
+  fetch(base + '/sw.js?t=' + Date.now(), { cache: 'no-store' })
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      var m = text.match(/const VERSION\s*=\s*['"]([^'"]+)['"]/);
+      if (!m) return;
+      var sv = m[1].trim();
+
+      // Gán APP_VERSION và hiển thị footer ngay
+      APP_VERSION = sv;
+      var el = document.getElementById('app-ver');
+      if (el) el.textContent = sv;
+
+      // So sánh với version đã lưu
+      var lv = localStorage.getItem('hstc_ver');
+      localStorage.setItem('hstc_ver', sv);
+
+      if (lv && lv !== sv) {
+        // Version mới → xóa toàn bộ cache → reload
+        console.log('[Ver] Update:', lv, '→', sv);
+        if ('caches' in window) {
+          caches.keys().then(function(ks) {
+            Promise.all(ks.map(function(k) { return caches.delete(k); }))
+              .then(function() { window.location.reload(true); });
+          });
+        } else {
+          window.location.reload(true);
+        }
+      }
+    })
+    .catch(function() {
+      // Offline: dùng version đã lưu trong localStorage
+      var cached = localStorage.getItem('hstc_ver');
+      if (cached) {
+        APP_VERSION = cached;
+        var el = document.getElementById('app-ver');
+        if (el) el.textContent = cached;
+      }
+    });
+})();
+
+// ═══════════════════════════════════════════
+// ⚙️ CẤU HÌNH SUPABASE
+// ═══════════════════════════════════════════
+const SUPABASE_URL = 'https://bkdupkjrafaprvdseued.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_VPxkr4o9TCHiM-cVNalB5A_z4x_dG5y';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_FUNC_URL = 'https://bkdupkjrafaprvdseued.supabase.co/functions/v1';
+
+// Hàm gửi Telegram (dùng chung)
+function sendTelegram(chatId, message) {
+  if (!chatId) return Promise.resolve();
+  return fetch(SUPABASE_FUNC_URL + '/send-telegram', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + SUPABASE_KEY
+    },
+    body: JSON.stringify({ chat_id: chatId, message: message }),
+    redirect: 'follow'
+  })
+  .then(function(r) { return r.text(); })
+  .then(function(text) {
+    try { return JSON.parse(text); } catch(e) { return {}; }
+  })
+  .catch(function(e) { console.warn('[Telegram]', e.message); });
+}
+
+// ═══════════════════════════════════════════
+// ⚙️ CẤU HÌNH — SỬA 2 GIÁ TRỊ NÀY
+// ═══════════════════════════════════════════
+const OFFICES = [
+  { name: 'CHẤM CÔNG CBNV', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
+];
+
+// Khoảng cách tối đa cho phép chấm công (mét). Vượt quá sẽ bị chặn hoàn toàn.
+// Ví dụ: 10000 = 10 km. Đặt 0 để tắt giới hạn này.
+const MAX_DISTANCE = 15000; //10000
+
+// Cấu hình Bật/Tắt các quy tắc chấm công (Sinh tự động từ Admin)
+const ALLOW_HOLIDAY_CHECKIN = false;  // true: cho phép chấm T7/CN/Lễ, false: chặn ngày nghỉ
+const ALLOW_MULTIPLE_CHECKIN = false; // true: cho chấm nhiều lần không cảnh báo, false: cảnh báo khi chấm trùng ca
+
+// Dùng OpenStreetMap Nominatim — miễn phí, không cần API key
+// ═══════════════════════════════════════════
+
+const DAYS = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+const GPS_EXPIRE_MS = 1 * 60 * 1000; // GPS hết hạn sau 1 phút
+var gpsTimestamp = 0;
+let gpsCoords = null;
+
+// GPS hết hạn sau 1 phút — phải lấy lại
+// GPS_EXPIRE_MS already declared above
+var gpsTimestamp = 0; // thời điểm lấy GPS
+var _isHolidayToday = false; // Cờ chặn ngày nghỉ toàn cục
+  
+// ── Đồng hồ ──────────────────────────────────────────────
+function tick(){
+  const n = new Date();
+  const hh = String(n.getHours()).padStart(2,'0');
+  const mm = String(n.getMinutes()).padStart(2,'0');
+  const ss = String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = hh + ':' + mm + ':' + ss;
+  document.getElementById('date-d').textContent =
+    DAYS[n.getDay()] + ', ' + n.getDate() + '/' + (n.getMonth()+1) + '/' + n.getFullYear();
+}
+// Chạy sau khi DOM load xong
+window.onload = function() {
+  tick();
+  setInterval(tick, 1000);
+};
+
+// ── Tên nhân viên từ URL parameter + localStorage fallback ──
+var employeeName = '';
+
+function initEmail() {
+  var params = new URLSearchParams(window.location.search);
+  var nameFromUrl = params.get('name') || '';
+  nameFromUrl = decodeURIComponent(nameFromUrl).trim();
+
+  // NẾU BIẾN NÀY ĐÃ ĐƯỢC ĐIỀN SẴN (DO TIẾN TRÌNH DEPLOY FILE CÁ NHÂN), ƯU TIÊN GIỮ NGUYÊN!
+  if (employeeName && employeeName.trim() !== '') {
+    localStorage.setItem('chamcong_name', employeeName);
+    sessionStorage.setItem('chamcong_name', employeeName);
+    document.getElementById('name-display').textContent = employeeName;
+    document.getElementById('name-hint').textContent = '';
+    return;
+  }
+
+  if (nameFromUrl) {
+    // Có tên trong URL → lưu vào localStorage để dùng lần sau (khi mở từ Home Screen)
+    employeeName = nameFromUrl;
+    // Lưu vào cả 2 nơi để phòng iOS xóa localStorage
+    localStorage.setItem('chamcong_name', nameFromUrl);
+    sessionStorage.setItem('chamcong_name', nameFromUrl);
+    document.getElementById('name-display').textContent = nameFromUrl;
+    document.getElementById('name-hint').textContent = '';
+  } else {
+    // Không có trong URL → thử lấy từ localStorage (đã quét QR trước đó)
+    // Thử localStorage trước, rồi sessionStorage
+    var savedName = localStorage.getItem('chamcong_name')
+                 || sessionStorage.getItem('chamcong_name')
+                 || '';
+    if (savedName) {
+      employeeName = savedName;
+      // Ghi lại để đồng bộ
+      localStorage.setItem('chamcong_name', savedName);
+      document.getElementById('name-display').textContent = savedName;
+      document.getElementById('name-hint').textContent = '';
+    } else {
+      // Chưa từng quét QR → báo lỗi
+      employeeName = '';
+      document.getElementById('name-display').textContent = '⚠️ Link không hợp lệ';
+      document.getElementById('name-hint').textContent = 'Vui lòng quét QR code được cấp trước khi dùng';
+      document.getElementById('name-display').style.color = '#c5221f';
+      document.getElementById('btn-gps').disabled = true;
+    }
+  }
+}
+
+function getEmail() {
+  return employeeName;
+}
+
+// ── Custom popup (thay alert) ─────────────────────────────
+function showPopup(msg, title) {
+  document.getElementById('popup-title').textContent = title || 'HAST Chấm công';
+  document.getElementById('popup-msg').textContent   = msg;
+  document.getElementById('popup-overlay').classList.add('show');
+}
+function closePopup() {
+  document.getElementById('popup-overlay').classList.remove('show');
+}
+
+// ── GPS ───────────────────────────────────────────────────
+function haversine(a,b,c,d){
+  const R=6371000, r=x=>x*Math.PI/180, da=r(c-a), db=r(d-b);
+  const e=Math.sin(da/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(db/2)**2;
+  return R*2*Math.atan2(Math.sqrt(e),Math.sqrt(1-e));
+}
+function checkOffice(lat,lng){
+  let best=null, min=Infinity;
+  OFFICES.forEach(o=>{
+    const d=haversine(lat,lng,o.lat,o.lng);
+    if(d<min){min=d;best=o;}
+  });
+  return {office:best, dist:min, inside:best&&min<=best.radius};
+}
+function setLoc(type, icon, title, lines){
+  var el = document.getElementById('loc');
+  el.className = 'loc ' + type;
+  var spans = '';
+  for (var i = 0; i < lines.length; i++) {
+    spans += '<span>' + lines[i] + '</span>';
+  }
+  el.innerHTML = '<span class="li">' + icon + '</span>'
+    + '<div class="lb"><strong>' + title + '</strong>' + spans + '</div>';
+}
+
+function getGPS(){
+  if (_isHolidayToday) return; // Chặn mọi hành động lấy GPS nếu là ngày nghỉ
+
+  const email = getEmail();
+  if (!email) {
+    showPopup('Vui lòng nhập và xác nhận họ tên trước.');
+    return;
+  }
+
+  // Tự động kiểm tra quyền GPS, nếu đã cho phép thì gọi luôn, không hiện Soft Prompt
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+      if (result.state === 'granted') {
+        acceptGPSPrompt(); // Đã cấp quyền -> Gọi luôn
+      } else if (result.state === 'prompt') {
+        document.getElementById('gps-prompt-overlay').classList.add('show'); // Lần đầu -> Hiện Soft prompt
+      } else {
+        acceptGPSPrompt(); // Bị từ chối -> Vẫn gọi để nó kích hoạt lỗi "Đã từ chối quyền..."
+      }
+    }).catch(function() {
+      // Dành cho Safari iOS đời cũ không hỗ trợ Permissions API đối với geolocation
+      if (localStorage.getItem('gps_authorized') === '1') {
+        acceptGPSPrompt();
+      } else {
+        document.getElementById('gps-prompt-overlay').classList.add('show');
+      }
+    });
+  } else {
+    if (localStorage.getItem('gps_authorized') === '1') {
+      acceptGPSPrompt();
+    } else {
+      document.getElementById('gps-prompt-overlay').classList.add('show');
+    }
+  }
+}
+
+// Hàm đóng Soft Prompt khi bấm Hủy
+function closeGPSPrompt() {
+  document.getElementById('gps-prompt-overlay').classList.remove('show');
+
+  // Khôi phục lại trạng thái bình thường của nút GPS
+  const btn = document.getElementById('btn-gps');
+  btn.disabled = false;
+  btn.innerHTML = '📡 Xác định vị trí';
+
+  setLoc('idle', '📍', 'Chưa xác định vị trí', ['Bấm nút bên dưới để xác định vị trí']);
+}
+
+// Hàm kích hoạt GPS thực tế khi bấm Tiếp tục từ Soft Prompt
+function acceptGPSPrompt() {
+  document.getElementById('gps-prompt-overlay').classList.remove('show');
+
+  const btn = document.getElementById('btn-gps');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Đang xác định vị trí...';
+  document.getElementById('btn-send').style.display = 'none';
+  setLoc('idle','📡','Đang xác định vị trí...','Nếu hỏi quyền → bấm Cho phép'.split('|'));
+
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      // Đánh dấu đã cấp quyền GPS thành công để các lần sau ẩn Soft Prompt
+      localStorage.setItem('gps_authorized', '1');
+
+      // Copy ra plain object để có thể gán thêm .address
+      gpsCoords = {
+        latitude:  pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy:  pos.coords.accuracy
+      };
+      gpsTimestamp = Date.now(); // lưu thời điểm lấy GPS
+      gpsTimestamp = Date.now(); // lưu thời điểm lấy GPS
+      const lat = gpsCoords.latitude;
+      const lng = gpsCoords.longitude;
+      const acc = gpsCoords.accuracy;
+      const {office, dist, inside} = checkOffice(lat, lng);
+      btn.disabled = false;
+      btn.innerHTML = '🔄 Xác định lại vị trí';
+
+      // Kiểm tra vượt quá khoảng cách tối đa
+      const overMax = MAX_DISTANCE > 0 && dist > MAX_DISTANCE;
+      const distKm  = (dist / 1000).toFixed(1);
+      const maxKm   = (MAX_DISTANCE / 1000).toFixed(1);; //(MAX_DISTANCE / 1000).toFixed(0);
+      if (overMax) {
+        setLoc('err','🚫','Không thể chấm công',[
+          `📏 Bạn đang cách Công ty <b>${distKm} km</b>`,
+          `⛔ Giới hạn cho phép: ${maxKm} km`,
+          '👉 Vui lòng đến gần Công ty hơn để chấm công.'
+        ]);
+      } else if (inside) {
+        setLoc('ok','✅',`Trong phạm vi: ${office.name}`,[
+          `📏 Khoảng cách: ${Math.round(dist)} m`,
+          `🎯 Độ chính xác: ±${Math.round(acc)} m`
+        ]);
+
+        document.getElementById('btn-send').style.display = 'flex';
+      } else {
+        setLoc('warn','⚠️','Ngoài phạm vi Công ty',[
+          `📏 Cách ${office?office.name:'VP'}: ${Math.round(dist)} m`,
+          `🎯 Độ chính xác: ±${Math.round(acc)} m`,
+          '🙅‍♀️ Dữ liệu chấm công vẫn được ghi nhận. Lưu ý vị trí lần chấm công tiếp theo!'
+        ]);
+        //document.getElementById('btn-gps').style.display = 'none'; - ẩn nút chấm công
+        document.getElementById('btn-send').style.display = 'flex';
+      }
+    },
+    err => {
+      gpsCoords = null;
+      btn.style.display = 'flex';
+      btn.disabled = false;
+      btn.innerHTML = '🔄 Thử lại GPS';
+      const m = {
+        1: 'Bạn đã từ chối quyền Chia sẻ vị trí. Vào Cài đặt → Vị trí → Cho phép rồi thử lại.',
+        2: 'Không bắt được tín hiệu GPS. Ra chỗ thoáng hoặc bật Wi-Fi rồi thử lại.',
+        3: 'Hết thời gian chờ GPS. Kiểm tra kết nối rồi thử lại.'
+      };
+      setLoc('err','❌','Không lấy được vị trí — Không thể chấm công',[
+        m[err.code]||'Lỗi GPS không xác định.',
+        '⛔ Bắt buộc phải có GPS để chấm công.'
+      ]);
+    },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:0}
+  );
+}
+
+// ── Gửi ──────────────────────────────────────────────────
+function send() {
+  if (!gpsCoords) {
+    showPopup('Chưa có GPS. Vui lòng xác định vị trí trước.');
+    return;
+  }
+  if (Date.now() - gpsTimestamp > GPS_EXPIRE_MS) {
+    gpsCoords = null; gpsTimestamp = 0;
+    document.getElementById('btn-send').style.display = 'none';
+    setLoc('warn','⏱️','Vị trí đã hết hạn',[
+      'GPS lấy quá 3 phút trước.',
+      'Đang tự động xác định lại...'
+    ]);
+    getGPS();
+    return;
+  }
+  // Kiểm tra đã chấm trong khung giờ này chưa
+  checkAttendanceBeforeSend();
+}
+
+var _pendingSendCoords = null;
+
+async function checkAttendanceBeforeSend() {
+  var name = getEmail();
+  if (!name || ALLOW_MULTIPLE_CHECKIN) {
+    doSend(gpsCoords.latitude, gpsCoords.longitude, gpsCoords.accuracy);
+    return;
+  }
+
+  const today = new Date();
+  // Format ngày theo giờ local Việt Nam -> YYYY-MM-DD
+  const todayStr = today.toLocaleDateString('vi-VN').split('/').reverse().join('-'); 
+  
+  try {
+    const { data: record, error } = await supabaseClient
+      .from('chamcong_attendance_records')
+      .select('*')
+      .eq('employee_name', name)
+      .eq('date', todayStr)
+      .single();
+
+    if (error || !record) {
+      doSend(gpsCoords.latitude, gpsCoords.longitude, gpsCoords.accuracy);
+      return;
+    }
+
+    var hhmm = today.getHours() * 100 + today.getMinutes();
+    var existingTime = '';
+    var sessionLabel = '';
+
+    if (hhmm <= 900) { // Sáng IN theo rule mới
+      if (record.morning_in)   { existingTime = record.morning_in;   sessionLabel = 'Check In sáng'; }
+    } else if (hhmm <= 1245) { // Sáng OUT
+      if (record.morning_out)  { existingTime = record.morning_out;  sessionLabel = 'Check Out sáng'; }
+    } else if (hhmm <= 1500) { // Chiều IN
+      if (record.afternoon_in) { existingTime = record.afternoon_in; sessionLabel = 'Check In chiều'; }
+    } else {                   // Chiều OUT
+      if (record.afternoon_out){ existingTime = record.afternoon_out;sessionLabel = 'Check Out chiều'; }
+    }
+
+    if (!existingTime) {
+      doSend(gpsCoords.latitude, gpsCoords.longitude, gpsCoords.accuracy);
+      return;
+    }
+
+    _pendingSendCoords = { lat: gpsCoords.latitude, lng: gpsCoords.longitude, acc: gpsCoords.accuracy };
+    showCheckinWarn(sessionLabel, existingTime, {
+      morningIn: record.morning_in,
+      morningOut: record.morning_out,
+      afternoonIn: record.afternoon_in,
+      afternoonOut: record.afternoon_out
+    });
+  } catch (err) {
+    doSend(gpsCoords.latitude, gpsCoords.longitude, gpsCoords.accuracy);
+  }
+}
+
+function showCheckinWarn(sessionLabel, existingTime, data) {
+  var t = existingTime.length >= 5 ? existingTime.substring(0,5) : existingTime;
+  document.getElementById('warn-msg').textContent =
+    'Bạn đã chấm công ' + sessionLabel + ' vào lúc ' + t + '. Bạn tiếp tục chấm công?';
+
+  var lines = [];
+  if (data.morningIn)    lines.push('☀️ Sáng IN:   ' + data.morningIn.substring(0,5));
+  if (data.morningOut)   lines.push('☀️ Sáng OUT:  ' + data.morningOut.substring(0,5));
+  if (data.afternoonIn)  lines.push('🌤️ Chiều IN:  ' + data.afternoonIn.substring(0,5));
+  if (data.afternoonOut) lines.push('🌤️ Chiều OUT: ' + data.afternoonOut.substring(0,5));
+
+  document.getElementById('warn-detail').innerHTML =
+    '<strong>Dữ liệu hôm nay:</strong><br>' +
+    lines.map(function(l){ return '<div>' + l + '</div>'; }).join('');
+
+  document.getElementById('checkin-warn-overlay').classList.add('show');
+}
+
+function cancelCheckin() {
+  _pendingSendCoords = null;
+  document.getElementById('checkin-warn-overlay').classList.remove('show');
+}
+
+function continueCheckin() {
+  document.getElementById('checkin-warn-overlay').classList.remove('show');
+  if (_pendingSendCoords) {
+    doSend(_pendingSendCoords.lat, _pendingSendCoords.lng, _pendingSendCoords.acc);
+    _pendingSendCoords = null;
+  }
+}
+
+async function doSend(lat, lng, accuracy){
+  var email = getEmail();
+  if (!email) { showPopup('Vui lòng nhập họ tên.'); return; }
+
+  var btnSend = document.getElementById('btn-send');
+  var btnGps  = document.getElementById('btn-gps');
+  btnSend.disabled = true;
+  btnGps.disabled  = true;
+  btnSend.innerHTML = '<span class="spin"></span> Đang gửi thông tin...';
+
+  // Tính khoảng cách
+  let best = null, minDist = Infinity;
+  OFFICES.forEach(o => {
+    const d = haversine(lat, lng, o.lat, o.lng);
+    if(d < minDist){ minDist = d; best = o; }
+  });
+  const isAllowed = best && minDist <= best.radius;
+
+  try {
+    // Gọi API OpenStreetMap (Nominatim) miễn phí để dịch ngược tọa độ ra địa chỉ tiếng Việt
+    let addressStr = 'Không xác định';
+    try {
+      const geoUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=vi`;
+      const geoRes = await fetch(geoUrl, {
+        headers: { 'User-Agent': 'HAST_Attendance_App' } // Yêu cầu từ OSM
+      });
+      if (geoRes.ok) {
+        const geoText = await geoRes.text();
+        const geoData = JSON.parse(geoText);
+        addressStr = geoData.display_name || 'Không xác định';
+      }
+    } catch (e) {
+      console.log('Lỗi reverse geocode:', e);
+    }
+
+    const { error } = await supabaseClient.from('chamcong_attendance_logs').insert([{
+      employee_name: email,
+      latitude: lat,
+      longitude: lng,
+      accuracy: Math.round(accuracy),
+      nearest_office: best ? best.name : 'Không xác định',
+      distance: Math.round(minDist),
+      status: isAllowed ? '✓ Hợp lệ' : '✗ Ngoài phạm vi',
+      address: addressStr, // Ghi địa chỉ thực tế vào Database!
+      note: document.getElementById('note').value.trim()
+    }]);
+
+    if (error) throw error;
+
+    btnSend.disabled = false;
+    btnGps.disabled  = false;
+    btnSend.innerHTML = '✅ Chấm công';
+
+    const now = new Date();
+    const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
+
+    // ⚡ GỬI TIN NHẮN telegram XÁC NHẬN CHẤM CÔNG CÁ NHÂN (Sự kiện 1)
+    try {
+      (async () => {
+        const { data: emp, error: empErr } = await supabaseClient
+          .from('chamcong_employees')
+          .select('telegram_chat_id')
+          .eq('name', email)
+          .maybeSingle();
+
+        if (!empErr && emp && emp.telegram_chat_id) {
+          var msg = `✅ <b>Xác nhận chấm công thành công</b>\n\n`
+            + `👤 <b>${email}</b>\n`
+            + `⏰ Thời gian: ${timeStr}\n`
+            + `📍 Địa điểm: ${best ? best.name : 'Không xác định'}\n`
+            + `✔️ Trạng thái: <b>${isAllowed ? 'Hợp lệ' : 'Ngoài phạm vi'}</b>`;
+
+          await sendTelegram(emp.telegram_chat_id, msg);
+        }
+      })();
+    } catch (e) {
+      console.warn('Lỗi gửi Telegram Chấm công:', e);
+    }
+
+    showDone({
+      success: true,
+      time: timeStr,
+      location: best ? best.name : 'Không xác định',
+      distance: minDist < 99999 ? Math.round(minDist) : null,
+      isAllowed: isAllowed,
+      address: addressStr // Gửi địa chỉ ra màn hình kết quả!
+    }, email);
+
+  } catch(e) {
+    btnSend.disabled = false;
+    btnGps.disabled  = false;
+    btnSend.innerHTML = '✅ Chấm công';
+    showPopup('Lỗi kết nối: ' + e.message, 'Có lỗi xảy ra');
+  }
+}
+
+// ── Kết quả ──────────────────────────────────────────────
+function showDone(r, email){
+  document.getElementById('main').classList.add('hide');
+  document.getElementById('done').classList.add('show');
+  if (r.success){
+    document.getElementById('r-emoji').textContent = r.isAllowed ? '✅' : '⚠️';
+    document.getElementById('r-title').textContent = 'Hoàn thành chấm công';
+    document.getElementById('r-rows').innerHTML = `
+      <div class="row"><span class="l">🕐 Thời gian</span><span class="v">${r.time}</span></div>
+      <div class="row"><span class="l">👤 Họ tên</span><span class="v">${email}</span></div>
+      <div class="row"><span class="l">📍 Checkin</span><span class="v">${r.location}</span></div>
+      ${r.distance!=null?`<div class="row"><span class="l">📏 Khoảng cách</span><span class="v">${r.distance} m</span></div>`:''}
+      ${r.address?`<div class="row" style="flex-direction:column;align-items:flex-start;gap:2px;"><span class="l">🗺 Vị trí chấm công</span><span class="v" style="text-align:left;">${r.address}</span></div>`:''}
+      <div class="row"><span class="l">✔ Trạng thái</span>
+        <span class="v">${r.isAllowed?'✅ Hợp lệ':'⚠️ Ngoài phạm vi'}</span></div>`;
+  } else {
+    document.getElementById('r-emoji').textContent = '❌';
+    document.getElementById('r-title').textContent = 'Có lỗi xảy ra';
+    document.getElementById('r-rows').innerHTML =
+      `<div class="row"><span class="v" style="color:#c5221f">${r.error}</span></div>`;
+  }
+}
+
+function resetForm(){
+  gpsCoords = null; gpsTimestamp = 0;
+  document.getElementById('done').classList.remove('show');
+  document.getElementById('main').classList.remove('hide');
+  document.getElementById('history').style.display = 'none';
+
+  const noteEl = document.getElementById('note');
+  noteEl.value = '';
+  if (!_isHolidayToday) {
+    noteEl.disabled = false;
+    noteEl.placeholder = "Công tác, đi muộn, lý do khác...";
+    noteEl.style.backgroundColor = "white";
+  }
+
+  document.getElementById('btn-send').style.display = 'none';
+  document.getElementById('btn-history-main').style.display = 'none';
+  document.getElementById('btn-gps').style.display = 'flex';
+  document.getElementById('btn-gps').disabled = false;
+  document.getElementById('btn-gps').innerHTML = '📡 Xác định vị trí';
+  setLoc('idle','📡','Đang xác định vị trí...','Vui lòng chờ'.split('|'));
+  getGPS();
+}
+
+// ── Kiểm tra Ngày Lễ / T7 / CN ─────────────────────────────────
+async function checkTodayHoliday() {
+  if (ALLOW_HOLIDAY_CHECKIN) return; // Nếu Admin đã bật "Cho phép chấm ngày nghỉ", thoát ngay lập tức!
+
+  const today = new Date();
+  const dow = today.getDay(); // 0 = CN, 6 = T7
+  
+  // Format ngày YYYY-MM-DD
+  const todayStr = today.toLocaleDateString('vi-VN').split('/').reverse().join('-');
+
+  let isHoliday = false;
+  let reason = '';
+
+  // 1. Kiểm tra cuối tuần
+  if (dow === 0) {
+    isHoliday = true;
+    reason = 'Hôm nay là Chủ Nhật — ngày nghỉ theo quy định.';
+  } else if (dow === 6) {
+    isHoliday = true;
+    reason = 'Hôm nay là Thứ 7 — ngày nghỉ theo quy định.';
+  } else {
+    // 2. Kiểm tra ngày lễ trong Supabase
+    try {
+      const { data, error } = await supabaseClient
+        .from('chamcong_holidays')
+        .select('*')
+        .eq('date', todayStr)
+        .single();
+        
+      if (data) {
+        isHoliday = true;
+        reason = `Hôm nay là ${data.description} — ngày nghỉ lễ.`;
+      }
+    } catch(e) {
+      console.log('Lỗi tải ngày lễ:', e);
+    }
+  }
+
+  // 3. Nếu là ngày nghỉ, hiển thị thông báo và khóa chức năng
+  if (isHoliday) {
+    _isHolidayToday = true; // Set cờ toàn cục
+
+    // Ẩn nút Xác định vị trí và nút Chấm công
+    document.getElementById('btn-gps').style.display = 'none';
+    document.getElementById('btn-send').style.display = 'none';
+
+    // Khóa ô ghi chú
+    const noteEl = document.getElementById('note');
+    noteEl.disabled = true;
+    noteEl.placeholder = "🔒 Bị khóa do hôm nay là Ngày nghỉ";
+    noteEl.style.backgroundColor = "#f1f3f4"; // Màu xám chìm
+
+    // Hiển thị trạng thái nghỉ ở khối Location
+    setLoc('idle', '🌴', 'Hôm nay là Ngày Nghỉ', [reason]);
+
+    // Hiện nút Lịch sử chấm công cho nhân viên
+    document.getElementById('btn-history-main').style.display = 'flex';
+  }
+}
+
+// ── QUẢN LÝ SỰ KIỆN VÀ KHỞI ĐỘNG ───────────────────────────────
+
+// 1. Khi người dùng quay lại app (từ background)
+document.addEventListener('visibilitychange', function() {
+  if (_isHolidayToday) return; // Nếu là ngày nghỉ -> KHÔNG ĐƯỢC làm gì cả
+
+  if (document.visibilityState === 'visible' && gpsCoords) {
+    // Nếu GPS đã hết hạn → tự động lấy lại
+    if (Date.now() - gpsTimestamp > GPS_EXPIRE_MS) {
+      gpsCoords = null;
+      gpsTimestamp = 0;
+      document.getElementById('btn-send').style.display = 'none';
+      setLoc('warn','⏱️','Vị trí cần cập nhật',[
+        'Đang xác định lại vị trí...'
+      ]);
+      if (employeeName) getGPS();
+    }
+  }
+});
+
+// 2. Khởi động App
+initEmail();
+
+if (employeeName) {
+  checkTodayHoliday().then(() => {
+    // Chỉ lấy GPS nếu hôm nay không phải là ngày nghỉ
+    if (!_isHolidayToday) {
+      getGPS();
+    }
+  });
+}
+
+// ── Lịch sử chấm công cá nhân ────────────────────────────────────────
+var histMonth = 0, histYear = 0;
+var _historyCalledFrom = 'done';
+
+function showHistory(from) {
+  var name = getEmail();
+  if (!name) { showPopup('Vui lòng xác nhận họ tên trước.'); return; }
+
+  _historyCalledFrom = from || 'done';
+
+  var now = new Date();
+  if (!histMonth) { histMonth = now.getMonth()+1; histYear = now.getFullYear(); }
+
+  // Ẩn màn hình hiện tại, hiện history
+  document.getElementById('done').classList.remove('show');
+  document.getElementById('main').classList.add('hide');
+  document.getElementById('history').style.display = 'block';
+
+  loadHistory(name);
+}
+
+var _historyCalledFrom = 'done'; // 'main' hoặc 'done'
+
+function showMain() {
+  document.getElementById('history').style.display = 'none';
+  if (_historyCalledFrom === 'main') {
+    document.getElementById('main').classList.remove('hide');
+    document.getElementById('done').classList.remove('show');
+  } else {
+    document.getElementById('done').classList.add('show');
+    document.getElementById('main').classList.add('hide');
+  }
+}
+
+function changeMonth(delta) {
+  histMonth += delta;
+  if (histMonth > 12) { histMonth = 1;  histYear++; }
+  if (histMonth < 1)  { histMonth = 12; histYear--; }
+  loadHistory(getEmail());
+}
+
+async function loadHistory(name) {
+  var label = 'Tháng ' + histMonth + '/' + histYear;
+  document.getElementById('hist-month-label').textContent = label;
+  document.getElementById('hist-content').innerHTML =
+    '<div class="hist-loading">⏳ Đang tải dữ liệu...</div>';
+  document.getElementById('hist-summary').innerHTML = '';
+
+  const padStr = n => n < 10 ? '0' + n : '' + n;
+  const startDate = `${histYear}-${padStr(histMonth)}-01`;
+  const endDate = `${histYear}-${padStr(histMonth)}-${padStr(new Date(histYear, histMonth, 0).getDate())}`;
+
+  try {
+    // 1. Tải danh sách ngày lễ trong tháng để tô màu
+    const { data: hld, error: hldErr } = await supabaseClient
+      .from('chamcong_holidays')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+
+    if (hldErr) throw hldErr;
+
+    const holidaysMap = {};
+    if (hld) {
+      hld.forEach(h => {
+        const parts = h.date.split('-');
+        const dateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        holidaysMap[dateStr] = h.description;
+      });
+    }
+
+    // 2. Tải records chấm công
+    const { data: rows, error: rowsErr } = await supabaseClient
+      .from('chamcong_attendance_records')
+      .select('*')
+      .eq('employee_name', name)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true });
+
+    if (rowsErr) throw rowsErr;
+
+    // 3. Tính toán thống kê và lồng ghép Record Ảo
+    let congChuan = 0;
+    const daysInMonth = new Date(histYear, histMonth, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dow = new Date(histYear, histMonth - 1, d).getDay();
+      if (dow !== 0 && dow !== 6) congChuan++;
+    }
+
+    let congThucTe = 0;
+    let congBD = 0;
+    let khongCham = 0;
+
+    // Lấy YYYY-MM-DD của ngày hôm nay theo timezone local
+    const nowTime = new Date();
+    const todayStr = `${nowTime.getFullYear()}-${padStr(nowTime.getMonth() + 1)}-${padStr(nowTime.getDate())}`;
+
+    // Đưa records vào bản đồ để tra cứu cực nhanh
+    const recordMap = {};
+    if (rows) {
+      rows.forEach(r => {
+        recordMap[r.date] = r;
+      });
+    }
+
+    const days = [];
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const curDateYMD = `${histYear}-${padStr(histMonth)}-${padStr(d)}`;
+      const dateStr = `${padStr(d)}/${padStr(histMonth)}/${histYear}`;
+
+      const isHoliday = !!holidaysMap[dateStr];
+      const dow = new Date(curDateYMD).getDay();
+      const isWeekend = dow === 0 || dow === 6;
+      const isTodayOrBefore = curDateYMD <= todayStr;
+
+      let r = recordMap[curDateYMD];
+      let isVirtual = false;
+
+      // Nếu ngày đó là ngày làm việc, đã hoặc đang xảy ra, và nhân viên KHÔNG check công -> Sinh Record vắng Ảo
+      if (!r && isTodayOrBefore && !isHoliday && !isWeekend) {
+        r = {
+          date: curDateYMD,
+          morning_in: '',
+          morning_out: '',
+          afternoon_in: '',
+          afternoon_out: '',
+          grades: 'D,D,D,D',
+          note: '',
+          justification: '',
+          approve_status: ''
+        };
+        isVirtual = true;
+      }
+
+      // Chỉ đẩy vào hiển thị nếu có log (hoặc ảo)
+      if (r) {
+        const ga = (r.grades || 'D,D,D,D').split(',').map(g => g.trim());
+        const hasAbsent = ga.every(g => g === 'D');
+        const allOk = ga.every(g => g === 'A');
+
+        if (isTodayOrBefore && !isHoliday && !isWeekend) {
+          if (!isVirtual) congThucTe++; // congThucTe = có check công (bản ghi thật)
+          if (!isVirtual && !allOk) congBD++;
+          if (isVirtual) khongCham++; // khongCham = ngày vắng ảo
+        }
+
+        days.push({
+          date: dateStr,
+          morningIn: r.morning_in,
+          morningOut: r.morning_out,
+          afternoonIn: r.afternoon_in,
+          afternoonOut: r.afternoon_out,
+          grades: r.grades,
+          g1: ga[0] || 'D', g2: ga[1] || 'D', g3: ga[2] || 'D', g4: ga[3] || 'D',
+          allOk: allOk,
+          hasAbsent: hasAbsent,
+          note: r.note || '',
+          reason: r.justification || '',
+          approve: r.approve_status || '',
+          isHoliday: isHoliday,
+          holidayLabel: holidaysMap[dateStr] || ''
+        });
+      }
+    }
+
+    const todayLocalStr = new Date().toLocaleDateString('vi-VN');
+
+    renderHistory({
+      month: histMonth,
+      year: histYear,
+      congChuan: congChuan,
+      congThucTe: congThucTe,
+      congBD: congBD,
+      khongCham: khongCham,
+      todayStr: todayLocalStr,
+      holidaysMap: holidaysMap,
+      days: days
+    });
+
+  } catch(e) {
+    document.getElementById('hist-content').innerHTML =
+      '<div class="hist-loading" style="color:#c5221f;">❌ Lỗi tải dữ liệu: ' + e.message + '</div>';
+  }
+}
+
+// Định dạng giờ cho bảng lịch sử
+function fmtTime(t) {
+  if (!t || t === '' || t === ':' || t === ': :' || t === '--:--') {
+    return '<span style="color:#ccc;">: :</span>';
+  }
+  // Chỉ hiện HH:MM (bỏ giây)
+  var s = t.toString().trim();
+  return s.length >= 5 ? s.substring(0,5) : s;
+}
+
+function renderHistory(data) {
+  var days        = data.days        || [];
+  var todayStr    = data.todayStr    || '';
+  var holidaysMap = data.holidaysMap || {};
+
+  // Cập nhật label tháng
+  document.getElementById('hist-month-label').textContent =
+    'Tháng ' + data.month + '/' + data.year;
+
+  // Lọc đến hôm nay
+  var daysToShow = days.filter(function(d) {
+    return compareDateClient(d.date, todayStr) <= 0;
+  });
+
+  // Thống kê
+  document.getElementById('hist-summary').innerHTML =
+    '<div class="hist-stat"><div class="val">'                        + (data.congChuan  ||0) + '</div><div class="lbl">Công chuẩn</div></div>' +
+    '<div class="hist-stat"><div class="val" style="color:#137333;">' + (data.congThucTe ||0) + '</div><div class="lbl">Công thực</div></div>'  +
+    '<div class="hist-stat"><div class="val" style="color:#b45309;">' + (data.congBD     ||0) + '</div><div class="lbl">Công B,D</div></div>'   +
+    '<div class="hist-stat"><div class="val" style="color:#c5221f;">' + (data.khongCham  ||0) + '</div><div class="lbl">Không chấm</div></div>';
+
+  if (daysToShow.length === 0) {
+    document.getElementById('hist-content').innerHTML =
+      '<div class="hist-loading">Chưa có dữ liệu.</div>';
+    return;
+  }
+
+  var DOW_LABEL = ['CN','2','3','4','5','6','7'];
+
+  function getDayOfWeek(dateStr) {
+    var p = dateStr.split('/');
+    return new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0])).getDay();
+  }
+
+  function gradeSpan(g) {
+    var cls = g==='A'?'grade-a':g==='B'?'grade-b':'grade-d';
+    return '<span class="'+cls+'">'+g+'</span>';
+  }
+
+  var tableHtml = '<table class="hist-table"><thead><tr>'
+    + '<th>Ngày</th><th>Thứ</th>'
+    + '<th>Sáng IN</th><th>Sáng OUT</th>'
+    + '<th>Chiều IN</th><th>Chiều OUT</th>'
+    + '<th>Đánh giá</th><th>Lý do</th>'
+    + '<th>Duyệt</th>'
+    + '</tr></thead><tbody>';
+
+  daysToShow.forEach(function(d) {
+    var dow       = getDayOfWeek(d.date);
+    var isWeekend = (dow === 0 || dow === 6);
+
+    // Kiểm tra ngày lễ: từ holidaysMap hoặc từ cột Lý do trong sheet
+    var isHoliday    = !!holidaysMap[d.date] || d.isHoliday === true;
+    // Lấy nhãn lễ
+    var holidayLabel = holidaysMap[d.date] || d.holidayLabel || '';
+    // Fallback: nếu reasonRaw chứa "Nghỉ" và không có chấm công → coi là nghỉ lễ
+    if (!isHoliday && d.hasAbsent) {
+      var reasonLower = (d.reason || '').toLowerCase().replace(/\|+/g,'').trim();
+      if (reasonLower.indexOf('nghỉ lễ') !== -1 || reasonLower.indexOf('nghỉ tết') !== -1) {
+        isHoliday    = true;
+        holidayLabel = (d.reason || '').replace(/\|+/g,'').trim() || 'Nghỉ lễ';
+      }
+    }
+
+    // Lý do: lấy từ dữ liệu, ẩn nếu chỉ là ||||
+    var reasonRaw = (d.reason || '').trim();
+    // Lọc bỏ |||| ở cuối (ví dụ "Nghỉ lễ||||" → "Nghỉ lễ")
+    var reasonClean = reasonRaw.replace(/\|+$/, '').trim();
+    // Nếu chỉ còn |||| hoặc rỗng → ẩn
+    var reasonDisplay = (!reasonClean || /^\|+$/.test(reasonClean)) ? '' : reasonClean;
+
+    // Ưu tiên label từ holidaysMap nếu có
+    if (isHoliday && !reasonDisplay) reasonDisplay = holidayLabel;
+
+    // Row class
+    var rowClass = isHoliday  ? 'holiday'
+      : isWeekend             ? 'weekend'
+      : d.hasAbsent           ? 'absent'
+      : d.allOk               ? 'all-ok'
+      : 'partial';
+
+    var noReasonClass = reasonDisplay === '' ? ' no-reason' : '';
+    var dowStyle = isWeekend || isHoliday
+      ? 'font-weight:700;' : 'color:#888;';
+    var dowLabel = dow === 0 ? 'CN' : 'T' + DOW_LABEL[dow];
+
+    tableHtml += '<tr class="' + rowClass + noReasonClass + '">'
+      + '<td>' + d.date + '</td>'
+      + '<td style="' + dowStyle + '">' + dowLabel + '</td>'
+      + '<td>' + fmtTime(d.morningIn)    + '</td>'
+      + '<td>' + fmtTime(d.morningOut)   + '</td>'
+      + '<td>' + fmtTime(d.afternoonIn)  + '</td>'
+      + '<td>' + fmtTime(d.afternoonOut) + '</td>'
+      + '<td style="white-space:nowrap;">'
+      + (isWeekend || isHoliday ? '' :
+          gradeSpan(d.g1)+' '+gradeSpan(d.g2)+' '+gradeSpan(d.g3)+' '+gradeSpan(d.g4))
+      + '</td>'
+      + (isWeekend || isHoliday
+        ? '<td>' + reasonDisplay + '</td><td></td>'
+        : (d.allOk && !reasonDisplay
+          ? '<td></td><td></td>'
+          : '<td class="gt-cell" data-gt="' + d.date + '">'
+            + (reasonDisplay
+                ? '<span class="gt-text">' + reasonDisplay + '</span>'
+                : '<span class="gt-hint">+ Giải trình</span>')
+            + '</td>'
+            + '<td>' + (!reasonDisplay ? '' : (
+                d.approve === 'Đồng ý' ? '<span class="badge-approve badge-dongY">✅ Đồng ý</span>'
+                : d.approve === 'Từ chối' ? '<span class="badge-approve badge-tuChoi">❌ Từ chối</span>'
+                : '<span class="badge-approve badge-choDuyet">⏳ Chờ</span>'
+              )) + '</td>'
+          ))
+      + '</tr>';
+  });
+
+  tableHtml += '</tbody></table>';
+  document.getElementById('hist-content').innerHTML = tableHtml;
+}
+
+// So sánh ngày dd/MM/yyyy phía client
+function compareDateClient(a, b) {
+  function n(s){ var p=s.split('/'); return parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]); }
+  var na=n(a), nb=n(b);
+  return na<nb?-1:na>nb?1:0;
+}
+
+// Hiện nút history sau khi GPS thành công
+var _origGetGPSSuccess = null;
+// Thêm vào sau khi GPS thành công
+// DOMContentLoaded removed (duplicate)
+
+
+// Hiện nút history trong main khi GPS thành công
+document.addEventListener('DOMContentLoaded', function() {
+  var _origSetLoc = window.setLoc;
+  if (_origSetLoc) {
+    window.setLoc = function(type, icon, title, lines) {
+      _origSetLoc(type, icon, title, lines);
+      var btn = document.getElementById('btn-history-main');
+      if (btn) btn.style.display = (type==='ok'||type==='warn') ? 'flex' : 'none';
+    };
+  }
+});
+
+// ════════════════════════════════════════════════
+// GUIDE OVERLAY FUNCTIONS
+// ════════════════════════════════════════════════
+
+async function openGuide(e) {
+  if (e) e.preventDefault();
+
+  // Tự động dọn dẹp các thẻ HTML tĩnh cũ của 4 trang hướng dẫn trước khi tải (nếu còn sót)
+  ['p1', 'p2', 'p3', 'p4'].forEach(function(pid) {
+    const pEl = document.getElementById(pid);
+    if (pEl && !pEl.innerHTML.includes('hist-loading')) {
+      pEl.innerHTML = '<div class="hist-loading">⏳ Đang tải hướng dẫn...</div>';
+    }
+  });
+
+  document.getElementById('guide-overlay').classList.add('show');
+  document.getElementById('guide-overlay').scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+  document.body.style.overscrollBehavior = 'none';
+
+  // Tự động tải nội dung hướng dẫn từ Supabase
+  try {
+    const { data, error } = await supabaseClient.from('chamcong_guide_content').select('*');
+    if (!error && data) {
+      data.forEach(item => {
+        const el = document.getElementById(item.id);
+        if (el) {
+          // --- BỘ DỊCH THÔNG MINH (Text to HTML) ---
+          // Nếu nội dung đã có thẻ HTML (có chữ </div>) thì giữ nguyên (để tương thích ngược với dữ liệu cũ)
+          // Nếu nội dung chỉ là văn bản thuần thì dùng bộ dịch mới
+          let text = item.content;
+          if (!text.includes('</div>')) {
+            let parsedHtml = '<div class="section">';
+            // Sử dụng Regex để tách dòng thông minh bất kể định dạng \r\n hay \n
+            const lines = text.split(/\r?\n/);
+            let inList = false;
+
+            lines.forEach(line => {
+              line = line.trim();
+              if (!line) return;
+
+              // 1. Chữ in đậm **chữ**
+              line = line.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+
+              // 2. Hình ảnh: [IMAGE] link_anh
+              if (/^\[IMAGE\]/i.test(line)) {
+                const imgLink = line.replace(/\[IMAGE\]/i, '').trim();
+                parsedHtml += `</div><div class="img-wrap"><img src="${imgLink}" class="guide-img-sm"></div><div class="section">`;
+                return;
+              }
+
+              // 3. Ghi chú màu cam: [!NOTE] nội dung
+              if (/^\[!NOTE\]/i.test(line)) {
+                const noteText = line.replace(/\[!NOTE\]/i, '').trim();
+                parsedHtml += `<div class="note">⚠️ ${noteText}</div>`;
+                return;
+              }
+
+              // 4. Bước thực hiện: 1. Bước một
+              const stepMatch = line.match(/^(\d+)\.\s+(.*)/);
+              if (stepMatch) {
+                if (inList) { parsedHtml += '</ul>'; inList = false; }
+                const stepNum = stepMatch[1];
+                let stepBody = stepMatch[2];
+                // Tách Tiêu đề bước (sau dấu :) nếu có
+                const parts = stepBody.split(':');
+                if (parts.length > 1) {
+                  stepBody = `<strong>${parts[0].trim()}</strong> ${parts.slice(1).join(':').trim()}`;
+                }
+                parsedHtml += `<div class="step"><div class="step-num">${stepNum}</div><div class="step-body">${stepBody}</div></div>`;
+                return;
+              }
+
+              // 5. Gạch đầu dòng: - nội dung
+              if (line.startsWith('-')) {
+                if (!inList) { parsedHtml += '<ul>'; inList = true; }
+                parsedHtml += `<li>${line.substring(1).trim()}</li>`;
+                return;
+              }
+
+              // 6. Đoạn văn thường
+              if (inList) { parsedHtml += '</ul>'; inList = false; }
+              parsedHtml += `<p>${line}</p>`;
+            });
+
+            if (inList) parsedHtml += '</ul>';
+            parsedHtml += '</div>'; // Đóng div section
+            el.innerHTML = parsedHtml;
+          } else {
+            // Hiển thị code HTML cũ bình thường
+            el.innerHTML = item.content;
+          }
+        }
+
+      // Cập nhật title của Tab trên thanh Nav
+      const tabList = document.querySelectorAll('.nav-tab');
+      if (item.id === 'p1' && tabList[0]) tabList[0].textContent = item.title;
+      if (item.id === 'p2' && tabList[1]) tabList[1].textContent = item.title;
+      if (item.id === 'p3' && tabList[2]) tabList[2].textContent = item.title;
+      if (item.id === 'p4' && tabList[3]) tabList[3].textContent = item.title;
+    });
+  }
+} catch(err) {
+  console.log('Lỗi tải hướng dẫn:', err);
+}
+}
+
+function closeGuide() {
+var overlay = document.getElementById('guide-overlay');
+overlay.classList.remove('show');
+document.documentElement.classList.remove('guide-open');
+document.documentElement.style.overflow = '';
+document.body.style.overflow = '';
+// Restore overscroll-behavior để pull-to-refresh hoạt động lại
+document.body.style.overscrollBehavior = '';
+document.documentElement.style.overscrollBehavior = '';
+}
+
+function goBack() {
+closeGuide();
+}
+
+function showPage(id, tab) {
+document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+document.getElementById(id).classList.add('active');
+tab.classList.add('active');
+window.scrollTo({top:0, behavior:'smooth'});
+// Scroll overlay về đầu
+document.getElementById('guide-overlay').scrollTo({top:0, behavior:'smooth'});
+}
+
+</script>
+
+<!-- Guide overlay nhúng trực tiếp -->
+<div id="guide-overlay">
+<div class="g-back-bar">
+  <button class="g-back-btn" onclick="closeGuide()">⤺ Trở về</button>
+  <span style="font-size:14px;font-weight:700;color:white;">📋 Hướng dẫn sử dụng</span>
+</div>
+
+<!-- Header -->
+<div class="header">
+<h1>Hướng dẫn sử dụng</h1>
+<p>App Chấm công</p>
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+<div class="nav-tab active" onclick="showPage('p1',this)">Chấm công</div>
+<div class="nav-tab" onclick="showPage('p2',this)">Dữ liệu tháng</div>
+<div class="nav-tab" onclick="showPage('p3',this)">Nhắc nhở</div>
+<div class="nav-tab" onclick="showPage('p4',this)">Lưu ý</div>
+</div>
+
+<!-- ══ TRANG 1: CHẤM CÔNG ══════════════════════════════════ -->
+<div class="page active" id="p1"><div class="hist-loading">⏳ Đang tải hướng dẫn...</div></div>
+
+<!-- ══ TRANG 2: DỮ LIỆU THÁNG ════════════════════════════ -->
+<div class="page" id="p2">
+  <div class="img-wrap">
+      <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/monthlydata.jpg" class="guide-img-sm">
+      <div class="img-caption">GIAO DIỆN DỮ LIỆU CHẤM CÔNG</div>
+    </div>
+  <div class="section">
+    <div class="section-title">📊 Các chỉ số tổng hợp</div>
+    <ul>
+      <li><strong>Công chuẩn:</strong> tổng số ngày trong tháng trừ Thứ 7 và Chủ Nhật</li>
+      <li><strong>Công thực:</strong> tổng số ngày có chấm công ít nhất 1 lần, tính đến ngày hiện tại</li>
+      <li><strong>Công B,D:</strong> số ngày công có xuất hiện đánh giá B hoặc D</li>
+      <li><strong>Không chấm:</strong> số ngày không chấm công tính đến ngày hiện tại (trừ T7, Chủ Nhật, ngày lễ tết)</li>
+    </ul>
+    <div class="note">
+      ⚠️ <strong>Lưu ý:</strong> Các thông tin tổng hợp chỉ mang tính tham khảo, không dùng làm căn cứ tính lương, thưởng. Việc tính ngày Công chuẩn và ngày Công thực căn cứ theo quy định Công ty.
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📅 Bảng dữ liệu chấm công</div>
+    <p>Toàn bộ dữ liệu chấm công thực của CBNV tính đến ngày hiện tại:</p>
+    <ul>
+      <li>Hiển thị theo từng ngày: Sáng IN/OUT, Chiều IN/OUT</li>
+      <li>Cột <strong>Đánh giá</strong>: A (đúng giờ), B (trễ/sớm), D (không chấm)</li>
+      <li>Cột <strong>Lý do:</strong> ghi chú lý do nếu có (nghỉ lễ, công tác...)</li>
+      <li>Dữ liệu sẽ được duy trì đến ngày 10 tháng tiếp theo</li>
+    </ul>
+    <p>Màu sắc dòng:</p>
+    <ul>
+      <li><span class="badge badge-green">Nền xanh</span> — Ngày đủ công (A A A A)</li>
+      <li><span class="badge badge-yellow">Nền vàng</span> — Thiếu công (có B hoặc D)</li>
+      <li><span class="badge badge-red">Nền đỏ</span> — Vắng (D D D D)</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══ TRANG 3: TELEGRAM ══════════════════════════════════ -->
+<div class="page" id="p3">
+
+  <div class="section">
+    <div class="section-title">🤖 Bot nhắc nhở Telegram</div>
+    <p>Bot Telegram <strong>HST Chấm công #reminder_bot</strong> sẽ tự động gửi tin nhắn nhắc nhở chấm công hàng ngày vào các khung giờ:</p>
+    <ul>
+      <li>⏰ <strong>07:30 – 08:00</strong> — Nhắc CHECKIN buổi sáng</li>
+      <li>⏰ <strong>12:00 – 12:30</strong> — Nhắc CHECKOUT buổi trưa</li>
+      <li>⏰ <strong>12:50 – 13:00</strong> — Nhắc CHECKIN buổi chiều</li>
+      <li>⏰ <strong>17:00 – 17:30</strong> — Nhắc CHECKOUT cuối ngày</li>
+    </ul>
+    <p>Bot chỉ gửi tin nhắn cho CBNV <strong>chưa chấm công</strong> tại thời điểm nhắc — CBNV đã chấm rồi sẽ không nhận được tin.</p>
+    <p>Bot <strong>không gửi</strong> tin nhắn vào thứ 7, Chủ Nhật hoặc ngày lễ, tết.</p>
+    <p>Bot gửi tin nhắn hệ thống xác nhận sau khi chấm công hoàn thành</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📲 Cách đăng ký nhận nhắc nhở</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Cài đặt Telegram</strong>
+        Tải từ Google Play hoặc App Store. Đăng ký / đăng nhập tài khoản cá nhân
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Tìm bot HST Chấm công</strong>
+        Mở Telegram, bấm <strong>Danh bạ -> Thêm -> Thêm bằng mã QR</strong> -> quét mã QR bên dưới để mở bot <strong>@HAST_CHAM_CONG_REMINDER_BOT</strong>
+      </div>
+    </div>
+    
+    <!-- ★ CHÈN ẢNH QR BOT:
+         Cách 1: dùng link ảnh trực tiếp
+           <img src="https://link-anh-cua-ban.png" class="guide-img-sm">
+
+         Cách 2: upload ảnh lên cùng thư mục GitHub rồi dùng đường dẫn tương đối
+           <img src="qr-bot.png" class="guide-img-sm">
+
+         Cách 3: chèn base64 (không cần host) - paste vào src bên dưới
+    -->
+    
+    <div class="img-wrap">
+      <img src="https://hasttechnical2025-prog.github.io/hast_chamcong/img/qr-bot.png" class="guide-img-sm">
+      <div class="img-caption">QR bot @HAST_CHAM_CONG_REMINDER_BOT</div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Nhắn tin cho bot</strong>
+        Gửi bất kỳ tin nhắn nào cho bot (ví dụ: "xin chào")
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Thông báo Phòng Kỹ thuật</strong>
+        Liên hệ Phòng Kỹ thuật để được kích hoạt nhắc nhở chấm công hàng ngày
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ TRANG 4: LƯU Ý ════════════════════════════════════ -->
+<div class="page" id="p4">
+
+  <div class="section">
+    <div class="section-title">⚠️ Lưu ý khi sử dụng</div>
+      <p>Chấm công <strong>4 lần/ngày</strong>:</p>
+      <ul>
+        <li>⏰ Check In sáng - <strong> trước 08:05</strong></li>
+        <li>⏰ Check Out sáng - <strong> từ 12:00 đến 12:45</strong></li>
+        <li>⏰ Check In chiều - <strong>từ 12:46 đến 13:05</strong></li>
+        <li>⏰ Check Out chiều - <strong>từ 17:00</strong></li>
+      </ul>
+      <p>Bật <strong>GPS/Vị trí</strong> trên điện thoại trước khi chấm công</p>
+      <p>Chấm công tại hoặc gần vị trí Công ty để đảm bảo hợp lệ</p>
+      <p>Nếu chấm ngoài phạm vi, vui lòng ghi lý do vào ô Ghi chú</p>
+      <p>Nghiêm cấm <strong>chấm công giúp người khác</strong></p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📞 Liên hệ hỗ trợ</div>
+    <p>Mọi vấn đề kỹ thuật, vui lòng liên hệ <strong>Phòng Kỹ thuật - Công ty CP Siêu Thanh Hà Nội</strong> để được hỗ trợ.</p>
+    <p>Địa chỉ: Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, TP Hà Nội</p>
+    <p>-----</p>
+    <p><i>Bản quyền</i> (c) Công ty CP Siêu Thanh Hà Nội</p>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     GIẢI TRÌNH LÝ DO — BỔ SUNG
+     Thêm vào cuối file, trước 
+	════════════════════════════════════════════ -->
+<!-- ════ POPUP CẢNH BÁO CHẤM CÔNG TRÙNG ════ -->
+<div id="checkin-warn-overlay">
+  <div class="checkin-warn-box">
+    <div class="checkin-warn-icon">⚠️</div>
+    <div class="checkin-warn-title">Bạn đã chấm công hôm nay</div>
+    <div class="checkin-warn-msg" id="warn-msg"></div>
+    <div class="checkin-warn-detail" id="warn-detail"></div>
+    <div class="checkin-warn-actions">
+      <button class="btn-warn-cancel"   onclick="cancelCheckin()">Hủy</button>
+      <button class="btn-warn-continue" onclick="continueCheckin()">Tiếp tục</button>
+    </div>
+  </div>
+</div>
+
+</body>
+     
+<!-- CSS giải trình: thêm vào trong <style> hoặc giữ ở đây -->
+<style>
+#giaitrinh-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0,0,0,.5);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#giaitrinh-overlay.show { display: flex; }
+.giaitrinh-box {
+  background: white;
+  border-radius: 16px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.giaitrinh-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a73e8;
+  margin-bottom: 4px;
+}
+.giaitrinh-date {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 14px;
+}
+#gt-reason {
+  width: 100%;
+  min-height: 90px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  outline: none;
+}
+#gt-reason:focus { border-color: #1a73e8; }
+.giaitrinh-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.giaitrinh-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+.btn-gt-cancel  { background: #f1f3f4; color: #444; }
+.btn-gt-submit  { background: #1a73e8; color: white; }
+.btn-gt-submit:disabled { background: #ccc; cursor: not-allowed; }
+/* Ô lý do trong bảng có thể bấm */
+.gt-cell { cursor: pointer; min-width: 86px; }
+.gt-cell:active { background: rgba(26,115,232,.08) !important; }
+.gt-hint { color: #ccc; font-size: 11px; }
+.gt-text { color: #555; font-size: 12px; }
+</style>
+
+<!-- ════ POPUP GIẢI TRÌNH ════ -->
+<div id="giaitrinh-overlay">
+  <div class="giaitrinh-box">
+    <div class="giaitrinh-title">📝 Giải trình / Bổ sung lý do</div>
+    <div class="giaitrinh-date" id="gt-date-label"></div>
+    <textarea id="gt-reason" placeholder="Nhập lý do: đi công tác, nghỉ phép, đi muộn..."></textarea>
+    <div class="giaitrinh-actions">
+      <button class="btn-gt-cancel" onclick="closeGiaiTrinh()">Hủy</button>
+      <button class="btn-gt-submit" id="btn-gt-submit" onclick="submitGiaiTrinh()">💾 Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ POPUP SOFT PROMPT XIN QUYỀN GPS (THÔNG BÁO MỒI) ════ -->
+<div id="gps-prompt-overlay">
+  <div class="gps-prompt-box">
+    <div class="gps-prompt-icon">📡</div>
+    <div class="gps-prompt-title">Cấp Quyền Vị Trí</div>
+    <div class="gps-prompt-msg">
+      <b>HSTC Chấm Công</b> cần xác định vị trí GPS của bạn để đảm bảo bạn đang ở văn phòng hợp lệ.<br><br>
+      👉 Hãy bấm <b>"Tiếp tục"</b>, sau đó bấm <b>"Cho phép"</b> ở thông báo của điện thoại nhé!
+    </div>
+    <div class="gps-prompt-actions">
+      <button class="btn-prompt-cancel" onclick="closeGPSPrompt()">Hủy</button>
+      <button class="btn-prompt-continue" onclick="acceptGPSPrompt()">Tiếp tục</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Giải trình ──────────────────────────────────────────
+var _gtName = '';
+var _gtDate = '';
+
+function openGiaiTrinh(date, currentReason) {
+  _gtName = getEmail();
+  _gtDate = date;
+  document.getElementById('gt-date-label').textContent = 'Ngày: ' + date;
+  document.getElementById('gt-reason').value =
+    (currentReason && !/^\|+$/.test(currentReason)) ? currentReason : '';
+  var btn = document.getElementById('btn-gt-submit');
+  btn.disabled = false;
+  btn.textContent = '💾 Lưu';
+  document.getElementById('giaitrinh-overlay').classList.add('show');
+  setTimeout(function(){ document.getElementById('gt-reason').focus(); }, 150);
+}
+
+function closeGiaiTrinh() {
+  document.getElementById('giaitrinh-overlay').classList.remove('show');
+  document.getElementById('gt-reason').value = '';
+  var btn = document.getElementById('btn-gt-submit');
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Lưu'; }
+}
+
+async function submitGiaiTrinh() {
+  var reason = document.getElementById('gt-reason').value.trim();
+  if (!reason) {
+    document.getElementById('gt-reason').focus();
+    return;
+  }
+  var btn = document.getElementById('btn-gt-submit');
+  btn.disabled = true;
+  btn.textContent = '⏳ Đang lưu...';
+
+  // Format ngày dd/MM/yyyy sang YYYY-MM-DD
+  const parts = _gtDate.split('/');
+  const dateDb = `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+  try {
+    // Thử UPDATE bản ghi hiện có trước, đồng thời trả về kết quả qua .select()
+    const { data, error } = await supabaseClient
+      .from('chamcong_attendance_records')
+      .update({
+        justification: reason,
+        approve_status: 'Chờ'
+      })
+      .eq('employee_name', _gtName)
+      .eq('date', dateDb)
+      .select();
+
+    if (error) throw error;
+
+    // Nếu không có bản ghi nào bị ảnh hưởng (mảng trả về rỗng vì là record ảo), ta sẽ tiến hành INSERT
+    if (!data || data.length === 0) {
+      const { error: insErr } = await supabaseClient
+        .from('chamcong_attendance_records')
+        .insert([{
+          employee_name: _gtName,
+          date: dateDb,
+          grades: 'D, D, D, D',
+          justification: reason,
+          approve_status: 'Chờ'
+        }]);
+
+      if (insErr) throw insErr;
+    }
+
+    closeGiaiTrinh();
+
+    // Cập nhật ô lý do trong bảng ngay
+    document.querySelectorAll('.gt-cell[data-gt="' + _gtDate + '"]')
+      .forEach(function(cell) {
+        cell.innerHTML = '<span class="gt-text">' + reason + '</span>';
+      });
+
+    showPopup('✅ Đã gửi giải trình lên TBP!');
+
+    // ⚡ GỬI TIN NHẮN TELEGRAM BÁO CHO TBP CÓ GIẢI TRÌNH MỚI (Sự kiện 2)
+    try {
+      (async () => {
+        // 1. Lấy thông tin phòng ban của nhân viên hiện tại
+        const { data: userEmp, error: userErr } = await supabaseClient
+          .from('chamcong_employees')
+          .select('department')
+          .eq('name', _gtName)
+          .maybeSingle();
+
+        if (!userErr && userEmp && userEmp.department) {
+          // 2. Lấy telegram_chat_id của Trưởng bộ phận (TBP) thuộc phòng ban đó
+          const { data: tbp, error: tbpErr } = await supabaseClient
+            .from('chamcong_employees')
+            .select('telegram_chat_id')
+            .eq('role', 'TBP')
+            .eq('department', userEmp.department)
+            .maybeSingle();
+
+          if (!tbpErr && tbp && tbp.telegram_chat_id) {
+            var adminUrl = 'https://hasttechnical2025-prog.github.io/hast_chamcong/giaitrinh_admin.html';
+            var msg = `📋 <b>Giải trình mới cần duyệt</b>\n\n`
+              + `👤 <b>${_gtName}</b>\n`
+              + `📅 Ngày: ${_gtDate}\n`
+              + `📝 Lý do: ${reason}\n\n`
+              + `🔗 <a href="${adminUrl}">Mở trang duyệt giải trình</a>`;
+
+            await sendTelegram(tbp.telegram_chat_id, msg);
+          }
+        }
+      })();
+    } catch(tgE) {
+      console.warn('Lỗi gửi Telegram báo giải trình mới:', tgE);
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '💾 Lưu';
+    showPopup('❌ Lỗi lưu dữ liệu: ' + e.message);
+  }
+}
+
+// Event delegation: bấm vào ô .gt-cell → mở popup
+document.addEventListener('click', function(e) {
+  var cell = e.target.closest ? e.target.closest('.gt-cell') : null;
+  if (!cell) return;
+  var date = cell.getAttribute('data-gt');
+  if (!date) return;
+  var textEl = cell.querySelector('.gt-text');
+  openGiaiTrinh(date, textEl ? textEl.textContent.trim() : '');
+});
+</script>
+
+</body>
+</html>

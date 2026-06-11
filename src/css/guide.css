@@ -1,0 +1,276 @@
+/* ════════════════════════════════════════════════
+   GUIDE OVERLAY — full screen, không cần iframe
+   ════════════════════════════════════════════════ */
+
+/* Back bar sticky */
+#guide-overlay .g-back-bar {
+  position: fixed;       /* thay sticky → fixed */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;        /* cao hơn overlay (9999) */
+  background: #1a73e8;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  min-height: 52px;
+}
+#guide-overlay > .nav {
+  margin-top: 0;
+}
+#guide-overlay > .header {
+  margin-top: 0px;
+}
+#guide-overlay > *:nth-child(2) {
+  margin-top: 52px;  /* đúng bằng chiều cao back-bar */
+}
+#guide-overlay .g-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #f1f3f4;
+  color: #444;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+}
+#guide-overlay .g-back-btn:active {
+  background: rgba(255,255,255,.35);
+}
+#guide-overlay .g-back-bar > span {
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#guide-overlay .g-back-btn:hover {
+  background: #1a73e8; color: white;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+#guide-overlay body {font-family:'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#333;
+  padding:0 0 40px;}
+
+/* Header */
+#guide-overlay .header {
+  display: none; /* Bỏ header */
+}
+#guide-overlay .header img {height:52px;object-fit:contain;margin-bottom:8px;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));}
+#guide-overlay .header h1 {
+  color: white !important;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+#guide-overlay .header p {
+  color: rgba(255,255,255,.85) !important;
+  font-size: 13px;
+}
+
+/* Nav tabs */
+#guide-overlay .nav {
+  display:flex;overflow-x:auto;background:white;
+  border-bottom:2px solid #e0e0e0;position:fixed;top:52px;left:0;right:0;z-index:9999;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);margin-top: 0 !important;
+  padding-top: 0;
+  height: 44px;
+}
+#guide-overlay .nav-tab {flex-shrink:0;padding:12px 16px;font-size:13px;font-weight:600;
+  color:#666;cursor:pointer;border-bottom:2px solid transparent;
+  margin-bottom:-2px;white-space:nowrap;transition:all .2s;}
+#guide-overlay .nav-tab.active {color:#1a73e8;border-bottom-color:#1a73e8;}
+#guide-overlay .nav-tab:hover {color:#1a73e8;background:#f8f9fa;}
+
+/* Content */
+#guide-overlay .page {display:none;max-width:680px;margin:96px auto 0;padding:20px 16px;}
+#guide-overlay .page.active {display:block;}
+
+/* Section */
+#guide-overlay .section {background:white;border-radius:12px;padding:18px 16px;
+  margin-bottom:16px;box-shadow:0 1px 6px rgba(0,0,0,.07);}
+#guide-overlay .section-title {font-size:15px;font-weight:700;color:#1a73e8;
+  margin-bottom:12px;padding-bottom:8px;
+  border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:6px;}
+
+/* Text */
+#guide-overlay p {font-size:14px;line-height:1.7;color:#444;margin-bottom:10px;}
+#guide-overlay p:last-child {margin-bottom:0;}
+#guide-overlay ul, #guide-overlay ol {padding-left:20px;margin-bottom:10px;}
+#guide-overlay li {font-size:14px;line-height:1.8;color:#444;}
+#guide-overlay strong {color:#202124;}
+#guide-overlay .note {background:#fff3e0;border-left:3px solid #f9a825;border-radius:0 8px 8px 0;
+  padding:10px 14px;margin:10px 0;font-size:13px;color:#5d4037;}
+
+/* Step */
+#guide-overlay .step {display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+#guide-overlay .step-num {width:26px;height:26px;border-radius:50%;background:#1a73e8;
+  color:white;font-size:13px;font-weight:700;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;}
+#guide-overlay .step-body {flex:1;font-size:14px;line-height:1.6;color:#444;}
+#guide-overlay .step-body strong {display:block;color:#202124;margin-bottom:2px;}
+
+/* Status badge */
+#guide-overlay .badge {display:inline-block;padding:2px 9px;border-radius:10px;
+  font-size:12px;font-weight:600;margin:2px;}
+#guide-overlay .badge-green {background:#e6f4ea;color:#137333;}
+#guide-overlay .badge-yellow {background:#fff3e0;color:#8a4f00;}
+#guide-overlay .badge-red {background:#fce8e6;color:#c5221f;}
+
+/* Screen mockup */
+#guide-overlay .mockup {background:#f8f9fa;border:1px solid #e0e0e0;border-radius:10px;
+  padding:12px;margin:10px 0;font-size:12px;color:#666;text-align:center;}
+
+/* Edit hint */
+#guide-overlay .edit-hint {background:#e8f0fe;border-radius:8px;padding:10px 14px;
+  font-size:12px;color:#1a73e8;margin-top:12px;display:flex;
+  align-items:center;gap:6px;}
+
+/* Images */
+#guide-overlay .guide-img {max-width:100%;border-radius:10px;display:block;margin:10px auto;}
+#guide-overlay .guide-img-sm {max-width:200px;border-radius:10px;display:block;margin:10px auto;}
+#guide-overlay .img-caption {text-align:center;font-size:12px;color:#888;margin-top:4px;margin-bottom:10px;}
+#guide-overlay .img-wrap {text-align:center;margin:12px 0;}
+
+/* Back button */
+#guide-overlay .back-bar {position:sticky;top:0;z-index:20;background:rgba(255,255,255,.95);
+  backdrop-filter:blur(8px);padding:10px 16px;
+  display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid #e8e8e8;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);}
+#guide-overlay .back-btn {display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:20px;
+  background:#f1f3f4;color:#444;font-size:13px;font-weight:600;
+  text-decoration:none;border:none;cursor:pointer;
+  transition:all .2s;white-space:nowrap;}
+#guide-overlay .back-btn:hover {background:#1a73e8;color:white;}
+#guide-overlay .back-bar-title {font-size:14px;font-weight:700;color:#202124;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}html.guide-open, html.guide-open body { overflow: hidden !important; }
+
+/* ── Popup cảnh báo chấm công trùng ── */
+#checkin-warn-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(0,0,0,.5);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#checkin-warn-overlay.show { display: flex; }
+.checkin-warn-box {
+  background: white;
+  border-radius: 16px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.checkin-warn-icon { font-size: 36px; text-align: center; margin-bottom: 10px; }
+.checkin-warn-title {
+  font-size: 16px; font-weight: 700; color: #e65100;
+  text-align: center; margin-bottom: 8px;
+}
+.checkin-warn-msg {
+  font-size: 14px; color: #444; line-height: 1.6;
+  text-align: center; margin-bottom: 18px;
+}
+.checkin-warn-detail {
+  background: #fff3e0; border-radius: 10px;
+  padding: 10px 14px; margin-bottom: 18px;
+  font-size: 13px; color: #8a4f00;
+}
+.checkin-warn-detail div { margin: 3px 0; }
+.checkin-warn-actions { display: flex; gap: 10px; }
+.checkin-warn-actions button {
+  flex: 1; padding: 13px; border-radius: 10px;
+  font-size: 15px; font-weight: 700; border: none; cursor: pointer;
+}
+.btn-warn-cancel   { background: #f1f3f4; color: #444; }
+.btn-warn-continue { background: #1a73e8; color: white; }
+
+/* ── SOFT PROMPT (THÔNG BÁO MỒI XIN QUYỀN GPS) ── */
+#gps-prompt-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10005; /* Phải cao hơn tất cả popup khác */
+  background: rgba(0,0,0,0.55);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#gps-prompt-overlay.show { display: flex; animation: fadeIn 0.25s ease-out; }
+@keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+
+.gps-prompt-box {
+  background: white;
+  border-radius: 18px;
+  padding: 26px 20px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.25);
+  text-align: center;
+  animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes slideUp { from {transform: translateY(30px) scale(0.95); opacity: 0;} to {transform: translateY(0) scale(1); opacity: 1;} }
+
+.gps-prompt-icon {
+  width: 64px;
+  height: 64px;
+  background: #e8f0fe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 16px auto;
+  color: #1a73e8;
+  box-shadow: 0 4px 10px rgba(26,115,232,.15);
+}
+.gps-prompt-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a73e8;
+  margin-bottom: 12px;
+}
+.gps-prompt-msg {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.5;
+  margin-bottom: 24px;
+  text-align: left;
+  background: #f8f9fa;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+}
+.gps-prompt-actions { display: flex; gap: 10px; }
+.gps-prompt-actions button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-prompt-cancel { background: #f1f3f4; color: #444; }
+.btn-prompt-cancel:active { background: #e0e0e0; }
+.btn-prompt-continue { background: #1a73e8; color: white; box-shadow: 0 4px 12px rgba(26,115,232,.25); }
+.btn-prompt-continue:active { background: #1557b0; }

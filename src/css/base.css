@@ -1,0 +1,9 @@
+/* BASE STYLES */
+:root { --primary: #1a73e8; --primary-hover: #1557b0; --bg-gray: #f8f9fa; --border-color: #dadce0; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+html, body { height: 100%; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #333; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); display: flex; flex-direction: column; min-height: 100vh; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+input, select, textarea { font-family: inherit; outline: none; }

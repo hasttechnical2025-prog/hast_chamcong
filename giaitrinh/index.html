@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duyệt GT">
+<meta name="theme-color" content="#1a73e8">
+<title>Duyệt Giải Trình Công — HSTC</title>
+
+<!-- Supabase JS Client SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="../src/css/base.css">
+  <link rel="stylesheet" href="../src/css/components.css">
+  <link rel="stylesheet" href="../src/css/history.css">
+  <link rel="stylesheet" href="../src/css/guide.css">
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">
+      <img src="logo.png" alt="Logo HSTC" style="max-height:60px; object-fit:contain; margin-bottom:12px; display:block; margin-left:auto; margin-right:auto;">
+      <h2>Duyệt Giải Trình Công</h2>
+      <p>Trang dành cho Trưởng Bộ phận</p>
+    </div>
+    <label>Mật khẩu</label>
+    <input type="password" id="pw-input" placeholder="Nhập mật khẩu..." onkeydown=if(event.key==='Enter'){event.preventDefault();login();}">
+    <button class="login-btn" data-action="login" data-args="">🔐 Đăng nhập</button>
+    <div class="login-err" id="login-err">❌ Sai mật khẩu, thử lại.</div>
+  </div>
+</div>
+
+<!-- MAIN SCREEN -->
+<div id="main-screen">
+  <div class="header">
+    <div>
+      <div class="header-title">
+        <span class="badge">📋</span>
+        <span>Duyệt Giải Trình Công CBNV</span>
+      </div>
+      <div class="sub" id="co-header-sub">Công ty CP Siêu Thanh Hà Nội</div>
+    </div>
+    <button class="logout-btn" data-action="logout" data-args="">Đăng xuất</button>
+  </div>
+
+  <!-- HÀNG TABS CHUYỂN TRANG + BỘ CHỌN THÁNG/NĂM DÙNG CHUNG (cố định dưới header) -->
+  <div class="header-tabs" id="nav-tabs-wrapper">
+    <button class="htab active" id="tab-gt" data-action="switchMainTab" data-args="'gt'">📋 Duyệt Giải Trình</button>
+    <button class="htab" id="tab-nscl" data-action="switchMainTab" data-args="'nscl'">📊 Bảng Điểm NSCL</button>
+    <div class="nav-controls">
+      <span class="nav-period-icon" title="Kỳ chấm công">📅</span>
+      <select id="sel-month" onchange="onMonthChange()" class="nav-select" aria-label="Chọn tháng">
+        <option value="1">Tháng 01</option>
+        <option value="2">Tháng 02</option>
+        <option value="3">Tháng 03</option>
+        <option value="4">Tháng 04</option>
+        <option value="5">Tháng 05</option>
+        <option value="6">Tháng 06</option>
+        <option value="7">Tháng 07</option>
+        <option value="8">Tháng 08</option>
+        <option value="9">Tháng 09</option>
+        <option value="10">Tháng 10</option>
+        <option value="11">Tháng 11</option>
+        <option value="12">Tháng 12</option>
+      </select>
+      <select id="sel-year" onchange="onMonthChange()" class="nav-select" aria-label="Chọn năm">
+        <option value="2026">Năm 2026</option>
+        <option value="2027">Năm 2027</option>
+        <option value="2028">Năm 2028</option>
+        <option value="2029">Năm 2029</option>
+        <option value="2030">Năm 2030</option>
+      </select>
+      <select id="sel-dept" onchange="onDeptChange()" class="nav-select" aria-label="Chọn phòng ban">
+        <option value="">🏢 Tất cả phòng ban</option>
+      </select>
+      <button class="nav-btn" data-action="loadData" data-args="" title="Tải lại dữ liệu">🔄 Tải lại</button>
+    </div>
+  </div>
+
+  <!-- CONTAINER TAB 1: DUYỆT GIẢI TRÌNH -->
+  <div class="container" id="gt-container">
+    <!-- Toolbar (chỉ còn lọc trạng thái - riêng tab Giải trình) -->
+    <div class="toolbar">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="sel-status" onchange="setFilterFromSelect()"
+          style="border:1.5px solid #e0e0e0;border-radius:8px;padding:7px 12px;
+            font-size:13px;color:#333;outline:none;background:white;font-weight:600;">
+          <option value="all">📋 Tất cả</option>
+          <option value="pending">⏳ Chờ duyệt</option>
+          <option value="approved">✅ Đã duyệt</option>
+          <option value="rejected">❌ Từ chối</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="val val-pending" id="cnt-pending">—</div>
+        <div class="lbl">⏳ Chờ duyệt</div>
+      </div>
+      <div class="stat-card">
+        <div class="val val-approved" id="cnt-approved">—</div>
+        <div class="lbl">✅ Đã đồng ý</div>
+      </div>
+      <div class="stat-card">
+        <div class="val val-rejected" id="cnt-rejected">—</div>
+        <div class="lbl">❌ Từ chối</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;
+      border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.08);">
+
+      <!-- Batch bar -->
+      <div class="batch-bar" id="batch-bar">
+        <div class="batch-info">
+          <div class="batch-info-title" id="batch-count-title">0 mục</div>
+          <div class="batch-info-sub"   id="batch-count-sub">0 chờ duyệt</div>
+        </div>
+        <div class="batch-btns">
+          <button class="btn-batch-approve" data-action="openBatch" data-args="'Đồng ý'">
+            ✅ Đồng ý toàn bộ
+          </button>
+          <button class="btn-batch-reject" data-action="openBatch" data-args="'Từ chối'">
+            ❌ Từ chối toàn bộ
+          </button>
+        </div>
+      </div>
+
+      <!-- Bảng cuộn -->
+      <div class="table-wrap">
+        <div id="tbl-container">
+          <div class="empty">Bấm "Tải dữ liệu" để xem danh sách giải trình.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTAINER TAB 2: BẢNG ĐIỂM NSCL -->
+  <div class="container" id="nscl-container" style="display:none;">
+    <div class="toolbar" style="justify-content: space-between;">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn-nscl-action primary" data-action="autofillPoints10" data-args="">⚡ Điền nhanh điểm 10</button>
+      </div>
+      <div id="nscl-title" class="nscl-title"></div>
+      <button class="btn-nscl-action" data-action="printNsclReport" data-args="">🖨️ In Bảng Điểm NSCL</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;overflow:hidden;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.08); height: fit-content; max-height: 100%;">
+      <div class="table-wrap">
+        <div id="tbl-nscl-container">
+          <div class="empty">Bảng chấm công NSCL sẽ hiển thị ở đây.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UNDO CONFIRM POPUP -->
+<div id="undo-overlay" style="display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.5);z-index:1000;align-items:center;
+  justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:14px;padding:24px 20px;
+    max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <div style="font-size:20px;text-align:center;margin-bottom:8px;">↩️</div>
+    <div style="font-size:15px;font-weight:700;color:#333;text-align:center;
+      margin-bottom:6px;">Hủy kết quả duyệt?</div>
+    <div style="font-size:13px;color:#888;text-align:center;margin-bottom:18px;"
+      id="undo-sub"></div>
+    <div style="display:flex;gap:10px;">
+      <button data-action="closeUndo" data-args=""
+        style="flex:1;padding:11px;border-radius:9px;border:none;
+          background:#f1f3f4;color:#444;font-size:14px;font-weight:600;cursor:pointer;">
+        Không
+      </button>
+      <button data-action="confirmUndo" data-args=""
+        style="flex:1;padding:11px;border-radius:9px;border:none;
+          background:#e65100;color:white;font-size:14px;font-weight:600;cursor:pointer;">
+        Hủy duyệt
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- REJECT POPUP -->
+<div id="reject-overlay">
+  <div class="reject-box">
+    <h3>❌ Từ chối giải trình</h3>
+    <div class="sub" id="reject-sub"></div>
+    <textarea id="reject-note" placeholder="Nhập lý do từ chối (tuỳ chọn)..."></textarea>
+    <div class="reject-actions">
+      <button class="btn-cancel-r" data-action="closeReject" data-args="">Hủy</button>
+      <button class="btn-confirm-r" id="btn-confirm-reject"
+        data-action="confirmReject" data-args="">❌ Xác nhận từ chối</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- BATCH CONFIRM POPUP -->
+<div id="batch-overlay">
+  <div class="batch-box">
+    <h3 id="batch-title">Xác nhận duyệt toàn bộ</h3>
+    <p id="batch-desc"></p>
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="progress-label" id="progress-label"></div>
+    <div class="batch-actions" id="batch-actions">
+      <button style="background:#f1f3f4;color:#444;"
+        data-action="closeBatch" data-args="">Hủy</button>
+      <button id="btn-confirm-batch" style="background:#1a73e8;color:white;"
+        data-action="confirmBatch" data-args="">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="../src/js/main.giaitrinh.js"></script>
+
+</body>
+</html>

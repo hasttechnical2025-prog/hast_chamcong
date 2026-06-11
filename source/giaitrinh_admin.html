@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duyệt GT">
+<meta name="theme-color" content="#1a73e8">
+<link rel="manifest" href="manifest.json">
+<title>Duyệt Giải Trình Công — HSTC</title>
+
+<!-- Supabase JS Client SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+/* ── Reset & Base ── */
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;
+  /* Safe area cho iPhone notch */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);}
+
+/* ── Header (app bar cố định) ── */
+.header{background:linear-gradient(135deg,#1a73e8,#1557b0);
+  color:white;padding:14px 22px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 12px rgba(26,115,232,.25);
+  flex-shrink:0;z-index:30;}
+.header-title{display:flex;align-items:center;gap:11px;font-size:18px;font-weight:700;letter-spacing:.2px;}
+.header-title .badge{width:38px;height:38px;border-radius:10px;
+  background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;
+  font-size:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);}
+.header h1{font-size:18px;font-weight:700;}
+.header .sub{font-size:12px;opacity:.85;margin-top:3px;font-weight:500;}
+.logout-btn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.45);
+  color:white;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;
+  transition:all .18s;}
+.logout-btn:hover{background:rgba(255,255,255,.32);}
+
+/* ── Login screen ── */
+#login-screen{display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:20px;}
+.login-box{background:white;border-radius:16px;padding:32px 28px;
+  max-width:360px;width:100%;
+  box-shadow:0 4px 24px rgba(0,0,0,.12);}
+.login-box .logo{text-align:center;margin-bottom:24px;}
+.login-box .logo h2{font-size:20px;font-weight:700;color:#1a73e8;margin-top:8px;}
+.login-box .logo p{font-size:13px;color:#888;margin-top:4px;}
+.login-box label{display:block;font-size:13px;color:#555;
+  font-weight:600;margin-bottom:6px;}
+.login-box input{width:100%;border:1.5px solid #dadce0;border-radius:10px;
+  padding:12px 14px;font-size:15px;outline:none;
+  transition:border-color .2s;font-family:inherit;}
+.login-box input:focus{border-color:#1a73e8;}
+.login-btn{width:100%;background:#1a73e8;color:white;border:none;
+  border-radius:10px;padding:13px;font-size:15px;font-weight:700;
+  cursor:pointer;margin-top:16px;transition:background .2s;}
+.login-btn:hover{background:#1557b0;}
+.login-err{color:#c5221f;font-size:13px;margin-top:10px;text-align:center;display:none;}
+
+/* ── Main screen (flex column toàn màn hình) ── */
+#main-screen{display:none;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
+.container{
+  max-width:100%;
+  flex:1 1 auto;
+  min-height:0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  overflow: hidden;
+}
+
+/* ── Toolbar ── */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin-bottom:10px;flex-shrink:0;}
+.month-select{display:flex;align-items:center;gap:8px;
+  background:white;border-radius:10px;padding:8px 14px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);}
+.month-select label{font-size:13px;color:#555;font-weight:600;}
+.month-select select{border:1px solid #dadce0;border-radius:7px;
+  padding:5px 8px;font-size:13px;outline:none;color:#333;}
+.refresh-btn{background:#1a73e8;color:white;border:none;border-radius:10px;
+  padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;}
+.refresh-btn:hover{background:#1557b0;}
+.filter-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.filter-btn{background:white;border:1.5px solid #e0e0e0;color:#555;
+  border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;}
+.filter-btn.active{background:#1a73e8;color:white;border-color:#1a73e8;}
+
+/* ── Stats bar ── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px;margin-bottom:10px;flex-shrink:0;}
+.stat-card{background:white;border-radius:10px;padding:12px 14px;
+  box-shadow:0 1px 4px rgba(0,0,0,.07);text-align:center;}
+.stat-card .val{font-size:22px;font-weight:700;}
+.stat-card .lbl{font-size:11px;color:#888;margin-top:2px;}
+.val-pending{color:#e65100;}
+.val-approved{color:#137333;}
+.val-rejected{color:#c5221f;}
+
+/* ── Table ── */
+.table-wrap{
+  background: white;
+  flex: 1;
+  overflow: auto;             /* cuộn bảng ngang + dọc */
+  -webkit-overflow-scrolling: touch;
+}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl{table-layout:fixed;}
+.tbl th{background:#1a73e8;color:white;padding:8px 10px;
+  text-align:left;font-size:12px;font-weight:600;
+  white-space:nowrap;position:sticky;top:0;z-index:2;}
+.tbl td{padding:8px 10px;border-bottom:1px solid #f0f0f0;
+  vertical-align:middle;font-size:12px;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#f8f9fa;}
+/* Độ rộng cố định từng cột (CHỈ áp dụng cho bảng Duyệt Giải Trình,
+   KHÔNG áp dụng cho bảng NSCL — dùng :not(.tbl-nscl) để khỏi đè width cột ngày) */
+.tbl:not(.tbl-nscl) th:nth-child(1){width:130px;min-width:130px;
+  position:sticky;left:0;z-index:3;background:#1a73e8;}
+.tbl:not(.tbl-nscl) td:nth-child(1){width:130px;min-width:130px;
+  position:sticky;left:0;z-index:1;background:white;
+  box-shadow:2px 0 4px rgba(0,0,0,.08);}
+.tbl:not(.tbl-nscl) tr:hover td:nth-child(1){background:#f8f9fa;} /* Họ tên sticky */
+.tbl:not(.tbl-nscl) th:nth-child(2),.tbl:not(.tbl-nscl) td:nth-child(2){width:80px;min-width:80px;}  /* Ngày */
+.tbl:not(.tbl-nscl) th:nth-child(3),.tbl:not(.tbl-nscl) td:nth-child(3){width:80px;min-width:80px;white-space:nowrap;}  /* Đánh giá */
+.tbl:not(.tbl-nscl) th:nth-child(4),.tbl:not(.tbl-nscl) td:nth-child(4){width:180px;min-width:180px;} /* Lý do */
+.tbl:not(.tbl-nscl) th:nth-child(5),.tbl:not(.tbl-nscl) td:nth-child(5){width:100px;min-width:100px;} /* Trạng thái */
+.tbl:not(.tbl-nscl) th:nth-child(6),.tbl:not(.tbl-nscl) td:nth-child(6){width:120px;min-width:120px;} /* Ghi chú */
+.tbl:not(.tbl-nscl) th:nth-child(7),.tbl:not(.tbl-nscl) td:nth-child(7){width:200px;min-width:200px;white-space:nowrap;} /* Thao tác */
+.tbl td.name{font-weight:600;color:#202124;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;}
+.tbl td.date{color:#555;white-space:nowrap;}
+.tbl td.grade{white-space:nowrap;}
+.tbl td.grade span{font-weight:700;margin-right:2px;}
+.grade-a{color:#137333;}.grade-b{color:#b45309;}.grade-d{color:#c5221f;}
+.tbl td.reason{color:#444;word-break:break-word;}
+.badge{display:inline-block;padding:3px 10px;border-radius:8px;
+  font-size:11px;font-weight:700;white-space:nowrap;}
+.badge-pending{background:#fff3e0;color:#e65100;}
+.badge-approved{background:#e6f4ea;color:#137333;}
+.badge-rejected{background:#fce8e6;color:#c5221f;}
+.tbl td.actions{white-space:nowrap;}
+.btn-approve{background:#34a853;color:white;border:none;border-radius:7px;
+  padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;
+  margin-right:4px;white-space:nowrap;}
+.btn-approve:hover{background:#137333;}
+.btn-reject{background:#ea4335;color:white;border:none;border-radius:7px;
+  padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-reject:hover{background:#c5221f;}
+.btn-undo{background:#f1f3f4;color:#555;border:none;border-radius:7px;
+  padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-undo:hover{background:#e0e0e0;}
+.tbl td.actions{white-space:nowrap;vertical-align:middle;}
+
+/* ── Empty / Loading ── */
+.empty{text-align:center;padding:40px;color:#888;font-size:14px;}
+
+/* ── Reject popup ── */
+#reject-overlay{display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.5);z-index:999;
+  align-items:center;justify-content:center;padding:20px;}
+#reject-overlay.show{display:flex;}
+.reject-box{background:white;border-radius:14px;padding:24px 20px;
+  max-width:380px;width:100%;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.reject-box h3{font-size:15px;font-weight:700;color:#c5221f;margin-bottom:4px;}
+.reject-box .sub{font-size:12px;color:#888;margin-bottom:14px;}
+.reject-box textarea{width:100%;min-height:80px;border:1.5px solid #e0e0e0;
+  border-radius:8px;padding:10px;font-size:13px;
+  font-family:inherit;resize:vertical;outline:none;}
+.reject-box textarea:focus{border-color:#1a73e8;}
+.reject-actions{display:flex;gap:8px;margin-top:12px;}
+.reject-actions button{flex:1;padding:11px;border-radius:9px;
+  font-size:14px;font-weight:600;border:none;cursor:pointer;}
+.btn-cancel-r{background:#f1f3f4;color:#444;}
+.btn-confirm-r{background:#ea4335;color:white;}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:#323232;color:white;padding:10px 20px;border-radius:10px;
+  font-size:13px;font-weight:600;z-index:9999;opacity:0;
+  transition:all .3s;pointer-events:none;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.success{background:#137333;}
+#toast.error{background:#c5221f;}
+
+/* ── Loading spinner ── */
+.spin{width:16px;height:16px;border:2.5px solid rgba(255,255,255,.3);
+  border-top-color:white;border-radius:50%;
+  animation:sp .7s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── Batch action bar ── */
+.batch-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: white;
+  border-bottom: 2px solid #e8eaed;
+  flex-shrink: 0;
+  /* Cố định vì nằm ngoài div cuộn — không cần sticky */
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+}
+/* Phần thông tin bên trái */
+.batch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.batch-info-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #202124;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.batch-info-sub {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+}
+/* Nhóm nút bên phải */
+.batch-btns {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.btn-batch-approve {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #e6f4ea;
+  color: #137333;
+  border: 1.5px solid #34a853;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.btn-batch-approve:hover {
+  background: #34a853;
+  color: white;
+}
+.btn-batch-reject {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fce8e6;
+  color: #c5221f;
+  border: 1.5px solid #ea4335;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.btn-batch-reject:hover {
+  background: #ea4335;
+  color: white;
+}
+
+/* ── Batch confirm popup ── */
+#batch-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.5); z-index: 1001;
+  align-items: center; justify-content: center; padding: 20px;
+}
+#batch-overlay.show { display: flex; }
+.batch-box {
+  background: white; border-radius: 14px; padding: 24px 20px;
+  max-width: 360px; width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.batch-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.batch-box p  { font-size: 13px; color: #666; margin-bottom: 16px; }
+.progress-wrap {
+  background: #f0f0f0; border-radius: 8px;
+  height: 8px; overflow: hidden; margin-bottom: 12px; display: none;
+}
+.progress-bar {
+  height: 100%; border-radius: 8px;
+  background: #1a73e8; width: 0%;
+  transition: width .3s;
+}
+.progress-label {
+  font-size: 12px; color: #888; text-align: center;
+  margin-bottom: 14px; display: none;
+}
+.batch-actions { display: flex; gap: 10px; }
+.batch-actions button {
+  flex: 1; padding: 11px; border-radius: 9px;
+  font-size: 14px; font-weight: 600; border: none; cursor: pointer;
+}
+
+/* ── Tab Layout & NSCL ── */
+.header-tabs { display:flex; gap:6px; padding:9px 18px; flex-shrink:0;
+  background:#1557b0; border-top:1px solid rgba(255,255,255,.12);
+  box-shadow:0 2px 8px rgba(0,0,0,.12); z-index:20; }
+.htab { background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.85); border:none;
+  padding:9px 20px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;
+  transition:all .18s; display:flex; align-items:center; gap:7px; }
+.htab.active { background:#fff; color:#1a73e8; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.18); }
+.htab:hover:not(.active) { background:rgba(255,255,255,0.28); color:#fff; }
+.nav-controls { margin-left:auto; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+.nav-period-icon { font-size:16px; line-height:1; }
+.nav-select { font-size:14px; font-weight:700; color:#1a73e8; background:#fff;
+  padding:7px 12px; border-radius:9px; border:none; outline:none; font-family:inherit;
+  cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.18); max-width:220px; }
+.nav-select:hover:not(:disabled) { background:#eef3ff; }
+.nav-select:disabled { cursor:not-allowed; }
+.nav-btn { font-size:13px; font-weight:700; color:#1a73e8; background:#fff;
+  padding:8px 14px; border-radius:9px; border:none; outline:none; font-family:inherit;
+  cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.18); }
+.nav-btn:hover { background:#eef3ff; }
+@media (max-width:760px){
+  .header-tabs{flex-wrap:wrap;}
+  .nav-controls{margin-left:0; width:100%; justify-content:flex-start;}
+}
+
+#nscl-container { display: none; }
+.nscl-input { width: 100%; height: 26px; text-align: center; border: 1px solid transparent; border-radius: 4px; outline: none; font-weight: 600; color: #202124; background: transparent; transition: all .2s; font-family: inherit; font-size: 12px; }
+.nscl-input:hover:not([readonly]), .nscl-input:focus:not([readonly]) { border: 1px solid #1a73e8; box-shadow: 0 0 4px rgba(26,115,232,0.3); background: white; }
+.nscl-input[readonly] { background: transparent; cursor: not-allowed; color: #aaa; pointer-events: none; }
+.tbl-nscl { table-layout: fixed; width: max-content; border-collapse: collapse; }
+.tbl-nscl th { padding: 4px 2px; text-align: center; font-size: 11px; border-bottom: 2px solid #dadce0; border-right: 1px solid #dadce0; overflow: hidden; }
+.tbl-nscl td { padding: 2px; border-right: 1px solid #dadce0; text-align: center; vertical-align: middle; overflow: hidden; }
+.tbl-nscl th.sticky-tt, .tbl-nscl td.sticky-tt { position: sticky; left: 0; z-index: 3; background: white; box-shadow: inset -1px 0 0 #dadce0; text-align: center; padding: 4px 2px; width: 35px; min-width: 35px; max-width: 35px; white-space: nowrap; overflow: hidden; font-size: 12px; }
+.tbl-nscl th.sticky-tt { background: #1a73e8; z-index: 4; }
+.tbl-nscl tr:hover td.sticky-tt { background: #f8f9fa; }
+.tbl-nscl th.sticky-name, .tbl-nscl td.sticky-name { position: sticky; left: 35px; z-index: 3; background: white; box-shadow: 2px 0 4px rgba(0,0,0,.08); text-align: left; padding: 4px 6px; width: 140px; min-width: 140px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-right: 2px solid #dadce0; font-size: 12px; }
+.tbl-nscl th.sticky-name { background: #1a73e8; z-index: 4; }
+.tbl-nscl tr:hover td.sticky-name { background: #f8f9fa; }
+.tbl-nscl td.sticky-total { position: sticky; left: 0; z-index: 3; background: #f8f9fa; box-shadow: 2px 0 4px rgba(0,0,0,.08); text-align: right; padding: 4px 6px; font-size: 12px; font-weight: bold; border-right: 2px solid #dadce0; }
+.tbl-nscl td.t7 { background: #fff2e6; }
+.tbl-nscl th.t7 { background: #ffa726; color: #fff; }
+.tbl-nscl td.cn { background: #e6f9ec; }
+.tbl-nscl th.cn { background: #66bb6a; color: #fff; }
+.tbl-nscl td.le { background: #f2f2f2; }
+.tbl-nscl th.le { background: #bdbdbd; color: #fff; }
+.col-sum { background: #f8f9fa; font-weight: 700; color: #1a73e8; }
+.col-pm { background:#fff7e6; padding:0; }
+.pm-input { font-weight:700; color:#e65100; }
+.nscl-input.pm-input:hover, .nscl-input.pm-input:focus { border:1px solid #e65100; box-shadow:0 0 4px rgba(230,81,0,.35); }
+.nscl-title { flex: 1; text-align: center; font-size: 15px; font-weight: 700; color: #1a73e8; letter-spacing: .3px; padding: 0 12px; }
+.btn-nscl-action { background: white; border: 1px solid #dadce0; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; color: #3c4043; display: flex; align-items: center; gap: 6px; }
+.btn-nscl-action:hover { background: #f1f3f4; }
+.btn-nscl-action.primary { background: #1a73e8; color: white; border: none; }
+.btn-nscl-action.primary:hover { background: #1557b0; }
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">
+      <img src="logo.png" alt="Logo HSTC" style="max-height:60px; object-fit:contain; margin-bottom:12px; display:block; margin-left:auto; margin-right:auto;">
+      <h2>Duyệt Giải Trình Công</h2>
+      <p>Trang dành cho Trưởng Bộ phận</p>
+    </div>
+    <label>Mật khẩu</label>
+    <input type="password" id="pw-input" placeholder="Nhập mật khẩu..." onkeydown=if(event.key==='Enter'){event.preventDefault();login();}">
+    <button class="login-btn" onclick="login()">🔐 Đăng nhập</button>
+    <div class="login-err" id="login-err">❌ Sai mật khẩu, thử lại.</div>
+  </div>
+</div>
+
+<!-- MAIN SCREEN -->
+<div id="main-screen">
+  <div class="header">
+    <div>
+      <div class="header-title">
+        <span class="badge">📋</span>
+        <span>Duyệt Giải Trình Công CBNV</span>
+      </div>
+      <div class="sub" id="co-header-sub">Công ty CP Siêu Thanh Hà Nội</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Đăng xuất</button>
+  </div>
+
+  <!-- HÀNG TABS CHUYỂN TRANG + BỘ CHỌN THÁNG/NĂM DÙNG CHUNG (cố định dưới header) -->
+  <div class="header-tabs" id="nav-tabs-wrapper">
+    <button class="htab active" id="tab-gt" onclick="switchMainTab('gt')">📋 Duyệt Giải Trình</button>
+    <button class="htab" id="tab-nscl" onclick="switchMainTab('nscl')">📊 Bảng Điểm NSCL</button>
+    <div class="nav-controls">
+      <span class="nav-period-icon" title="Kỳ chấm công">📅</span>
+      <select id="sel-month" onchange="onMonthChange()" class="nav-select" aria-label="Chọn tháng">
+        <option value="1">Tháng 01</option>
+        <option value="2">Tháng 02</option>
+        <option value="3">Tháng 03</option>
+        <option value="4">Tháng 04</option>
+        <option value="5">Tháng 05</option>
+        <option value="6">Tháng 06</option>
+        <option value="7">Tháng 07</option>
+        <option value="8">Tháng 08</option>
+        <option value="9">Tháng 09</option>
+        <option value="10">Tháng 10</option>
+        <option value="11">Tháng 11</option>
+        <option value="12">Tháng 12</option>
+      </select>
+      <select id="sel-year" onchange="onMonthChange()" class="nav-select" aria-label="Chọn năm">
+        <option value="2026">Năm 2026</option>
+        <option value="2027">Năm 2027</option>
+        <option value="2028">Năm 2028</option>
+        <option value="2029">Năm 2029</option>
+        <option value="2030">Năm 2030</option>
+      </select>
+      <select id="sel-dept" onchange="onDeptChange()" class="nav-select" aria-label="Chọn phòng ban">
+        <option value="">🏢 Tất cả phòng ban</option>
+      </select>
+      <button class="nav-btn" onclick="loadData()" title="Tải lại dữ liệu">🔄 Tải lại</button>
+    </div>
+  </div>
+
+  <!-- CONTAINER TAB 1: DUYỆT GIẢI TRÌNH -->
+  <div class="container" id="gt-container">
+    <!-- Toolbar (chỉ còn lọc trạng thái - riêng tab Giải trình) -->
+    <div class="toolbar">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="sel-status" onchange="setFilterFromSelect()"
+          style="border:1.5px solid #e0e0e0;border-radius:8px;padding:7px 12px;
+            font-size:13px;color:#333;outline:none;background:white;font-weight:600;">
+          <option value="all">📋 Tất cả</option>
+          <option value="pending">⏳ Chờ duyệt</option>
+          <option value="approved">✅ Đã duyệt</option>
+          <option value="rejected">❌ Từ chối</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="val val-pending" id="cnt-pending">—</div>
+        <div class="lbl">⏳ Chờ duyệt</div>
+      </div>
+      <div class="stat-card">
+        <div class="val val-approved" id="cnt-approved">—</div>
+        <div class="lbl">✅ Đã đồng ý</div>
+      </div>
+      <div class="stat-card">
+        <div class="val val-rejected" id="cnt-rejected">—</div>
+        <div class="lbl">❌ Từ chối</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;
+      border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.08);">
+
+      <!-- Batch bar -->
+      <div class="batch-bar" id="batch-bar">
+        <div class="batch-info">
+          <div class="batch-info-title" id="batch-count-title">0 mục</div>
+          <div class="batch-info-sub"   id="batch-count-sub">0 chờ duyệt</div>
+        </div>
+        <div class="batch-btns">
+          <button class="btn-batch-approve" onclick="openBatch('Đồng ý')">
+            ✅ Đồng ý toàn bộ
+          </button>
+          <button class="btn-batch-reject" onclick="openBatch('Từ chối')">
+            ❌ Từ chối toàn bộ
+          </button>
+        </div>
+      </div>
+
+      <!-- Bảng cuộn -->
+      <div class="table-wrap">
+        <div id="tbl-container">
+          <div class="empty">Bấm "Tải dữ liệu" để xem danh sách giải trình.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTAINER TAB 2: BẢNG ĐIỂM NSCL -->
+  <div class="container" id="nscl-container" style="display:none;">
+    <div class="toolbar" style="justify-content: space-between;">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn-nscl-action primary" onclick="autofillPoints10()">⚡ Điền nhanh điểm 10</button>
+      </div>
+      <div id="nscl-title" class="nscl-title"></div>
+      <button class="btn-nscl-action" onclick="printNsclReport()">🖨️ In Bảng Điểm NSCL</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;overflow:hidden;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.08); height: fit-content; max-height: 100%;">
+      <div class="table-wrap">
+        <div id="tbl-nscl-container">
+          <div class="empty">Bảng chấm công NSCL sẽ hiển thị ở đây.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UNDO CONFIRM POPUP -->
+<div id="undo-overlay" style="display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.5);z-index:1000;align-items:center;
+  justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:14px;padding:24px 20px;
+    max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <div style="font-size:20px;text-align:center;margin-bottom:8px;">↩️</div>
+    <div style="font-size:15px;font-weight:700;color:#333;text-align:center;
+      margin-bottom:6px;">Hủy kết quả duyệt?</div>
+    <div style="font-size:13px;color:#888;text-align:center;margin-bottom:18px;"
+      id="undo-sub"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeUndo()"
+        style="flex:1;padding:11px;border-radius:9px;border:none;
+          background:#f1f3f4;color:#444;font-size:14px;font-weight:600;cursor:pointer;">
+        Không
+      </button>
+      <button onclick="confirmUndo()"
+        style="flex:1;padding:11px;border-radius:9px;border:none;
+          background:#e65100;color:white;font-size:14px;font-weight:600;cursor:pointer;">
+        Hủy duyệt
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- REJECT POPUP -->
+<div id="reject-overlay">
+  <div class="reject-box">
+    <h3>❌ Từ chối giải trình</h3>
+    <div class="sub" id="reject-sub"></div>
+    <textarea id="reject-note" placeholder="Nhập lý do từ chối (tuỳ chọn)..."></textarea>
+    <div class="reject-actions">
+      <button class="btn-cancel-r" onclick="closeReject()">Hủy</button>
+      <button class="btn-confirm-r" id="btn-confirm-reject"
+        onclick="confirmReject()">❌ Xác nhận từ chối</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- BATCH CONFIRM POPUP -->
+<div id="batch-overlay">
+  <div class="batch-box">
+    <h3 id="batch-title">Xác nhận duyệt toàn bộ</h3>
+    <p id="batch-desc"></p>
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="progress-label" id="progress-label"></div>
+    <div class="batch-actions" id="batch-actions">
+      <button style="background:#f1f3f4;color:#444;"
+        onclick="closeBatch()">Hủy</button>
+      <button id="btn-confirm-batch" style="background:#1a73e8;color:white;"
+        onclick="confirmBatch()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// ⚙️ CẤU HÌNH SUPABASE
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://bkdupkjrafaprvdseued.supabase.co'; // Thay PROJECT_REF
+const SUPABASE_KEY = 'sb_publishable_VPxkr4o9TCHiM-cVNalB5A_z4x_dG5y'; // Thay ANON_KEY
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_FUNC_URL = 'https://bkdupkjrafaprvdseued.supabase.co/functions/v1';
+
+// Hàm gửi Telegram (dùng chung)
+function sendTelegram(chatId, message) {
+  if (!chatId) return Promise.resolve();
+  return fetch(SUPABASE_FUNC_URL + '/send-telegram', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + SUPABASE_KEY
+    },
+    body: JSON.stringify({ chat_id: chatId, message: message }),
+    redirect: 'follow'
+  })
+  .then(function(r) { return r.text(); })
+  .then(function(text) {
+    try { return JSON.parse(text); } catch(e) { return {}; }
+  })
+  .catch(function(e) { console.warn('[Telegram]', e.message); });
+}
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+var _pw         = '';
+var _allItems   = [];
+var _filter     = 'all';
+var _rejectRow  = null; // Lưu UUID của bản ghi bị từ chối
+var _tbpDept    = ''; // Phòng ban của TBP
+var _isAdmin    = false; // Admin có thể chọn phòng ban tự do
+
+// ══════════════════════════════════════════════
+// KHỞI ĐỘNG
+// ══════════════════════════════════════════════
+(function init() {
+  var savedPw = sessionStorage.getItem('hstc_admin_pw');
+  if (savedPw) {
+    _pw      = savedPw;
+    _isAdmin = sessionStorage.getItem('hstc_admin_is_admin') === '1';
+    _tbpDept = sessionStorage.getItem('hstc_admin_dept') || '';
+    // Khôi phục tháng/năm đã chọn trước đó (giữ khi F5)
+    var _sm = sessionStorage.getItem('hstc_sel_month');
+    var _sy = sessionStorage.getItem('hstc_sel_year');
+    if (_sm) document.getElementById('sel-month').value = _sm;
+    if (_sy) document.getElementById('sel-year').value = _sy;
+    loadPrintConfig();   // nạp cấu hình bản in
+    showMainScreen();
+    loadData();
+  }
+})();
+
+// ══════════════════════════════════════════════
+// AUTH TỪ SUPABASE
+// ══════════════════════════════════════════════
+async function login() {
+  var pw = document.getElementById('pw-input').value.trim();
+  if (!pw) return;
+
+  var btn = document.querySelector('.login-btn');
+  btn.innerHTML = '<span class="spin"></span> Đang xác thực...';
+  btn.disabled  = true;
+
+  try {
+    const { data: settings, error } = await supabaseClient.from('chamcong_admin_settings').select('*');
+    if (error) throw error;
+
+    let user = null;
+    settings.forEach(s => {
+      if (s.password === pw) {
+        if (s.key === 'tbp_kd') user = { dept: 'Kinh doanh', isAdmin: false };
+        if (s.key === 'tbp_kt') user = { dept: 'Kế toán-Hành chính', isAdmin: false };
+        if (s.key === 'admin')  user = { dept: '', isAdmin: true };
+      }
+    });
+
+    if (!user) {
+      throw new Error('Sai mật khẩu, thử lại.');
+    }
+
+    // Khởi tạo trạng thái đăng nhập
+    _pw = pw;
+    _isAdmin = user.isAdmin;
+    _tbpDept = user.dept;
+    applyPrintCfgFromSettings(settings); // nạp cấu hình bản in
+
+    sessionStorage.setItem('hstc_admin_pw', pw);
+    sessionStorage.setItem('hstc_admin_is_admin', _isAdmin ? '1' : '0');
+    sessionStorage.setItem('hstc_admin_dept', _tbpDept);
+
+    showMainScreen();
+    loadData();
+  } catch (e) {
+    var err = document.getElementById('login-err');
+    err.textContent = '❌ ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.innerHTML = '🔐 Đăng nhập';
+    btn.disabled  = false;
+  }
+}
+
+function logout() {
+  _pw = '';
+  sessionStorage.removeItem('hstc_admin_pw');
+  sessionStorage.removeItem('hstc_admin_is_admin');
+  sessionStorage.removeItem('hstc_admin_dept');
+  sessionStorage.removeItem('hstc_month_init'); // Xóa khởi tạo tháng
+  sessionStorage.removeItem('hstc_sel_month');
+  sessionStorage.removeItem('hstc_sel_year');
+  _isAdmin = false;
+  _tbpDept = '';
+  document.getElementById('main-screen').style.display  = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+}
+
+function showMainScreen() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-screen').style.display  = 'flex';
+}
+
+function switchMainTab(tabId) {
+  document.querySelectorAll('.htab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+
+  if (tabId === 'gt') {
+    document.getElementById('gt-container').style.display = 'flex';
+    document.getElementById('nscl-container').style.display = 'none';
+  } else {
+    document.getElementById('gt-container').style.display = 'none';
+    document.getElementById('nscl-container').style.display = 'flex';
+    renderNsclTable();
+  }
+}
+
+// Biến lưu trữ cho NSCL
+var _allActiveEmployees = [];
+var _holidaysMap = {};
+
+// ══════════════════════════════════════════════
+// TẢI DỮ LIỆU TỪ SUPABASE
+// ══════════════════════════════════════════════
+
+function onMonthChange() {
+  loadData();
+}
+
+// Đổi phòng ban (dùng chung) -> render lại tab đang mở (không cần tải lại CSDL)
+function onDeptChange() {
+  renderTable();
+  if (document.getElementById('nscl-container').style.display === 'flex') {
+    renderNsclTable();
+  }
+}
+
+async function loadData() {
+  var container = document.getElementById('tbl-container');
+  container.innerHTML = '<div class="empty">⏳ Đang tải dữ liệu từ Supabase...</div>';
+
+  var selMonth = document.getElementById('sel-month');
+  var selYear  = document.getElementById('sel-year');
+  var now = new Date();
+  var month = now.getMonth() + 1;
+  var year  = now.getFullYear();
+
+  // Kiểm tra đã khởi tạo tháng cho phiên này chưa
+  var isInitialized = sessionStorage.getItem('hstc_month_init') === '1';
+
+  if (!isInitialized) {
+    // Khi đăng nhập -> mặc định tháng hiện tại
+    selMonth.value = month.toString();
+    selYear.value  = year.toString();
+    sessionStorage.setItem('hstc_month_init', '1');
+  } else {
+    // Đã khởi tạo: dropdown là nguồn chuẩn (đọc đúng tháng người dùng đang chọn)
+    month = parseInt(selMonth.value, 10);
+    year  = parseInt(selYear.value, 10);
+  }
+  // Lưu lại lựa chọn hiện tại để khôi phục khi tải lại trang (F5)
+  sessionStorage.setItem('hstc_sel_month', String(month));
+  sessionStorage.setItem('hstc_sel_year', String(year));
+
+  const padStr = n => n < 10 ? '0' + n : '' + n;
+  const startDate = `${year}-${padStr(month)}-01`;
+  const endDate = `${year}-${padStr(month)}-${padStr(new Date(year, month, 0).getDate())}`;
+
+  try {
+    // 1. Lấy thông tin phòng ban của tất cả Employees (Thêm điều kiện status active)
+    const { data: emps, error: empErr } = await supabaseClient
+      .from('chamcong_employees')
+      .select('name, department, status, role');
+
+    if (empErr) throw empErr;
+
+    const deptMap = {};
+    const depts = new Set();
+    const activeEmps = []; // Chỉ lấy nhân viên đang làm việc
+
+    emps.forEach(e => {
+      deptMap[e.name.toLowerCase()] = e.department;
+      depts.add(e.department);
+
+      const st = e.status ? e.status.toString().trim().toLowerCase() : '';
+      const isActive = !st || st.indexOf('đang') !== -1 || st.indexOf('active') !== -1 || st.indexOf('làm việc') !== -1 || st.indexOf('lam viec') !== -1;
+      if (isActive) {
+        activeEmps.push(e);
+      }
+    });
+
+    // Cập nhật dropdown phòng ban
+    var deptSel = document.getElementById('sel-dept');
+    if (deptSel) {
+      deptSel.innerHTML = '';
+      if (_isAdmin) {
+        var allOpt = document.createElement('option');
+        allOpt.value = ''; allOpt.textContent = '🏢 Tất cả phòng ban';
+        deptSel.appendChild(allOpt);
+      }
+      depts.forEach(d => {
+        var opt = document.createElement('option');
+        opt.value = d; opt.textContent = '🏢 ' + d;
+        deptSel.appendChild(opt);
+      });
+      if (_tbpDept) deptSel.value = _tbpDept;
+
+      deptSel.disabled = !_isAdmin;
+      deptSel.style.opacity = _isAdmin ? '1' : '0.7';
+    }
+
+    // 2. Lấy dữ liệu ngày lễ trong tháng
+    const { data: hld, error: hldErr } = await supabaseClient
+      .from('chamcong_holidays')
+      .select('date')
+      .gte('date', startDate)
+      .lte('date', endDate);
+
+    if (hldErr) throw hldErr;
+
+    const holidaySet = new Set();
+    if (hld) {
+      hld.forEach(h => holidaySet.add(h.date));
+    }
+
+    // 3. Lấy dữ liệu chấm công tổng hợp trong tháng hiện tại
+    const { data: records, error: recErr } = await supabaseClient
+      .from('chamcong_attendance_records')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true });
+
+    if (recErr) throw recErr;
+
+    // Map records thật từ Supabase
+    const recordMap = {};
+    records.forEach(r => {
+      recordMap[r.employee_name.toLowerCase() + '_' + r.date] = r;
+    });
+
+    // 4. Khởi tạo & filter giải trình theo quyền hạn (Kết hợp tạo Record Ảo)
+    var items = [];
+
+    // Xác định ngày cuối cùng cần kiểm tra
+    const nowTime = new Date();
+    // Nếu đang xem tháng hiện tại thì chỉ check đến ngày hôm nay, nếu tháng quá khứ thì check đến hết tháng
+    const limitDay = (month === nowTime.getMonth() + 1 && year === nowTime.getFullYear())
+                     ? nowTime.getDate()
+                     : new Date(year, month, 0).getDate();
+
+    for (let d = 1; d <= limitDay; d++) {
+      const curDateYMD = `${year}-${padStr(month)}-${padStr(d)}`;
+
+      // Bỏ qua ngày lễ
+      if (holidaySet.has(curDateYMD)) continue;
+
+      // Bỏ qua T7, Chủ Nhật
+      const dow = new Date(curDateYMD).getDay();
+      if (dow === 0 || dow === 6) continue;
+
+      const dateStr = `${padStr(d)}/${padStr(month)}/${year}`;
+
+      activeEmps.forEach(e => {
+        const userDept = e.department || '';
+
+        // TBP: Lọc theo phòng ban TBP quản lý
+        if (!_isAdmin && _tbpDept && userDept !== _tbpDept) return;
+
+        const key = e.name.toLowerCase() + '_' + curDateYMD;
+        let r = recordMap[key];
+
+        let isVirtual = false;
+
+        if (!r) {
+          // Record ẢO: Dành cho những người hoàn toàn không chấm công ngày hôm đó
+          r = {
+            id: `virtual-${curDateYMD}-${e.name}`,
+            employee_name: e.name,
+            date: curDateYMD,
+            grades: 'D, D, D, D',
+            justification: '',
+            approve_status: 'Chờ',
+            approve_note: '',
+            approve_time: null
+          };
+          isVirtual = true;
+        }
+
+        // Chỉ hiển thị các dòng vắng/trễ công (có B hoặc D) HOẶC có giải trình
+        const ga = (r.grades || 'D,D,D,D').split(',').map(g => g.trim());
+        const hasBD = ga.includes('B') || ga.includes('D');
+        const hasReason = !!(r.justification && r.justification.trim());
+
+        if (!hasBD && !hasReason) return;
+
+        items.push({
+          rowIndex: r.id, // UUID thật hoặc Chuỗi Ảo
+          name: r.employee_name,
+          dept: userDept,
+          date: dateStr,
+          grade: r.grades,
+          reason: r.justification || '',
+          approve: r.approve_status === 'Chờ' ? '' : r.approve_status,
+          approveNote: r.approve_note || '',
+          approveTime: r.approve_time ? new Date(r.approve_time).toLocaleString('vi-VN') : '',
+          isVirtual: isVirtual // Đánh dấu flag
+        });
+      });
+    }
+
+    _allItems = items;
+    _allActiveEmployees = activeEmps;
+    _holidaysMap = holidaySet; // lưu lại cho NSCL
+    _recordMap = recordMap; // lưu lại cho NSCL
+
+    renderTable();
+    updateStats();
+
+    // Nếu đang ở Tab NSCL thì render lại bảng NSCL
+    if (document.getElementById('nscl-container').style.display === 'flex') {
+      renderNsclTable();
+    }
+
+  } catch(e) {
+    container.innerHTML = `<div class="empty" style="color:#c5221f;">❌ Lỗi kết nối: ${e.message}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════
+// RENDER BẢNG
+// ══════════════════════════════════════════════
+function setFilterFromSelect() {
+  _filter = document.getElementById('sel-status').value || 'all';
+  renderTable();
+}
+
+function setFilter(f) {
+  _filter = f;
+  var sel = document.getElementById('sel-status');
+  if (sel) sel.value = f;
+  renderTable();
+}
+
+function getFilteredItems() {
+  if (!_isAdmin) {
+    return _allItems.slice();
+  }
+  var selDept = (document.getElementById('sel-dept') || {}).value || '';
+  return _allItems.filter(function(item) {
+    if (selDept && item.dept !== selDept) return false;
+    return true;
+  });
+}
+
+function getDisplayItems() {
+  var items = getFilteredItems();
+  var filtered = items.filter(function(item) {
+    if (_filter === 'pending')  return !item.approve;
+    if (_filter === 'approved') return item.approve === 'Đồng ý';
+    if (_filter === 'rejected') return item.approve === 'Từ chối';
+    return true;
+  });
+  // Sắp xếp theo Tên (Họ tên) tiếng Việt để nhóm nhân viên lại với nhau
+  filtered.sort(function(a, b) {
+    return a.name.localeCompare(b.name, 'vi');
+  });
+  return filtered;
+}
+
+function renderTable() {
+  var items = getDisplayItems();
+
+  // Reset highlight tổng hợp batch bar luôn (trước khi có thể bị return sớm)
+  var bcTitle = document.getElementById('batch-count-title');
+  var bcSub   = document.getElementById('batch-count-sub');
+  if (bcTitle) {
+    var pending  = items.filter(function(i){ return !i.approve; }).length;
+    var approved = items.filter(function(i){ return i.approve === 'Đồng ý'; }).length;
+    var rejected = items.filter(function(i){ return i.approve === 'Từ chối'; }).length;
+    bcTitle.textContent = items.length + ' mục hiển thị';
+    bcSub.textContent   = '⏳ ' + pending + '  ✅ ' + approved + '  ❌ ' + rejected;
+  }
+  updateStats(); // Reset số liệu của block stats luôn
+
+  if (items.length === 0) {
+    document.getElementById('tbl-container').innerHTML =
+      '<div class="empty">📭 Không có giải trình nào' +
+      (_filter !== 'all' ? ' trong bộ lọc này' : ' trong tháng này') + '.</div>';
+    return;
+  }
+
+  var html = '<table class="tbl"><thead><tr>'
+    + '<th>Họ tên</th><th>Ngày</th><th>Đánh giá</th>'
+    + '<th>Lý do giải trình</th><th>Trạng thái</th>'
+    + '<th>Ghi chú TBP</th><th>Thao tác</th>'
+    + '</tr></thead><tbody>';
+
+  items.forEach(function(item) {
+    var gradeHtml = item.grade.split(',').map(function(g){
+      g = g.trim();
+      var cls = g==='A'?'grade-a':g==='B'?'grade-b':'grade-d';
+      return '<span class="'+cls+'">'+g+'</span>';
+    }).join(' ');
+
+    var statusBadge = !item.approve
+      ? '<span class="badge badge-pending">⏳ Chờ duyệt</span>'
+      : item.approve === 'Đồng ý'
+        ? '<span class="badge badge-approved">✅ Đồng ý</span>'
+        : '<span class="badge badge-rejected">❌ Từ chối</span>';
+
+    var _canApprove = hasJustification(item);
+    var actionHtml = !item.approve
+      ? (_canApprove
+          ? `<button class="btn-approve" onclick="doApprove('${item.rowIndex}')">✅ Đồng ý</button>`
+          : `<button class="btn-approve" style="background:#c4c7c5;cursor:not-allowed;" title="Chưa có lý do giải trình" onclick="warnNoReason()">✅ Đồng ý</button>`)
+        + `<button class="btn-reject"  onclick="openReject('${item.rowIndex}','${escHtml(item.name)}','${item.date}')">❌ Từ chối</button>`
+      : `<button class="btn-undo" onclick="undoApprove('${item.rowIndex}')" title="Hủy duyệt">↩ Hủy</button>`;
+
+    html += '<tr>'
+      + '<td class="name">' + escHtml(item.name) + '</td>'
+      + '<td class="date">' + item.date + '</td>'
+      + '<td class="grade">' + gradeHtml + '</td>'
+      + '<td class="reason">' + escHtml(item.reason) + '</td>'
+      + '<td>' + statusBadge + '</td>'
+      + '<td style="font-size:12px;color:#666;">' + escHtml(item.approveNote || '') + '</td>'
+      + '<td class="actions">' + actionHtml + '</td>'
+      + '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('tbl-container').innerHTML = html;
+}
+
+function updateStats() {
+  var base     = getFilteredItems();
+  var pending  = base.filter(function(i){ return !i.approve; }).length;
+  var approved = base.filter(function(i){ return i.approve === 'Đồng ý'; }).length;
+  var rejected = base.filter(function(i){ return i.approve === 'Từ chối'; }).length;
+  document.getElementById('cnt-pending').textContent  = pending;
+  document.getElementById('cnt-approved').textContent = approved;
+  document.getElementById('cnt-rejected').textContent = rejected;
+}
+
+// ══════════════════════════════════════════════
+// DUYỆT / TỪ CHỐI QUA SUPABASE API
+// ══════════════════════════════════════════════
+// Có lý do giải trình thực sự hay không (bỏ qua khoảng trắng và ký tự |)
+function hasJustification(item) {
+  var r = (item && item.reason ? String(item.reason) : '').replace(/\|/g, '').trim();
+  return r.length > 0;
+}
+// Cảnh báo khi bấm Đồng ý ở dòng chưa có lý do
+function warnNoReason() {
+  showToast('⚠️ Chưa có lý do giải trình nên không thể duyệt. CBNV cần gửi giải trình trước.', 'error');
+}
+
+function doApprove(id) {
+  var item = _allItems.find(function(i){ return i.rowIndex === id; });
+  if (item && !hasJustification(item)) {
+    showToast('⚠️ Không thể duyệt: trường hợp này chưa có lý do giải trình.', 'error');
+    return;
+  }
+  sendApproval(id, 'Đồng ý', '');
+}
+
+function openReject(id, name, date) {
+  _rejectRow = id;
+  document.getElementById('reject-sub').textContent = name + ' — ' + date;
+  document.getElementById('reject-note').value = '';
+  document.getElementById('reject-overlay').classList.add('show');
+  setTimeout(function(){ document.getElementById('reject-note').focus(); }, 150);
+}
+
+function closeReject() {
+  _rejectRow = null;
+  document.getElementById('reject-overlay').classList.remove('show');
+}
+
+function confirmReject() {
+  if (!_rejectRow) return;
+  var note = document.getElementById('reject-note').value.trim();
+  sendApproval(_rejectRow, 'Từ chối', note);
+  closeReject();
+}
+
+var _undoRow = null;
+
+function undoApprove(id) {
+  _undoRow = id;
+  var item = _allItems.find(function(i){ return i.rowIndex === id; });
+  var sub  = item ? (item.name + ' — ' + item.date + ' — ' + item.approve) : '';
+  document.getElementById('undo-sub').textContent = sub;
+  var el = document.getElementById('undo-overlay');
+  el.style.display = 'flex';
+}
+
+function closeUndo() {
+  _undoRow = null;
+  document.getElementById('undo-overlay').style.display = 'none';
+}
+
+function confirmUndo() {
+  if (!_undoRow) return;
+  var id = _undoRow;
+  closeUndo();
+  sendApproval(id, 'Chờ', ''); // Chờ -> Mở khóa duyệt
+}
+
+async function sendApproval(id, approveStatus, note) {
+  try {
+    var item = _allItems.find(function(i){ return i.rowIndex === id; });
+    var isVirtual = id.toString().startsWith('virtual-');
+
+    if (isVirtual) {
+      // Record ẢO: Tiến hành INSERT bản ghi vắng mới vào CSDL
+      const dbDate = item.date.split('/').reverse().join('-'); // dd/MM/yyyy -> yyyy-MM-DD
+      const { data, error } = await supabaseClient
+        .from('chamcong_attendance_records')
+        .insert([{
+          employee_name: item.name,
+          date: dbDate,
+          grades: 'D, D, D, D',
+          approve_status: approveStatus,
+          approve_note: note || '',
+          approve_time: approveStatus === 'Chờ' ? null : new Date().toISOString()
+        }])
+        .select();
+
+      if (error) throw error;
+
+      // Nếu insert thành công, đổi id ảo thành id thật từ DB để có thể undo/duyệt tiếp mà không bị trùng
+      if (data && data.length > 0) {
+        item.rowIndex = data[0].id;
+      }
+    } else {
+      // Record THẬT: Tiến hành UPDATE bản ghi hiện có
+      const { error } = await supabaseClient
+        .from('chamcong_attendance_records')
+        .update({
+          approve_status: approveStatus,
+          approve_note: note || '',
+          approve_time: approveStatus === 'Chờ' ? null : new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    }
+
+    // Cập nhật trạng thái hiển thị local
+    if (item) {
+      item.approve     = approveStatus === 'Chờ' ? '' : approveStatus;
+      item.approveNote = note;
+      item.approveTime = approveStatus === 'Chờ' ? '' : new Date().toLocaleString('vi-VN');
+    }
+
+    renderTable();
+    updateStats();
+
+    var msg = approveStatus === 'Đồng ý'
+      ? '✅ Đã đồng ý giải trình thành công'
+      : approveStatus === 'Từ chối'
+        ? '❌ Đã từ chối giải trình thành công'
+        : '↩️ Đã hủy duyệt';
+
+    showToast(msg, approveStatus === 'Đồng ý' ? 'success' : '');
+
+    // ⚡ GỬI TIN NHẮN TELEGRAM BÁO CHO CBNV KẾT QUẢ DUYỆT (Sự kiện 4)
+    if (approveStatus === 'Đồng ý' || approveStatus === 'Từ chối') {
+      try {
+        (async () => {
+          const { data: emp, error: empErr } = await supabaseClient
+            .from('chamcong_employees')
+            .select('telegram_chat_id')
+            .eq('name', item.name)
+            .maybeSingle();
+
+          if (!empErr && emp && emp.telegram_chat_id) {
+            var icon = approveStatus === 'Đồng ý' ? '✅' : '❌';
+            var tgMsg = `${icon} <b>Kết quả duyệt giải trình</b>\n\n`
+              + `📅 Ngày: ${item.date}\n`
+              + `📝 Lý do: ${item.reason}\n`
+              + `${icon} Kết quả: <b>${approveStatus}</b>`
+              + (note ? `\n💬 Ghi chú TBP: ${note}` : '');
+
+            await sendTelegram(emp.telegram_chat_id, tgMsg);
+          }
+        })();
+      } catch (tgE) {
+        console.warn('Lỗi gửi Telegram kết quả duyệt:', tgE);
+      }
+    }
+
+  } catch(e) {
+    showToast('❌ Lỗi kết nối: ' + e.message, 'error');
+  }
+}
+
+// ══════════════════════════════════════════════
+// BATCH DUYỆT HÀNG LOẠT SIÊU TỐC
+// ══════════════════════════════════════════════
+var _batchAction = '';
+var _batchApproveList = [];
+
+function openBatch(action) {
+  var pending = getDisplayItems().filter(function(i){ return !i.approve; });
+  if (pending.length === 0) {
+    showToast('Không có mục nào cần duyệt', '');
+    return;
+  }
+  _batchAction = action;
+  var icon  = action === 'Đồng ý' ? '✅' : '❌';
+  var color = action === 'Đồng ý' ? '#137333' : '#c5221f';
+  document.getElementById('batch-title').innerHTML = icon + ' ' + action + ' toàn bộ';
+  document.getElementById('batch-title').style.color = color;
+
+  var descEl     = document.getElementById('batch-desc');
+  var confirmBtn = document.getElementById('btn-confirm-batch');
+
+  if (action === 'Đồng ý') {
+    // CHỈ duyệt những dòng CÓ lý do giải trình
+    var withReason = pending.filter(hasJustification);
+    var noReason   = pending.filter(function(i){ return !hasJustification(i); });
+    _batchApproveList = withReason;
+
+    var html = '';
+    if (withReason.length === 0) {
+      html = '⚠️ Không có trường hợp nào có lý do giải trình để đồng ý.';
+      confirmBtn.style.display = 'none';
+    } else {
+      html = 'Sẽ <b style="color:#137333;">ĐỒNG Ý ' + withReason.length + '</b> giải trình có lý do.';
+      confirmBtn.style.display = '';
+    }
+    if (noReason.length > 0) {
+      html += '<br><br>⚠️ <b style="color:#c5221f;">' + noReason.length +
+        ' trường hợp chưa có lý do</b> sẽ KHÔNG được duyệt:' +
+        '<div style="max-height:140px;overflow:auto;margin-top:6px;border:1px solid #eee;' +
+        'border-radius:8px;padding:6px 8px;font-size:12px;color:#666;text-align:left;">' +
+        noReason.map(function(i){ return '• ' + escHtml(i.name) + ' — ' + i.date; }).join('<br>') +
+        '</div>';
+    }
+    descEl.innerHTML = html;
+  } else {
+    // Từ chối toàn bộ: áp dụng cho tất cả mục đang chờ (như cũ)
+    _batchApproveList = pending;
+    confirmBtn.style.display = '';
+    descEl.textContent = 'Sẽ từ chối ' + pending.length + ' giải trình đang hiển thị (chưa duyệt).';
+  }
+
+  document.getElementById('progress-wrap').style.display  = 'none';
+  document.getElementById('progress-label').style.display = 'none';
+  document.getElementById('batch-actions').style.display  = 'flex';
+  confirmBtn.style.background = action === 'Đồng ý' ? '#34a853' : '#ea4335';
+  confirmBtn.textContent = 'Xác nhận';
+  document.getElementById('batch-overlay').classList.add('show');
+}
+
+function closeBatch() {
+  document.getElementById('batch-overlay').classList.remove('show');
+  document.getElementById('btn-confirm-batch').style.display = '';
+  _batchAction = '';
+  _batchApproveList = [];
+}
+
+async function confirmBatch() {
+  var items    = (_batchApproveList || []).slice();
+  var actLabel = _batchAction;
+  if (items.length === 0) { closeBatch(); return; }
+
+  document.getElementById('batch-actions').style.display  = 'none';
+  document.getElementById('progress-wrap').style.display  = 'block';
+  document.getElementById('progress-label').style.display = 'block';
+  document.getElementById('progress-label').textContent   = 'Đang xử lý trên Supabase...';
+
+  try {
+    // Chạy song song N updates/inserts lên Supabase qua Promise.all
+    const promises = items.map(item => {
+      const isVirtual = item.rowIndex.toString().startsWith('virtual-');
+      if (isVirtual) {
+        // Nếu là bản ghi ảo thì phải INSERT
+        const dbDate = item.date.split('/').reverse().join('-');
+        return supabaseClient
+          .from('chamcong_attendance_records')
+          .insert([{
+            employee_name: item.name,
+            date: dbDate,
+            grades: 'D, D, D, D',
+            approve_status: _batchAction,
+            approve_note: '',
+            approve_time: new Date().toISOString()
+          }]);
+      } else {
+        // Nếu là bản ghi thật thì UPDATE bình thường
+        return supabaseClient
+          .from('chamcong_attendance_records')
+          .update({
+            approve_status: _batchAction,
+            approve_note: '',
+            approve_time: new Date().toISOString()
+          })
+          .eq('id', item.rowIndex);
+      }
+    });
+
+    await Promise.all(promises);
+
+    // ⚡ GỬI TIN NHẮN TELEGRAM BÁO CHO CBNV KẾT QUẢ DUYỆT HÀNG LOẠT (Sự kiện 4)
+    try {
+      (async () => {
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const { data: emp, error: empErr } = await supabaseClient
+            .from('chamcong_employees')
+            .select('telegram_chat_id')
+            .eq('name', item.name)
+            .maybeSingle();
+
+          if (!empErr && emp && emp.telegram_chat_id) {
+            var icon = actLabel === 'Đồng ý' ? '✅' : '❌';
+            var tgMsg = `${icon} <b>Kết quả duyệt giải trình</b>\n\n`
+              + `📅 Ngày: ${item.date}\n`
+              + `📝 Lý do: ${item.reason}\n`
+              + `${icon} Kết quả: <b>${actLabel}</b> (Duyệt hàng loạt)`;
+
+            await sendTelegram(emp.telegram_chat_id, tgMsg);
+          }
+        }
+      })();
+    } catch(tgE) {
+      console.warn('Lỗi gửi Telegram kết quả duyệt hàng loạt:', tgE);
+    }
+
+    // Lưu ý nhỏ: Khi duyệt batch thành công, do ta không lấy id mới của các bản ghi insert trả về (để tiết kiệm code),
+    // Giải pháp tốt nhất là buộc trang tải lại dữ liệu mới từ Server để lấy đúng id thật cho các nút Hủy duyệt.
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('progress-label').textContent = `✅ Đã ${actLabel.toLowerCase()} ${items.length} mục! Đang tải lại...`;
+
+    setTimeout(function() {
+      closeBatch();
+      loadData(); // Gọi lại loadData để đảm bảo các record ảo vừa insert được load id thật
+      showToast(`✅ Đã ${actLabel.toLowerCase()} ${items.length} mục!`, 'success');
+    }, 1200);
+
+  } catch (e) {
+    document.getElementById('progress-label').textContent = '❌ Lỗi: ' + e.message;
+    setTimeout(function() {
+      document.getElementById('batch-actions').style.display = 'flex';
+      document.getElementById('btn-confirm-batch').textContent = 'Thử lại';
+    }, 1500);
+  }
+}
+
+// ══════════════════════════════════════════════
+// BẢNG ĐIỂM NSCL
+// ══════════════════════════════════════════════
+var _recordMap = {}; // Lưu map của loadData
+
+function renderNsclTable() {
+  const container = document.getElementById('tbl-nscl-container');
+  const selMonth = parseInt(document.getElementById('sel-month').value, 10);
+  const selYear = parseInt(document.getElementById('sel-year').value, 10);
+  const padStr = n => n < 10 ? '0' + n : '' + n;
+
+  // Cập nhật tiêu đề tháng/năm để TBP biết đang chấm điểm cho tháng nào
+  const _titleEl = document.getElementById('nscl-title');
+  if (_titleEl) _titleEl.textContent =
+    `BẢNG CHẤM CÔNG & CHẤM ĐIỂM NSCL THÁNG ${padStr(selMonth)} NĂM ${selYear}`;
+
+  const daysInMonth = new Date(selYear, selMonth, 0).getDate();
+
+  // Lọc nhân viên theo phòng ban được chọn
+  let empsToShow = _allActiveEmployees;
+  if (!_isAdmin) {
+    empsToShow = empsToShow.filter(e => e.department === _tbpDept);
+  } else {
+    const selDept = document.getElementById('sel-dept').value;
+    if (selDept) empsToShow = empsToShow.filter(e => e.department === selDept);
+  }
+
+  // Sắp xếp: TBP lên đầu, sau đó xếp theo bảng chữ cái
+  empsToShow.sort((a,b) => {
+    const aRole = (a.role || '').toUpperCase();
+    const bRole = (b.role || '').toUpperCase();
+    if (aRole === 'TBP' && bRole !== 'TBP') return -1;
+    if (aRole !== 'TBP' && bRole === 'TBP') return 1;
+    return a.name.localeCompare(b.name, 'vi');
+  });
+
+  if (empsToShow.length === 0) {
+    container.innerHTML = '<div class="empty">Không có CBNV phù hợp.</div>';
+    return;
+  }
+
+  // Khởi tạo HTML Table (sử dụng colgroup để cố định chiều rộng cột tuyệt đối trong fixed table layout)
+  let colgroupHtml = `
+    <colgroup>
+      <col style="width: 35px;"> <!-- Cột TT -->
+      <col style="width: 140px;"> <!-- Cột Họ tên -->
+  `;
+  for (let d = 1; d <= daysInMonth; d++) {
+    colgroupHtml += `  <col style="width: 38px;">\n`; // 31 Cột ngày
+  }
+  colgroupHtml += `
+      <col style="width: 38px;"> <!-- Cột Điểm +/- -->
+      <col style="width: 40px;"> <!-- Điểm -->
+      <col style="width: 38px;"> <!-- Trực -->
+      <col style="width: 38px;"> <!-- Phép -->
+      <col style="width: 38px;"> <!-- CĐ -->
+      <col style="width: 38px;"> <!-- Ốm -->
+      <col style="width: 25px;"> <!-- B -->
+      <col style="width: 25px;"> <!-- C -->
+      <col style="width: 25px;"> <!-- D -->
+      <col style="width: 25px;"> <!-- E -->
+      <col style="width: 25px;"> <!-- Y -->
+    </colgroup>
+  `;
+
+  let html = `<table class="tbl tbl-nscl">
+    ${colgroupHtml}
+    <thead>
+      <tr>
+        <th rowspan="2" class="sticky-tt">TT</th>
+        <th rowspan="2" class="sticky-name">Họ tên</th>
+        <th colspan="${daysInMonth}">Ngày/tháng</th>
+        <th rowspan="2" style="writing-mode: vertical-rl; transform: rotate(180deg); font-size:10px;">Điểm +/-</th>
+        <th colspan="10">TỔNG HỢP CÔNG ĐIỂM/THÁNG</th>
+      </tr>
+      <tr>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const curDateYMD = `${selYear}-${padStr(selMonth)}-${padStr(d)}`;
+    const dow = new Date(curDateYMD).getDay();
+    let thClass = '';
+    if (_holidaysMap && _holidaysMap.has(curDateYMD)) thClass = 'le';
+    else if (dow === 6) thClass = 't7';
+    else if (dow === 0) thClass = 'cn';
+    html += `<th class="${thClass}">${padStr(d)}</th>`;
+  }
+
+  html += `
+        <th>Điểm</th>
+        <th style="font-size:10px; writing-mode: vertical-rl; transform: rotate(180deg);">Trực</th>
+        <th style="font-size:10px; writing-mode: vertical-rl; transform: rotate(180deg);">Phép</th>
+        <th style="font-size:10px; writing-mode: vertical-rl; transform: rotate(180deg);">CĐ</th>
+        <th style="font-size:10px; writing-mode: vertical-rl; transform: rotate(180deg);">Ốm</th>
+        <th>B</th><th>C</th><th>D</th><th>E</th><th>Y</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  let totalDiem = 0;
+  let totalPhep = 0;
+  let totalOm = 0;
+
+  empsToShow.forEach((emp, index) => {
+    html += `<tr>
+      <td class="sticky-tt">${index + 1}</td>
+      <td class="sticky-name">${emp.name}</td>`;
+
+    let sumDiem = 0;
+    let sumPhep = 0;
+    let sumOm = 0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const curDateYMD = `${selYear}-${padStr(selMonth)}-${padStr(d)}`;
+      const dow = new Date(curDateYMD).getDay();
+      let tdClass = '';
+      let readonly = '';
+      let isHoliday = false;
+      if (_holidaysMap && _holidaysMap.has(curDateYMD)) { tdClass = 'le'; readonly = 'readonly'; isHoliday = true; }
+      else if (dow === 6) { tdClass = 't7'; readonly = 'readonly'; }
+      else if (dow === 0) { tdClass = 'cn'; readonly = 'readonly'; }
+
+      const r = _recordMap[emp.name.toLowerCase() + '_' + curDateYMD];
+      let val = (r && r.nscl_score) ? String(r.nscl_score).trim() : '';
+
+      // Chuẩn hóa hiển thị IN HOA cho P, Ô, N
+      const up = val.toUpperCase();
+      if (up === 'P') val = 'P';
+      else if (up === 'Ô' || up === 'O') val = 'Ô';
+      else if (up === 'N') val = 'N';
+
+      // Ngày lễ/tết -> hiển thị N (không sửa, không tính điểm)
+      if (isHoliday) val = 'N';
+
+      // Tính toán tổng hợp
+      if (val === 'P') sumPhep += 1;
+      else if (up === 'P/2') sumPhep += 0.5;          // dữ liệu cũ (đã bỏ)
+      else if (val === 'Ô') sumOm += 1;
+      else if (val === 'N') { /* nghỉ lễ - bỏ qua */ }
+      else {
+        const nv = parseFloat(val);
+        if (!isNaN(nv)) { sumDiem += nv; if (nv === 5) sumPhep += 0.5; } // điểm 5 = 0.5 ngày phép
+      }
+
+      const inputDisabled = readonly ? 'disabled tabindex="-1"' : '';
+      const oninput = readonly ? '' : 'oninput="sanitizeDayInput(this)"';
+      html += `<td class="${tdClass}"><input type="text" class="nscl-input" ${readonly} ${inputDisabled} value="${val}" data-emp="${emp.name}" data-date="${curDateYMD}" ${oninput} onblur="saveNsclScore(this)"></td>`;
+    }
+
+    // Điểm +/- (lưu trên bản ghi ngày 01, cộng thẳng vào cột Điểm tổng)
+    const adjRec = _recordMap[emp.name.toLowerCase() + '_' + `${selYear}-${padStr(selMonth)}-01`];
+    const adjVal = (adjRec && adjRec.nscl_adjust != null && adjRec.nscl_adjust !== '') ? String(adjRec.nscl_adjust) : '';
+    const adjNum = parseFloat(adjVal);
+    const rowDiem = sumDiem + (isNaN(adjNum) ? 0 : adjNum);
+
+    totalDiem += rowDiem;
+    totalPhep += sumPhep;
+    totalOm   += sumOm;
+
+    html += `
+      <td class="col-pm"><input type="text" class="nscl-input pm-input" value="${adjVal}" data-emp="${emp.name}" data-month="${selYear}-${padStr(selMonth)}" oninput="sanitizeAdjustInput(this)" onblur="saveNsclAdjust(this)"></td>
+      <td class="col-sum" id="sum-diem-${index}">${rowDiem || '-'}</td>
+      <td>-</td>
+      <td id="sum-phep-${index}">${sumPhep || '-'}</td>
+      <td>-</td>
+      <td id="sum-om-${index}">${sumOm || '-'}</td>
+      <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+    </tr>`;
+  });
+
+  html += `
+    <tr style="background:#f8f9fa; font-weight:bold;">
+      <td colspan="2" class="sticky-total" style="text-align:right;">CỘNG:</td>
+      <td colspan="${daysInMonth + 1}"></td>
+      <td class="col-sum">${totalDiem || '-'}</td>
+      <td>-</td>
+      <td>${totalPhep || '-'}</td>
+      <td>-</td>
+      <td>${totalOm || '-'}</td>
+      <td colspan="5"></td>
+    </tr>
+  </tbody></table>`;
+
+  container.innerHTML = html;
+}
+
+// Tính lại Realtime sau khi nhập xong
+function recalcNsclRow(empName) {
+  // Lấy ra tất cả các ô input của người này, tính lại là xong
+  // (Hoặc render lại cả bảng là nhanh nhất)
+  renderNsclTable();
+}
+
+// ── Kiểm soát ký tự nhập ──
+// Ô ngày: chỉ cho số nguyên 1..15, P (phép), Ô (ốm). Tự động IN HOA p->P, o/ô->Ô.
+function sanitizeDayInput(el) {
+  let v = (el.value || '').trim();
+  if (v === '') { el.value = ''; return; }
+  const first = v.charAt(v.length - 1) || v.charAt(0); // ưu tiên ký tự vừa gõ
+  // Nếu có chữ cái -> chấp nhận P (phép), Ô (ốm) hoặc N (nghỉ)
+  if (/[pP]/.test(v)) { el.value = 'P'; return; }
+  if (/[oôOÔ]/.test(v)) { el.value = 'Ô'; return; }
+  if (/[nN]/.test(v)) { el.value = 'N'; return; }
+  // Còn lại: chỉ giữ chữ số
+  let digits = v.replace(/[^0-9]/g, '');
+  if (digits === '') { el.value = ''; return; }
+  let n = parseInt(digits, 10);
+  if (isNaN(n) || n < 1) { el.value = ''; return; }
+  if (n > 15) n = 15;
+  el.value = String(n);
+}
+
+// Ô Điểm +/-: chỉ số nguyên 1..15
+function sanitizeAdjustInput(el) {
+  let digits = (el.value || '').replace(/[^0-9]/g, '');
+  if (digits === '') { el.value = ''; return; }
+  let n = parseInt(digits, 10);
+  if (isNaN(n) || n < 1) { el.value = ''; return; }
+  if (n > 15) n = 15;
+  el.value = String(n);
+}
+
+// Giá trị ngày hợp lệ: rỗng | 1..15 | P | Ô | N
+function isValidDayValue(v) {
+  if (v === '' || v === 'P' || v === 'Ô' || v === 'N') return true;
+  return /^\d+$/.test(v) && +v >= 1 && +v <= 15;
+}
+
+// Blur -> Lưu DB
+async function saveNsclScore(inputEl) {
+  const empName = inputEl.getAttribute('data-emp');
+  const dateYMD = inputEl.getAttribute('data-date');
+  let val = inputEl.value.trim();
+
+  // Chuẩn hóa IN HOA
+  const up = val.toUpperCase();
+  if (up === 'P') val = 'P';
+  else if (up === 'Ô' || up === 'O') val = 'Ô';
+  else if (up === 'N') val = 'N';
+
+  const key = empName.toLowerCase() + '_' + dateYMD;
+  let r = _recordMap[key];
+
+  // Chặn giá trị không hợp lệ -> khôi phục giá trị cũ
+  if (!isValidDayValue(val)) {
+    inputEl.value = (r && r.nscl_score) ? r.nscl_score : '';
+    showToast('⚠️ Chỉ được nhập số 1–15, P (phép) hoặc Ô (ốm).', 'error');
+    return;
+  }
+  inputEl.value = val;
+
+  // Nếu giá trị không đổi so với DB thì bỏ qua
+  if (r && (r.nscl_score || '') === val) return;
+  if (!r && val === '') return;
+
+  try {
+    if (!r) {
+      const { data, error } = await supabaseClient
+        .from('chamcong_attendance_records')
+        .insert([{
+          employee_name: empName,
+          date: dateYMD,
+          grades: 'D, D, D, D',
+          approve_status: 'Chờ',
+          nscl_score: val
+        }]).select();
+      if (error) throw error;
+      if (data && data.length > 0) {
+        _recordMap[key] = data[0]; // Ghi nhận vào RAM
+      }
+    } else {
+      const { error } = await supabaseClient
+        .from('chamcong_attendance_records')
+        .update({ nscl_score: val })
+        .eq('id', r.id);
+      if (error) throw error;
+      r.nscl_score = val; // Ghi nhận vào RAM
+    }
+
+    inputEl.style.backgroundColor = '#e6f4ea';
+    setTimeout(() => { inputEl.style.backgroundColor = ''; }, 500);
+
+    recalcNsclRow(empName);
+
+  } catch(e) {
+    showToast('❌ Lỗi lưu điểm NSCL: ' + e.message, 'error');
+    inputEl.style.backgroundColor = '#fce8e6';
+  }
+}
+
+// Blur ô Điểm +/- -> Lưu vào cột nscl_adjust trên bản ghi ngày 01 của tháng
+async function saveNsclAdjust(inputEl) {
+  const empName = inputEl.getAttribute('data-emp');
+  const ym = inputEl.getAttribute('data-month'); // YYYY-MM
+  let val = (inputEl.value || '').trim();
+  if (val !== '' && !(/^\d+$/.test(val) && +val >= 1 && +val <= 15)) {
+    inputEl.value = '';
+    showToast('⚠️ Điểm +/- chỉ nhận số 1–15.', 'error');
+    return;
+  }
+
+  const dateYMD = ym + '-01';
+  const key = empName.toLowerCase() + '_' + dateYMD;
+  let r = _recordMap[key];
+
+  // Cột nscl_adjust kiểu numeric: ô trống phải gửi NULL (không phải '')
+  const dbVal = (val === '') ? null : Number(val);
+
+  // Không đổi so với hiện tại thì bỏ qua
+  const curStr = (r && r.nscl_adjust != null) ? String(r.nscl_adjust) : '';
+  if (r && curStr === val) return;
+  if (!r && val === '') return; // chưa có bản ghi mà cũng để trống -> khỏi tạo
+
+  try {
+    if (!r) {
+      const { data, error } = await supabaseClient
+        .from('chamcong_attendance_records')
+        .insert([{
+          employee_name: empName,
+          date: dateYMD,
+          grades: 'D, D, D, D',
+          approve_status: 'Chờ',
+          nscl_score: '',
+          nscl_adjust: dbVal
+        }]).select();
+      if (error) throw error;
+      if (data && data.length > 0) _recordMap[key] = data[0];
+    } else {
+      const { error } = await supabaseClient
+        .from('chamcong_attendance_records')
+        .update({ nscl_adjust: dbVal })
+        .eq('id', r.id);
+      if (error) throw error;
+      r.nscl_adjust = dbVal;
+    }
+    inputEl.style.backgroundColor = '#e6f4ea';
+    setTimeout(() => { inputEl.style.backgroundColor = ''; }, 500);
+    recalcNsclRow(empName);
+  } catch(e) {
+    // Có thể bảng chưa có cột nscl_adjust -> vẫn giữ giá trị trong phiên để tính/in
+    if (!r) {
+      _recordMap[key] = { employee_name: empName, date: dateYMD, nscl_adjust: dbVal };
+    } else {
+      r.nscl_adjust = dbVal;
+    }
+    recalcNsclRow(empName);
+    showToast('⚠️ Điểm +/- chưa lưu được vào CSDL (cần cột "nscl_adjust"). Vẫn áp dụng trong phiên này.', 'error');
+  }
+}
+
+// Điền nhanh 10
+async function autofillPoints10() {
+  if (!confirm('Bạn có chắc muốn tự động điền 10 điểm vào TẤT CẢ các ngày làm việc trống của nhân sự đang hiển thị?\n(Sẽ KHÔNG điền vào những ngày trong tương lai.)')) return;
+
+  // Mốc "hôm nay" theo lịch địa phương (YYYY-MM-DD) để so sánh chuỗi
+  const _t = new Date();
+  const _pad = n => n < 10 ? '0' + n : '' + n;
+  const todayStr = `${_t.getFullYear()}-${_pad(_t.getMonth() + 1)}-${_pad(_t.getDate())}`;
+
+  // Chỉ lấy ô chấm điểm ngày (có data-date), KHÔNG đụng tới ô Điểm +/- (pm-input)
+  const inputs = document.querySelectorAll('.nscl-input[data-date]');
+  let count = 0, skippedFuture = 0;
+  showToast('⏳ Đang tự động rải điểm 10...');
+
+  for (let i = 0; i < inputs.length; i++) {
+    const inp = inputs[i];
+    if (inp.classList.contains('pm-input')) continue; // bỏ qua cột Điểm +/-
+    if (inp.readOnly) continue; // Ngày lễ
+    // Bỏ qua nếu là T7/CN
+    const parentCls = inp.parentElement.className;
+    if (parentCls.includes('t7') || parentCls.includes('cn')) continue;
+
+    // Bỏ qua ngày trong tương lai (chỉ điền đến hết ngày hôm nay)
+    const dateStr = inp.getAttribute('data-date') || '';
+    if (dateStr > todayStr) { skippedFuture++; continue; }
+
+    if (inp.value === '') {
+      inp.value = '10';
+      await saveNsclScore(inp);
+      count++;
+    }
+  }
+  let msg = `✅ Đã rải tự động thành công ${count} điểm 10!`;
+  if (skippedFuture > 0) msg += ` (Bỏ qua ${skippedFuture} ô của những ngày chưa tới.)`;
+  showToast(msg, 'success');
+}
+
+// Cấu hình bản in NSCL (có thể chỉnh từ admin_new.html, lưu ở admin_settings)
+var _nsclPrintCfg = {
+  fontName: 11,           // cỡ chữ tên CBNV, điểm tổng
+  fontData: 11,           // cỡ chữ điểm chấm & số ngày
+  rowHeight: 30,          // độ cao dòng (px)
+  colorSat: '#BFBFBF',    // Thứ 7  (Excel: White, Darker 25%)
+  colorSun: '#A6A6A6',    // Chủ nhật (Excel: White, Darker 35%)
+  colorHoliday: '#D9D9D9' // Ngày lễ (Excel: White, Darker 15%)
+};
+
+// Đọc cấu hình bản in từ mảng admin_settings (lưu JSON ở cột password, key='nscl_print_config')
+function applyPrintCfgFromSettings(settings){
+  try {
+    const row = (settings || []).find(s => s.key === 'nscl_print_config');
+    if (row && row.password) {
+      const c = JSON.parse(row.password);
+      _nsclPrintCfg = Object.assign({}, _nsclPrintCfg, c);
+    }
+  } catch (e) { /* lỗi parse -> dùng mặc định */ }
+}
+
+// Tải cấu hình bản in (dùng khi khôi phục phiên / F5)
+async function loadPrintConfig(){
+  try {
+    const { data } = await supabaseClient.from('chamcong_admin_settings').select('*');
+    applyPrintCfgFromSettings(data);
+  } catch (e) { /* dùng mặc định */ }
+}
+
+
+// In Bảng — dựng bảng in sạch trực tiếp từ dữ liệu (không clone bảng màn hình)
+function printNsclReport() {
+  const cfg = Object.assign({
+    fontName: 11, fontData: 11, rowHeight: 30,
+    colorSat: '#BFBFBF', colorSun: '#A6A6A6', colorHoliday: '#D9D9D9'
+  }, _nsclPrintCfg || {});
+  const selMonth = parseInt(document.getElementById('sel-month').value, 10);
+  const selYear  = parseInt(document.getElementById('sel-year').value, 10);
+  const pad = n => n < 10 ? '0' + n : '' + n;
+  const daysInMonth = new Date(selYear, selMonth, 0).getDate();
+
+  // Lọc nhân viên đúng như bảng đang hiển thị
+  let emps = (_allActiveEmployees || []).slice();
+  if (!_isAdmin) {
+    emps = emps.filter(e => e.department === _tbpDept);
+  } else {
+    const selDept = (document.getElementById('sel-dept') || {}).value || '';
+    if (selDept) emps = emps.filter(e => e.department === selDept);
+  }
+  emps.sort((a, b) => {
+    const ar = (a.role || '').toUpperCase(), br = (b.role || '').toUpperCase();
+    if (ar === 'TBP' && br !== 'TBP') return -1;
+    if (ar !== 'TBP' && br === 'TBP') return 1;
+    return a.name.localeCompare(b.name, 'vi');
+  });
+
+  if (emps.length === 0) {
+    showToast('⚠️ Không có CBNV để in.', 'error');
+    return;
+  }
+
+  const deptName = (!_isAdmin && _tbpDept)
+    ? _tbpDept
+    : ((document.getElementById('sel-dept') || {}).value || 'Toàn Công Ty');
+
+  // Người lập = TBP của phòng (nếu có)
+  const tbp = emps.find(e => (e.role || '').toUpperCase() === 'TBP');
+  const nguoiLap = tbp ? tbp.name : '';
+
+  // Xác định loại ngày: lễ ('le') / Thứ 7 ('t7') / Chủ nhật ('cn')
+  function dayClass(d) {
+    const ymd = selYear + '-' + pad(selMonth) + '-' + pad(d);
+    if (_holidaysMap && _holidaysMap.has && _holidaysMap.has(ymd)) return 'le';
+    const dow = new Date(selYear, selMonth - 1, d).getDay();
+    if (dow === 6) return 't7';
+    if (dow === 0) return 'cn';
+    return '';
+  }
+
+  // colgroup cố định độ rộng (cột ngày để trống -> tự chia đều phần còn lại)
+  let colgroup = '<col class="c-tt"><col class="c-name">';
+  for (let d = 1; d <= daysInMonth; d++) colgroup += '<col class="c-day">';
+  colgroup += '<col class="c-pm">'
+    + '<col class="c-diem"><col class="c-sum"><col class="c-sum"><col class="c-sum"><col class="c-sum">'
+    + '<col class="c-sm"><col class="c-sm"><col class="c-sm"><col class="c-sm"><col class="c-sm">';
+
+  // Header hàng 2: số ngày
+  let dayHeads = '';
+  for (let d = 1; d <= daysInMonth; d++) dayHeads += '<th class="' + dayClass(d) + '">' + pad(d) + '</th>';
+
+  // Thân bảng
+  let body = '';
+  let totDiem = 0, totPhep = 0, totOm = 0;
+  emps.forEach((emp, i) => {
+    let diem = 0, phep = 0, om = 0, dayCells = '';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ymd = selYear + '-' + pad(selMonth) + '-' + pad(d);
+      const cls = dayClass(d);
+      const r = _recordMap[emp.name.toLowerCase() + '_' + ymd];
+      let v = (r && r.nscl_score) ? String(r.nscl_score).trim() : '';
+      const u = v.toUpperCase();
+      if (u === 'P') v = 'P';
+      else if (u === 'Ô' || u === 'O') v = 'Ô';
+      else if (u === 'N') v = 'N';
+      // Ngày lễ/tết -> N
+      if (cls === 'le') v = 'N';
+
+      if (v === 'P') phep += 1;
+      else if (u === 'P/2') phep += 0.5;          // dữ liệu cũ
+      else if (v === 'Ô') om += 1;
+      else if (v === 'N') { /* nghỉ lễ */ }
+      else { const nv = parseFloat(v); if (!isNaN(nv)) { diem += nv; if (nv === 5) phep += 0.5; } }
+
+      dayCells += '<td class="' + cls + '">' + escHtml(v) + '</td>';
+    }
+    // Điểm +/- (lưu ở bản ghi ngày 01)
+    const adjRec = _recordMap[emp.name.toLowerCase() + '_' + (selYear + '-' + pad(selMonth) + '-01')];
+    const adjVal = (adjRec && adjRec.nscl_adjust != null && adjRec.nscl_adjust !== '') ? String(adjRec.nscl_adjust) : '';
+    const adjNum = parseFloat(adjVal);
+    const rowDiem = diem + (isNaN(adjNum) ? 0 : adjNum);
+
+    totDiem += rowDiem; totPhep += phep; totOm += om;
+    body += '<tr>'
+      + '<td class="c-tt">' + (i + 1) + '</td>'
+      + '<td class="c-name">' + escHtml(emp.name) + '</td>'
+      + dayCells
+      + '<td>' + (adjVal || '-') + '</td>'
+      + '<td class="c-diem">' + (rowDiem || '-') + '</td>'
+      + '<td>-</td>'
+      + '<td>' + (phep || '-') + '</td>'
+      + '<td>-</td>'
+      + '<td>' + (om || '-') + '</td>'
+      + '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>'
+      + '</tr>';
+  });
+
+  const congRow = '<tr class="cong">'
+    + '<td colspan="2" style="text-align:right;padding-right:4px;">CỘNG</td>'
+    + '<td colspan="' + (daysInMonth + 1) + '"></td>'
+    + '<td class="c-diem">' + (totDiem || '-') + '</td>'
+    + '<td>-</td>'
+    + '<td>' + (totPhep || '-') + '</td>'
+    + '<td>-</td>'
+    + '<td>' + (totOm || '-') + '</td>'
+    + '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>'
+    + '</tr>';
+
+  const today = new Date();
+  const dateLine = 'Hà Nội, ngày ' + pad(today.getDate()) + ' tháng ' + pad(today.getMonth() + 1) + ' năm ' + today.getFullYear();
+
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html>
+    <head>
+    <meta charset="UTF-8">
+    <title>In Bảng Điểm NSCL - Tháng ${pad(selMonth)}/${selYear}</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family:'Times New Roman',Times,serif; color:#000; margin:0; padding:6mm 8mm;
+        -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+      /* ── Letterhead (dùng ảnh letterhead.png) ── */
+      .lh { width:100%; margin-bottom:4px; }
+      .lh-img { display:block; width:100%; height:auto; object-fit:contain; }
+      .lh-fallback { display:none; font-weight:bold; font-size:15px; color:#c0392b;
+        border-bottom:2px solid #c0392b; padding-bottom:6px; }
+
+      .sub { display:flex; justify-content:space-between; align-items:center; margin-top:7px; }
+      .phong { font-weight:bold; font-size:12px; text-transform:uppercase; }
+      .bm { border:1px solid #000; padding:2px 10px; font-size:11px; font-weight:bold; white-space:nowrap; }
+
+      .title { text-align:center; margin:8px 0 6px; }
+      .title h2 { font-size:14px; font-weight:bold; text-transform:uppercase; margin:0; }
+
+      /* ── Bảng ── */
+      table.nscl { width:100%; border-collapse:collapse; table-layout:fixed; border:1.4px solid #000;
+        -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      table.nscl th, table.nscl td { border-right:1px solid #000; border-bottom:1px dashed #9a9a9a;
+        text-align:center; vertical-align:middle; font-size:${cfg.fontData}px; padding:3px 2px; overflow:hidden;
+        white-space:nowrap; height:${cfg.rowHeight}px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      /* Đầu bảng: nền xám nhạt, kẻ ngang đậm liền dưới tiêu đề */
+      table.nscl thead th { background:#e9e9e9; font-weight:bold; border-bottom:1.4px solid #000; }
+      table.nscl td { background:#fff; }
+      table.nscl td.c-name { text-align:left; padding-left:6px; font-size:${cfg.fontName}px; }
+      table.nscl th.c-tt, table.nscl th.c-name { font-size:${cfg.fontName}px; }
+      td.c-diem { font-weight:bold; font-size:${cfg.fontName}px; }
+      .vtxt { writing-mode:vertical-rl; transform:rotate(180deg); white-space:nowrap;
+        display:inline-block; line-height:1; font-size:9px; }
+
+      /* Độ rộng cột */
+      col.c-tt  { width:26px; }
+      col.c-name{ width:132px; }
+      col.c-pm  { width:24px; }
+      col.c-diem{ width:42px; }
+      col.c-sum { width:24px; }
+      col.c-sm  { width:20px; }
+      /* col.c-day không đặt width -> chia đều phần còn lại */
+
+      /* Tô màu cuối tuần / ngày lễ theo cấu hình (mã màu Excel).
+         Tô đều cả ô tiêu đề và ô dữ liệu; số ngày in đậm đen nên không bị che. */
+      table.nscl thead th.t7, table.nscl td.t7 { background:${cfg.colorSat}; color:#000; }
+      table.nscl thead th.cn, table.nscl td.cn { background:${cfg.colorSun}; color:#000; }
+      table.nscl thead th.le, table.nscl td.le { background:${cfg.colorHoliday}; color:#000; }
+      tr.cong td { font-weight:bold; background:#e9e9e9; border-top:1.4px solid #000;
+        border-bottom:1px solid #000; }
+
+      /* ── Ghi chú (ô có viền, đủ rộng để ghi tay) ── */
+      .note-box { border:1px solid #000; min-height:64px; margin-top:10px; padding:6px 8px; }
+      .note-box .note-label { font-weight:bold; font-size:11px; }
+      .footer { display:flex; justify-content:space-between; margin-top:14px; padding:0 6%; }
+      .fbox { text-align:center; width:40%; }
+      .fbox .role { font-weight:bold; font-size:13px; }
+      .fbox .date { font-style:italic; font-size:12px; margin-bottom:2px; }
+      .fbox .gap  { height:56px; }
+      .fbox .signer { font-weight:bold; font-style:italic; font-size:13px; }
+
+      @page { size: A4 landscape; margin: 7mm; }
+      @media print { body { padding:0; } }
+    </style>
+    </head>
+    <body onload="setTimeout(function(){window.print();window.close();},500);">
+
+      <div class="lh">
+        <img src="letterhead.png" class="lh-img"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+        <div class="lh-fallback">CÔNG TY CP SIÊU THANH HÀ NỘI</div>
+      </div>
+
+      <div class="sub">
+        <div class="phong">PHÒNG: ${escHtml(deptName.toUpperCase())}</div>
+        <div class="bm">BM11-HCNS.01</div>
+      </div>
+
+      <div class="title">
+        <h2>BẢNG CHẤM CÔNG &amp; CHẤM ĐIỂM NSCL THÁNG ${pad(selMonth)} NĂM ${selYear}</h2>
+      </div>
+
+      <table class="nscl">
+        <colgroup>${colgroup}</colgroup>
+        <thead>
+          <tr>
+            <th class="c-tt"   rowspan="2">TT</th>
+            <th class="c-name" rowspan="2">Họ tên</th>
+            <th colspan="${daysInMonth}">Ngày/tháng</th>
+            <th rowspan="2"><span class="vtxt">Điểm +/-</span></th>
+            <th colspan="10">TỔNG HỢP CÔNG ĐIỂM/THÁNG</th>
+          </tr>
+          <tr>
+            ${dayHeads}
+            <th>Điểm</th>
+            <th><span class="vtxt">Trực</span></th>
+            <th><span class="vtxt">Phép</span></th>
+            <th><span class="vtxt">CĐ</span></th>
+            <th><span class="vtxt">Ốm</span></th>
+            <th>B</th><th>C</th><th>D</th><th>E</th><th>Y</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${body}
+          ${congRow}
+        </tbody>
+      </table>
+
+      <div class="note-box"><div class="note-label">Ghi chú:</div></div>
+
+      <div class="footer">
+        <div class="fbox">
+          <div class="role">PHÒNG KT-HC</div>
+          <div class="gap"></div>
+        </div>
+        <div class="fbox">
+          <div class="date">${dateLine}</div>
+          <div class="role">NGƯỜI LẬP</div>
+          <div class="gap"></div>
+          <div class="signer">${escHtml(nguoiLap)}</div>
+        </div>
+      </div>
+
+    </body>
+    </html>
+  `);
+  w.document.close();
+}
+
+// ══════════════════════════════════════════════
+// TIỆN ÍCH HỖ TRỢ
+// ══════════════════════════════════════════════
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'show' + (type ? ' ' + type : '');
+  setTimeout(function(){
+    t.className = type || '';
+  }, 3000);
+}
+</script>
+
+</body>
+</html>

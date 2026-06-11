@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản Trị Hệ Thống Chấm Công — HSTC</title>
+
+<!-- Supabase JS Client SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="../src/css/base.css">
+  <link rel="stylesheet" href="../src/css/components.css">
+  <link rel="stylesheet" href="../src/css/history.css">
+  <link rel="stylesheet" href="../src/css/guide.css">
+</head>
+<body>
+
+<!-- NAVIGATION BAR -->
+<div class="navbar">
+  <div class="nav-logo">
+    <span style="font-size: 26px;">🏢</span>
+    <div>
+      <h1>HSTC Chấm Công</h1>
+      <span style="font-size: 11px; color: #888;">Cơ sở dữ liệu Supabase Portal</span>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-action="switchTab" data-args="'deploy'">🚀 Deploy PWA</div>
+    <div class="nav-tab" data-action="switchTab" data-args="'employees'">👥 Nhân Viên</div>
+    <div class="nav-tab" data-action="switchTab" data-args="'attendance'">📍 Dữ Liệu Chấm Công</div>
+    <div class="nav-tab" data-action="switchTab" data-args="'holidays'">🌴 Ngày Nghỉ Lễ</div>
+    <div class="nav-tab" data-action="switchTab" data-args="'shifts'">⚙️ Cài Đặt Ca</div>
+    <div class="nav-tab" data-action="switchTab" data-args="'guide'">📖 Hướng Dẫn App</div>
+    <div class="nav-tab" data-action="switchTab" data-args="'config'">🔑 Cấu Hình Hệ Thống</div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main-container">
+
+  <!-- ==================== PANEL 1: DEPLOY PWA ==================== -->
+  <div id="panel-deploy" class="tab-panel active">
+    <div class="flex-col-left">
+      <div class="card">
+        <h3>🚀 Đồng bộ & Deploy PWA Tự Động</h3>
+        <div class="note-blue">
+          Tiến trình deploy hiện đã được tự động hóa qua <b>GitHub Actions</b>. Hệ thống sẽ tự động đồng bộ danh sách nhân viên từ Supabase, cập nhật mã nguồn phiên bản mới, sinh tệp cài đặt cho iPhone/Android, và tự động deploy lên GitHub Pages.
+        </div>
+        <div style="margin-top: 12px; font-size:12.5px; color:#5f6368;">
+          • Không cần nạp file index.html mẫu từ máy tính.<br>
+          • Mật khẩu và Token bảo mật được quản lý an toàn ở Backend.
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <h3>🛠️ Trực quan & Kích hoạt</h3>
+        <div id="deploy-cfg-status" style="font-size: 13px; line-height: 1.8; color: #5f6368; flex: 1;">
+          Đang đọc cấu hình từ trình duyệt...
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button id="btnStart" class="btn btn-blue" style="width: 100%;" data-action="startDeployProcess" data-args="">🚀 Bắt đầu cập nhật & Deploy PWA</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col-right">
+      <div class="console-panel">
+        <div class="console-header">
+          <span>Log Tiến Trình Deploy</span>
+          <button class="btn-gray" style="padding: 2px 8px; font-size: 11px; border: none; background: #444; color: white;" data-action="clearConsole" data-args="">Xóa Log</button>
+        </div>
+        <div class="console-body" id="console">
+          <div class="log-line">Sẵn sàng. Hãy chọn file index.html mẫu ở cột bên trái và bấm bắt đầu.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANEL 2: NHÂN VIÊN ==================== -->
+  <div id="panel-employees" class="tab-panel">
+    <div class="flex-col-left" style="flex: 1.6;">
+      <div class="card" style="flex: 1; overflow: hidden;">
+        <h3 style="justify-content: space-between;">
+          <div style="display:flex; align-items:center; gap:8px;">👥 Danh sách cán bộ nhân viên</div>
+          <div style="display:flex; gap:10px; font-weight: normal; font-size: 13px; align-items: center;">
+            <button class="btn btn-blue" style="padding: 5px 12px; font-size:12px; background:#118a59; border-radius: 4px;" data-action="printAllQRCodes" data-args="">🖨️ Tạo In ALL QR</button>
+            <select id="filter-dept" onchange="renderEmployeeTable()" style="padding:4px 8px; border:1px solid #ccc; border-radius:4px; outline:none;">
+              <option value="all">🏢 Tất cả phòng ban</option>
+              <option value="Kinh doanh">Kinh doanh</option>
+              <option value="Kế toán-Hành chính">Kế toán-HC</option>
+              <option value="Kỹ thuật">Kỹ thuật</option>
+            </select>
+            <select id="filter-shift" onchange="renderEmployeeTable()" style="padding:4px 8px; border:1px solid #ccc; border-radius:4px; outline:none;">
+              <option value="all">⏱️ Tất cả loại ca</option>
+              <option value="tieu_chuan">Tiêu chuẩn</option>
+              <option value="ngoai_le_1">Ngoại lệ 1</option>
+              <option value="ngoai_le_2">Ngoại lệ 2</option>
+            </select>
+          </div>
+        </h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Họ tên</th>
+                <th>Phòng ban</th>
+                <th>Telegram ID</th>
+                <th>Loại ca</th>
+                <th>Trạng thái</th>
+                <th style="text-align: center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="emp-table-body">
+              <tr><td colspan="6" class="empty" style="text-align:center;">Đang tải danh sách nhân viên...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col-right" style="flex: 0.9;">
+      <div class="card">
+        <h3 id="emp-form-title">👤 Thêm nhân viên mới</h3>
+        <input type="hidden" id="emp-id">
+        <div class="form-group">
+          <label>Họ và tên</label>
+          <input type="text" id="emp-name" placeholder="Ví dụ: Trần Văn A">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Phòng ban</label>
+            <select id="emp-dept">
+              <option value="Kinh doanh">Kinh doanh</option>
+              <option value="Kế toán-Hành chính">Kế toán-Hành chính</option>
+              <option value="Kỹ thuật">Kỹ thuật</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Vai trò</label>
+            <select id="emp-role">
+              <option value="CBNV">Cán bộ nhân viên (CBNV)</option>
+              <option value="TBP">Trưởng bộ phận (TBP)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Loại Ca</label>
+            <select id="emp-shift">
+              <option value="tieu_chuan">Ca Tiêu Chuẩn</option>
+              <option value="ngoai_le_1">Ngoại lệ 1 (In 8:30)</option>
+              <option value="ngoai_le_2">Ngoại lệ 2 (In 9:00/Out 16:00)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Trạng thái</label>
+            <select id="emp-status">
+              <option value="active">Đang làm việc</option>
+              <option value="inactive">Nghỉ việc (Khóa account)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Telegram Chat ID</label>
+          <input type="number" id="emp-telegram" placeholder="Điền số chat ID để nhận thông báo">
+        </div>
+        <div style="display:flex; gap:10px; margin-top: 10px;">
+          <button class="btn btn-blue" style="flex: 1;" data-action="saveEmployee" data-args="">💾 Lưu nhân viên</button>
+          <button id="btn-emp-cancel" class="btn btn-gray" style="display:none;" data-action="cancelEmployeeEdit" data-args="">Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANEL 3: NGÀY NGHỈ LỄ ==================== -->
+  <div id="panel-holidays" class="tab-panel">
+    <div class="flex-col-left" style="flex: 1.4;">
+      <div class="card" style="flex: 1; overflow: hidden;">
+        <h3>🌴 Danh sách ngày nghỉ lễ / Tết</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ngày nghỉ</th>
+                <th>Mô tả ngày nghỉ lễ</th>
+                <th style="text-align: center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="holiday-table-body">
+              <tr><td colspan="3" class="empty" style="text-align:center;">Đang tải danh sách ngày lễ...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col-right" style="flex: 0.8;">
+      <div class="card">
+        <h3>📅 Thêm ngày lễ mới</h3>
+        <div class="form-group">
+          <label>Chọn ngày nghỉ</label>
+          <input type="date" id="hld-date">
+        </div>
+        <div class="form-group">
+          <label>Tên ngày lễ</label>
+          <input type="text" id="hld-desc" placeholder="Ví dụ: Tết Dương Lịch">
+        </div>
+        <button class="btn btn-blue" style="margin-top:10px;" data-action="addHoliday" data-args="">➕ Thêm ngày nghỉ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANEL 4: CÀI ĐẶT CA ==================== -->
+  <div id="panel-shifts" class="tab-panel">
+    <div class="flex-col-left" style="flex: 1.4;">
+      <div class="card" style="flex: 1; overflow: hidden;">
+        <h3>⚙️ Cài đặt mốc giờ ca làm việc</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Loại Ca</th>
+                <th>Ca nhỏ</th>
+                <th>Bắt đầu A (chỉ Out)</th>
+                <th>Kết thúc A (chốt IN/OUT)</th>
+                <th>Mốc 2 A (chỉ Out Sáng)</th>
+                <th>Kết thúc B (Trễ/vắng)</th>
+                <th style="text-align: center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="shift-table-body">
+              <tr><td colspan="7" class="empty" style="text-align:center;">Đang tải cấu hình ca làm việc...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col-right" style="flex: 0.8;">
+      <div class="card">
+        <h3 id="shift-form-title">📝 Cập nhật ca làm việc</h3>
+        <input type="hidden" id="shift-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Loại ca</label>
+            <input type="text" id="shift-type" disabled style="background:#f1f3f4; color:#666;">
+          </div>
+          <div class="form-group">
+            <label>Ca nhỏ</label>
+            <input type="text" id="shift-session" disabled style="background:#f1f3f4; color:#666;">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mốc bắt đầu A (time)</label>
+            <input type="time" id="shift-a-start">
+          </div>
+          <div class="form-group">
+            <label>Mốc kết thúc A (time)</label>
+            <input type="time" id="shift-a-end">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mốc kết thúc 2 A (time)</label>
+            <input type="time" id="shift-a-end2">
+          </div>
+          <div class="form-group">
+            <label>Mốc kết thúc B (time)</label>
+            <input type="time" id="shift-b-end">
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top: 10px;">
+          <button id="btn-shift-save" class="btn btn-blue" style="flex: 1;" disabled data-action="saveShiftConfig" data-args="">💾 Cập nhật mốc giờ</button>
+          <button id="btn-shift-cancel" class="btn btn-gray" style="display:none;" data-action="cancelShiftEdit" data-args="">Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANEL 5: QUẢN LÝ HƯỚNG DẪN APP ==================== -->
+  <div id="panel-guide" class="tab-panel">
+    <div class="flex-col-left" style="flex: 1.2;">
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>📖 Danh sách trang hướng dẫn</h3>
+        <div class="table-container" style="max-height: 250px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID Trang</th>
+                <th>Tiêu đề Tab trên App</th>
+                <th>Cập nhật cuối</th>
+                <th style="text-align: center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="guide-table-body">
+              <tr><td colspan="4" class="empty" style="text-align:center;">Đang tải danh sách bài hướng dẫn...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <h3>💡 Bảng tra cứu cú pháp soạn thảo rút gọn (Không cần HTML)</h3>
+        <div style="font-size: 13px; line-height: 1.6; color: #3c4043;">
+          <div style="margin-bottom: 12px;"><b>1. Tạo bước tròn xanh (Step):</b> Gõ <code>1. Tên bước: Nội dung</code> ở đầu dòng.
+            <br><small style="color:#666;">Ví dụ: <code>1. Quét QR: Hãy quét mã QR cá nhân của bạn.</code></small>
+          </div>
+          <div style="margin-bottom: 12px;"><b>2. Hộp Ghi chú màu cam (Note):</b> Gõ <code>[!NOTE] Nội dung ghi chú</code> ở đầu dòng.
+            <br><small style="color:#666;">Ví dụ: <code>[!NOTE] Bạn cần bật GPS trước khi thực hiện bấm nút.</code></small>
+          </div>
+          <div style="margin-bottom: 12px;"><b>3. Chèn ảnh bo góc (Image):</b> Gõ <code>[IMAGE] đường_dẫn_ảnh</code> ở đầu dòng.
+            <br><small style="color:#666;">Ví dụ: <code>[IMAGE] https://hasttechnical2025-prog.github.io/hast_chamcong/img/chamcong.jpg</code></small>
+          </div>
+          <div style="margin-bottom: 12px;"><b>4. Gạch đầu dòng (List):</b> Gõ dấu trừ <code>- Nội dung</code> ở đầu dòng.
+            <br><small style="color:#666;">Ví dụ: <code>- Chấm công đúng khung giờ quy định.</code></small>
+          </div>
+          <div><b>5. Chữ đậm (Bold):</b> Kẹp chữ trong 2 dấu sao <code>**chữ đậm**</code>.
+            <br><small style="color:#666;">Ví dụ: <code>Chấm công **trước 08:05** để tránh bị muộn.</code></small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col-right" style="flex: 0.9; overflow-y: auto;">
+      <div class="card" style="margin-bottom: 24px;">
+        <h3 id="guide-form-title">📝 Cập nhật nội dung hướng dẫn</h3>
+        <input type="hidden" id="guide-id">
+        <div class="form-group">
+          <label>Tiêu đề Tab</label>
+          <input type="text" id="guide-title" placeholder="Ví dụ: Chấm công">
+        </div>
+        <div class="form-group" style="flex: 1; display:flex; flex-direction:column;">
+          <label>Nội dung chi tiết (Văn bản rút gọn hoặc Mã HTML)</label>
+          <textarea id="guide-content" style="flex:1; min-height: 250px; font-family: 'Consolas', monospace; font-size:12.5px;"
+            placeholder="Hỗ trợ 2 chế độ viết:&#10;&#10;Chế độ 1 - Văn bản rút gọn (Nhàn nhất):&#10;• Gõ '1. Bước một: Nội dung' để tạo các bước tròn xanh.&#10;• Gõ '- Nội dung' để tạo gạch đầu dòng.&#10;• Gõ '[!NOTE] Nội dung' để tạo hộp cảnh báo màu cam.&#10;• Gõ '[IMAGE] link_ảnh' để chèn ảnh minh họa bo góc.&#10;• Kẹp '**chữ**' để viết chữ đậm.&#10;&#10;Chế độ 2 - Mã HTML (Nâng cao):&#10;• Nhập trực tiếp code HTML đầy đủ có chứa thẻ &lt;/div&gt;"></textarea>
+        </div>
+        <div style="display:flex; gap:10px; margin-top: 10px;">
+          <button id="btn-guide-save" class="btn btn-blue" style="flex: 1;" disabled data-action="saveGuideContent" data-args="">💾 Lưu hướng dẫn</button>
+          <button id="btn-guide-cancel" class="btn btn-gray" style="display:none;" data-action="cancelGuideEdit" data-args="">Hủy</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🖼️ Tải Ảnh Minh Họa lên thư mục /img</h3>
+        <div class="form-group">
+          <label>Chọn file ảnh (PNG, JPG, JPEG)</label>
+          <input type="file" id="imageInput" accept="image/*" class="form-group" style="padding: 10px 0;" onchange="handleImageSelected()">
+        </div>
+        <div class="form-group">
+          <label>Tên file lưu trên GitHub (ví dụ: guide1.jpg)</label>
+          <input type="text" id="imageName" placeholder="Tên file tự nhận dạng...">
+        </div>
+        <button id="btnUploadImage" class="btn btn-blue" data-action="uploadImageToGithub" data-args="">⬆️ Tải Ảnh Lên GitHub</button>
+        <div id="image-upload-status" style="margin-top:12px; font-size:12.5px; word-break:break-all;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANEL 5: CẤU HÌNH HỆ THỐNG ==================== -->
+  <div id="panel-config" class="tab-panel">
+    <div class="flex-col-left" style="flex: 1.1;">
+      <div class="card">
+        <h3>⚡ Kết Nối Supabase</h3>
+        <div class="form-group">
+          <label>Supabase URL</label>
+          <input type="text" id="supaUrl" placeholder="https://your-project-id.supabase.co">
+        </div>
+        <div class="form-group">
+          <label>Supabase Anon Key</label>
+          <input type="password" id="supaKey" placeholder="eyJhbGciOiJIUzI1NiIs...">
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🔐 Đổi Mật Khẩu Trang Duyệt Giải Trình</h3>
+        <div class="form-group">
+          <label>Mật khẩu TBP Kinh Doanh</label>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="pw-tbp-kd" placeholder="Đang tải...">
+            <button class="btn btn-blue" style="padding: 4px 12px; font-size:12px; width:80px;" data-action="updatePassword" data-args="'tbp_kd', 'pw-tbp-kd'">Lưu</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mật khẩu TBP Kế toán - HC</label>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="pw-tbp-kt" placeholder="Đang tải...">
+            <button class="btn btn-blue" style="padding: 4px 12px; font-size:12px; width:80px;" data-action="updatePassword" data-args="'tbp_kt', 'pw-tbp-kt'">Lưu</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mật khẩu Admin Kỹ Thuật (Full Quyền)</label>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="pw-admin" placeholder="Đang tải...">
+            <button class="btn btn-blue" style="padding: 4px 12px; font-size:12px; width:80px;" data-action="updatePassword" data-args="'admin', 'pw-admin'">Lưu</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🖨️ Cấu Hình Bản In Bảng Điểm NSCL</h3>
+        <p style="font-size:12px; color:#5f6368; margin-bottom:12px;">
+          Áp dụng cho nút “In Bảng Điểm NSCL” ở trang Duyệt Giải Trình. Lưu chung trên Supabase nên mọi TBP đều dùng cùng định dạng.
+        </p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cỡ chữ Tên CBNV / Điểm tổng (px)</label>
+            <input type="number" id="pcfg-fontName" min="8" max="16" step="1" value="11">
+          </div>
+          <div class="form-group">
+            <label>Cỡ chữ Điểm chấm / Số ngày (px)</label>
+            <input type="number" id="pcfg-fontData" min="8" max="16" step="1" value="11">
+          </div>
+          <div class="form-group">
+            <label>Độ cao dòng (px)</label>
+            <input type="number" id="pcfg-rowHeight" min="20" max="48" step="1" value="30">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Màu nền Thứ 7</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="color" id="pcfg-colorSat" value="#BFBFBF" style="width:46px; height:34px; padding:2px;">
+              <input type="text" id="pcfg-colorSatHex" value="#BFBFBF" style="flex:1;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Màu nền Chủ Nhật</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="color" id="pcfg-colorSun" value="#A6A6A6" style="width:46px; height:34px; padding:2px;">
+              <input type="text" id="pcfg-colorSunHex" value="#A6A6A6" style="flex:1;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Màu nền Ngày lễ</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="color" id="pcfg-colorHoliday" value="#D9D9D9" style="width:46px; height:34px; padding:2px;">
+              <input type="text" id="pcfg-colorHolidayHex" value="#D9D9D9" style="flex:1;">
+            </div>
+          </div>
+        </div>
+        <p style="font-size:11px; color:#888; margin:4px 0 12px;">
+          Gợi ý mã màu Excel (White, Background 1): Darker 15% = <b>#D9D9D9</b>, Darker 25% = <b>#BFBFBF</b>, Darker 35% = <b>#A6A6A6</b>, Darker 50% = <b>#808080</b>.
+        </p>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-blue" style="flex:1;" data-action="saveNsclPrintCfg" data-args="">💾 Lưu cấu hình bản in</button>
+          <button class="btn btn-gray" data-action="resetNsclPrintCfg" data-args="">↩️ Mặc định</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🐙 Cấu Hình Đẩy File Lên GitHub</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>GitHub Username (Tài khoản sở hữu)</label>
+            <input type="text" id="ghUser" placeholder="hasttechnical2025-prog">
+          </div>
+          <div class="form-group">
+            <label>Repository Name (Kho chứa code)</label>
+            <input type="text" id="ghRepo" placeholder="hast_chamcong">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Branch</label>
+            <input type="text" id="ghBranch" value="main">
+          </div>
+          <div class="form-group">
+            <label>GitHub Personal Access Token (PAT)</label>
+            <input type="password" id="ghToken" disabled placeholder="(Đã bảo mật trên Server)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col-right" style="flex: 0.9;">
+      <div class="card">
+        <h3>🏢 Cấu Hình Hiển Thị & Quy Tắc GPS</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tên Công ty (Tiêu đề App)</label>
+            <input type="text" id="companyName" value="CHẤM CÔNG CBNV">
+          </div>
+          <div class="form-group">
+            <label>Tên Văn Phòng / Địa Điểm (Định vị GPS)</label>
+            <input type="text" id="officeName" value="Siêu Thanh Hà Nội">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Địa chỉ công ty (Dưới logo)</label>
+            <input type="text" id="companyAddress" value="Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, TP Hà Nội">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Vĩ độ Văn phòng (Latitude)</label>
+            <input type="text" id="officeLat" value="21.00861322599807">
+          </div>
+          <div class="form-group">
+            <label>Kinh độ (Longitude)</label>
+            <input type="text" id="officeLng" value="105.81294998643875">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Bán kính cho phép (mét)</label>
+            <input type="number" id="officeRadius" value="200">
+          </div>
+          <div class="form-group">
+            <label>Khoảng cách chặn tối đa (mét)</label>
+            <input type="number" id="maxDistance" value="15000" placeholder="0 = không giới hạn chặn">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:15px; flex-direction:column; gap:10px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; cursor:pointer;">
+            <input type="checkbox" id="allowHoliday" style="width:16px; height:16px;"> Cho phép chấm công vào Ngày nghỉ lễ / T7 / CN
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; cursor:pointer;">
+            <input type="checkbox" id="allowMultiple" style="width:16px; height:16px;"> Tắt cảnh báo trùng ca (Cho phép chấm đè nhiều lần thoải mái)
+          </label>
+        </div>
+        <button class="btn btn-blue" style="margin-top: 10px;" data-action="saveSystemConfig" data-args="">💾 Lưu & Đồng bộ toàn bộ cấu hình</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANEL: DỮ LIỆU CHẤM CÔNG ==================== -->
+  <div id="panel-attendance" class="tab-panel">
+    <div class="flex-col-left" style="flex:1;">
+      <div class="card" style="flex:1; overflow:hidden;">
+        <h3 style="justify-content: space-between;">
+          <div style="display:flex; align-items:center; gap:8px;">📍 Dữ liệu chấm công CBNV</div>
+          <div style="display:flex; gap:10px; font-weight: normal; font-size: 13px; align-items: center;">
+            <select id="att-month" onchange="loadAttendanceLogs()" style="padding:5px 8px; border:1px solid #ccc; border-radius:4px; outline:none; font-weight:600;">
+              <option value="1">Tháng 01</option><option value="2">Tháng 02</option><option value="3">Tháng 03</option>
+              <option value="4">Tháng 04</option><option value="5">Tháng 05</option><option value="6">Tháng 06</option>
+              <option value="7">Tháng 07</option><option value="8">Tháng 08</option><option value="9">Tháng 09</option>
+              <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+            </select>
+            <select id="att-year" onchange="loadAttendanceLogs()" style="padding:5px 8px; border:1px solid #ccc; border-radius:4px; outline:none; font-weight:600;">
+              <option value="2025">Năm 2025</option><option value="2026">Năm 2026</option>
+              <option value="2027">Năm 2027</option><option value="2028">Năm 2028</option>
+              <option value="2029">Năm 2029</option><option value="2030">Năm 2030</option>
+            </select>
+            <select id="att-emp" onchange="renderAttendanceTable()" style="padding:5px 8px; border:1px solid #ccc; border-radius:4px; outline:none; max-width:200px;">
+              <option value="all">👥 Tất cả nhân viên</option>
+            </select>
+            <button class="btn btn-blue" style="padding: 5px 12px; font-size:12px;" data-action="loadAttendanceLogs" data-args="">🔄 Tải lại</button>
+          </div>
+        </h3>
+        <div style="display:flex; gap:18px; margin-bottom:12px; font-size:13px; color:#5f6368; flex-wrap:wrap;">
+          <span>Tổng lượt chấm: <b id="att-count" style="color:#202124;">0</b></span>
+          <span id="att-range"></span>
+          <span style="color:#b06000;">💡 Giờ hiển thị theo giờ Việt Nam (GMT+7). Bấm ✏️ để điều chỉnh giờ / vị trí chấm công.</span>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:42px;">TT</th>
+                <th>Họ tên</th>
+                <th>Thời gian chấm</th>
+                <th>Vị trí / Địa chỉ</th>
+                <th>Tọa độ (GPS)</th>
+                <th>K.cách</th>
+                <th>Trạng thái</th>
+                <th>Ghi chú</th>
+                <th style="text-align:center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="att-table-body">
+              <tr><td colspan="9" style="text-align:center; color:#888;">Chọn tháng rồi bấm “Tải lại” để xem dữ liệu chấm công.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ĐIỀU CHỈNH LƯỢT CHẤM CÔNG -->
+<div id="logEditModal" class="modal-overlay" data-action="closeLogModalOverlay">
+  <div class="modal-box" style="max-width:540px; text-align:left;" data-action="stopPropagation">
+    <h3 style="text-align:left;">✏️ Điều chỉnh lượt chấm công</h3>
+    <input type="hidden" id="log-id">
+    <div class="form-group">
+      <label>Họ tên CBNV</label>
+      <select id="log-emp"></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Thời gian chấm — giờ Việt Nam (GMT+7)</label>
+        <input type="datetime-local" id="log-time" step="1">
+      </div>
+      <div class="form-group" style="flex:0 0 150px;">
+        <label>Trạng thái</label>
+        <select id="log-status">
+          <option value="Hợp lệ">Hợp lệ</option>
+          <option value="Không hợp lệ">Không hợp lệ</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Vĩ độ (Latitude)</label><input type="number" id="log-lat" step="any" placeholder="VD: 21.0086"></div>
+      <div class="form-group"><label>Kinh độ (Longitude)</label><input type="number" id="log-lng" step="any" placeholder="VD: 105.8129"></div>
+    </div>
+    <div class="form-group"><label>Địa chỉ chấm công</label><input type="text" id="log-address" placeholder="Số nhà, đường, phường..."></div>
+    <div class="form-group"><label>Văn phòng gần nhất</label><input type="text" id="log-office" placeholder="VD: Siêu Thanh Hà Nội"></div>
+    <div class="form-group"><label>Ghi chú</label><input type="text" id="log-note"></div>
+    <div style="display:flex; gap:10px; margin-top:8px;">
+      <button class="btn btn-blue" style="flex:1;" data-action="saveLogEdit" data-args="">💾 Lưu điều chỉnh</button>
+      <button class="btn btn-gray" data-action="closeLogModal" data-args="">Hủy</button>
+    </div>
+    <div style="border-top:1px solid var(--border-color); margin-top:14px; padding-top:12px;">
+      <button class="btn btn-red" style="width:100%;" data-action="deleteLog" data-args="">🗑️ Xóa lượt chấm công này</button>
+    </div>
+  </div>
+</div>
+<div id="qr-modal" class="modal-overlay" data-action="closeQRModalOverlay">
+  <div class="modal-box" data-action="stopPropagation">
+    <h3 id="qr-title-name">Mã QR Chấm Công</h3>
+    <div style="font-size: 13px; color: #5f6368;" id="qr-url-text">Link...</div>
+    <div class="qr-container">
+      <img id="qr-img-src" src="" alt="Mã QR cá nhân">
+    </div>
+    <div style="font-size: 12px; color: #e65100; margin-bottom: 15px; font-weight: 600;">
+      ⚠️ Hãy in hoặc cho nhân viên quét mã này để cài đặt App trên iPhone/Android
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-blue" style="flex: 1;" data-action="printQRCode" data-args="">🖨️ In Mã QR</button>
+      <button class="btn btn-gray" style="flex: 1;" data-action="closeQRModal" data-args="">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="../src/js/main.quantri.js"></script>
+</body>
+</html>
