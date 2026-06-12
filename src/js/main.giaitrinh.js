@@ -1054,6 +1054,9 @@ function printNsclReport() {
     fontName: 11, fontData: 11, rowHeight: 30,
     colorSat: '#BFBFBF', colorSun: '#A6A6A6', colorHoliday: '#D9D9D9'
   }, _nsclPrintCfg || {});
+  // URL tuyệt đối tới letterhead.png ở gốc site — cửa sổ in là about:blank nên
+  // đường dẫn tương đối "letterhead.png" sẽ không tải được.
+  const lhUrl = window.location.href.split('#')[0].split('?')[0].replace(/giaitrinh\/[^/]*$/, '') + 'letterhead.png';
   const selMonth = parseInt(document.getElementById('sel-month').value, 10);
   const selYear  = parseInt(document.getElementById('sel-year').value, 10);
   const pad = n => n < 10 ? '0' + n : '' + n;
@@ -1241,7 +1244,7 @@ function printNsclReport() {
     <body onload="setTimeout(function(){window.print();window.close();},500);">
 
       <div class="lh">
-        <img src="letterhead.png" class="lh-img"
+        <img src="${lhUrl}" class="lh-img"
           onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
         <div class="lh-fallback">CÔNG TY CP SIÊU THANH HÀ NỘI</div>
       </div>

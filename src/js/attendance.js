@@ -63,12 +63,12 @@ export async function checkAttendanceBeforeSend() {
     }
 
     if (existingTime) {
-      document.getElementById('confirm-title').textContent = '⚠️ Cảnh báo chấm trùng ca';
-      document.getElementById('confirm-msg').innerHTML =
-        `Bạn đã có giờ <b>${existingTime}</b> cho ca <b>${sessionLabel}</b> hôm nay.<br><br>` +
-        `Nếu tiếp tục chấm lại, hệ thống sẽ <b>thay thế giờ cũ bằng giờ mới nhất</b>.<br><br>` +
+      document.getElementById('warn-msg').innerHTML =
+        `Bạn đã có giờ <b>${existingTime}</b> cho ca <b>${sessionLabel}</b> hôm nay.`;
+      document.getElementById('warn-detail').innerHTML =
+        `Nếu tiếp tục chấm lại, hệ thống sẽ <b>thay thế giờ cũ bằng giờ mới nhất</b>.<br>` +
         `Bạn có chắc chắn muốn ghi đè không?`;
-      document.getElementById('confirm-overlay').classList.add('show');
+      document.getElementById('checkin-warn-overlay').classList.add('show');
     } else {
       doSend(state.gpsCoords.latitude, state.gpsCoords.longitude, state.gpsCoords.accuracy);
     }
@@ -79,14 +79,14 @@ export async function checkAttendanceBeforeSend() {
 }
 
 export function confirmOverwrite() {
-  document.getElementById('confirm-overlay').classList.remove('show');
+  document.getElementById('checkin-warn-overlay').classList.remove('show');
   if (state.gpsCoords) {
     doSend(state.gpsCoords.latitude, state.gpsCoords.longitude, state.gpsCoords.accuracy);
   }
 }
 
 export function cancelOverwrite() {
-  document.getElementById('confirm-overlay').classList.remove('show');
+  document.getElementById('checkin-warn-overlay').classList.remove('show');
 }
 
 export async function doSend(lat, lng, accuracy) {

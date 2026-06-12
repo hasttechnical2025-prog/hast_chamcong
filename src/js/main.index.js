@@ -90,6 +90,10 @@ async function initEmail() {
   // Chạy GPS nếu đã xác định được nhân viên
   const currentName = getEmployeeName();
   if (currentName) {
+    // Hiện nút xem dữ liệu chấm công tháng ngay trên màn hình chính
+    const btnHistMain = document.getElementById('btn-history-main');
+    if (btnHistMain) btnHistMain.style.display = 'flex';
+
     checkTodayHoliday().then(() => {
       if (!state.isHolidayToday) {
         getGPS();
@@ -151,11 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnClosePopup = document.getElementById('btn-close-popup');
   if (btnClosePopup) btnClosePopup.addEventListener('click', window.closePopup);
 
-  const btnCloseConfirm = document.getElementById('btn-close-confirm');
-  if (btnCloseConfirm) btnCloseConfirm.addEventListener('click', cancelOverwrite);
+  const btnWarnCancel = document.querySelector('.btn-warn-cancel');
+  if (btnWarnCancel) btnWarnCancel.addEventListener('click', cancelOverwrite);
 
-  const btnConfirmOk = document.getElementById('btn-confirm-ok');
-  if (btnConfirmOk) btnConfirmOk.addEventListener('click', confirmOverwrite);
+  const btnWarnContinue = document.querySelector('.btn-warn-continue');
+  if (btnWarnContinue) btnWarnContinue.addEventListener('click', confirmOverwrite);
 
   const btnCloseGuide = document.getElementById('btn-close-guide');
   if (btnCloseGuide) btnCloseGuide.addEventListener('click', closeGuide);
