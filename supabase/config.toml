@@ -1,0 +1,8 @@
+project_id = "hast_chamcong"
+
+# Function api tự kiểm tra JWT bằng JWT_SECRET trong code (xem functions/api/index.ts),
+# nên PHẢI tắt verify_jwt ở tầng gateway — nếu không, các endpoint công khai
+# (/auth/login, /auth/verify-token) bị Supabase chặn 401 "Missing authorization header".
+# Giữ dòng này để mọi lần `supabase functions deploy api` đều không bật lại verify_jwt.
+[functions.api]
+verify_jwt = false
