@@ -136,6 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnHistoryDone = document.getElementById('btn-history-done');
   if (btnHistoryDone) btnHistoryDone.addEventListener('click', () => showHistory('done'));
 
+  const btnBackCheckin = document.getElementById('btn-back-checkin');
+  if (btnBackCheckin) btnBackCheckin.addEventListener('click', resetForm);
+
   const btnPrevMonth = document.getElementById('btn-prev-month');
   if (btnPrevMonth) btnPrevMonth.addEventListener('click', () => changeMonth(-1));
 

@@ -24,12 +24,12 @@
 
 
   <!-- CSS -->
-  <link rel="stylesheet" href="src/css/base.css?v=3">
-  <link rel="stylesheet" href="src/css/components.css?v=3">
-  <link rel="stylesheet" href="src/css/history.css?v=3">
-  <link rel="stylesheet" href="src/css/guide.css?v=3">
+  <link rel="stylesheet" href="src/css/base.css?v=4">
+  <link rel="stylesheet" href="src/css/components.css?v=4">
+  <link rel="stylesheet" href="src/css/history.css?v=4">
+  <link rel="stylesheet" href="src/css/guide.css?v=4">
 </head>
-<body style="align-items:center; justify-content:center; padding:16px;">
+<body class="cbnv" style="align-items:center; justify-content:center; padding:16px;">
 <div class="card">
 
   <!-- Màn hình chính -->
@@ -119,7 +119,7 @@
     <div class="hist-scroll">
       <div id="hist-content" class="hist-loading">⏳ Đang tải...</div>
     </div>
-    <button class="btn" style="background:#f1f3f4;color:#444;margin-top:12px;"
+    <button class="btn" id="btn-close-hist" style="background:#f1f3f4;color:#444;margin-top:12px;"
      >← Quay lại</button>
   </div>
 
@@ -128,7 +128,7 @@
     <div class="popup-box">
       <div class="popup-title" id="popup-title">HAST Chấm công</div>
       <div class="popup-msg"   id="popup-msg"></div>
-      <button class="popup-btn">OK</button>
+      <button class="popup-btn" id="btn-close-popup">OK</button>
     </div>
   </div>
 
@@ -137,15 +137,15 @@
     <div class="r-emoji" id="r-emoji"></div>
     <div class="r-title" id="r-title"></div>
     <div class="rows"    id="r-rows"></div>
-    <button class="btn green">🔄 Quay lại Chấm công</button>
-    <button class="btn" style="background:#e8f0fe;color:#1a73e8;margin-top:0;"
+    <button class="btn green" id="btn-back-checkin">🔄 Quay lại Chấm công</button>
+    <button class="btn" id="btn-history-done" style="background:#e8f0fe;color:#1a73e8;margin-top:0;"
      >📊 Dữ liệu chấm công trong tháng</button>
   </div>
   
 </div>
 
 
-<script type="module" src="src/js/main.index.js?v=2"></script>
+<script type="module" src="src/js/main.index.js?v=3"></script>
 
 <!-- Guide overlay nhúng trực tiếp -->
 <div id="guide-overlay">

@@ -1174,7 +1174,69 @@ function printNsclReport() {
     <head>
     <meta charset="UTF-8">
     <title>In Bảng Điểm NSCL - Tháng ${pad(selMonth)}/${selYear}</title>
-    
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family:'Times New Roman',Times,serif; color:#000; margin:0; padding:6mm 8mm;
+        -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+      /* ── Letterhead (dùng ảnh letterhead.png) ── */
+      .lh { width:100%; margin-bottom:4px; }
+      .lh-img { display:block; width:100%; height:auto; object-fit:contain; }
+      .lh-fallback { display:none; font-weight:bold; font-size:15px; color:#c0392b;
+        border-bottom:2px solid #c0392b; padding-bottom:6px; }
+
+      .sub { display:flex; justify-content:space-between; align-items:center; margin-top:7px; }
+      .phong { font-weight:bold; font-size:12px; text-transform:uppercase; }
+      .bm { border:1px solid #000; padding:2px 10px; font-size:11px; font-weight:bold; white-space:nowrap; }
+
+      .title { text-align:center; margin:8px 0 6px; }
+      .title h2 { font-size:14px; font-weight:bold; text-transform:uppercase; margin:0; }
+
+      /* ── Bảng ── */
+      table.nscl { width:100%; border-collapse:collapse; table-layout:fixed; border:1.4px solid #000;
+        -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      table.nscl th, table.nscl td { border-right:1px solid #000; border-bottom:1px dashed #9a9a9a;
+        text-align:center; vertical-align:middle; font-size:${cfg.fontData}px; padding:3px 2px; overflow:hidden;
+        white-space:nowrap; height:${cfg.rowHeight}px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      /* Đầu bảng: nền xám nhạt, kẻ ngang đậm liền dưới tiêu đề */
+      table.nscl thead th { background:#e9e9e9; font-weight:bold; border-bottom:1.4px solid #000; }
+      table.nscl td { background:#fff; }
+      table.nscl td.c-name { text-align:left; padding-left:6px; font-size:${cfg.fontName}px; }
+      table.nscl th.c-tt, table.nscl th.c-name { font-size:${cfg.fontName}px; }
+      td.c-diem { font-weight:bold; font-size:${cfg.fontName}px; }
+      .vtxt { writing-mode:vertical-rl; transform:rotate(180deg); white-space:nowrap;
+        display:inline-block; line-height:1; font-size:9px; }
+
+      /* Độ rộng cột */
+      col.c-tt  { width:26px; }
+      col.c-name{ width:132px; }
+      col.c-pm  { width:24px; }
+      col.c-diem{ width:42px; }
+      col.c-sum { width:24px; }
+      col.c-sm  { width:20px; }
+      /* col.c-day không đặt width -> chia đều phần còn lại */
+
+      /* Tô màu cuối tuần / ngày lễ theo cấu hình (mã màu Excel).
+         Tô đều cả ô tiêu đề và ô dữ liệu; số ngày in đậm đen nên không bị che. */
+      table.nscl thead th.t7, table.nscl td.t7 { background:${cfg.colorSat}; color:#000; }
+      table.nscl thead th.cn, table.nscl td.cn { background:${cfg.colorSun}; color:#000; }
+      table.nscl thead th.le, table.nscl td.le { background:${cfg.colorHoliday}; color:#000; }
+      tr.cong td { font-weight:bold; background:#e9e9e9; border-top:1.4px solid #000;
+        border-bottom:1px solid #000; }
+
+      /* ── Ghi chú (ô có viền, đủ rộng để ghi tay) ── */
+      .note-box { border:1px solid #000; min-height:64px; margin-top:10px; padding:6px 8px; }
+      .note-box .note-label { font-weight:bold; font-size:11px; }
+      .footer { display:flex; justify-content:space-between; margin-top:14px; padding:0 6%; }
+      .fbox { text-align:center; width:40%; }
+      .fbox .role { font-weight:bold; font-size:13px; }
+      .fbox .date { font-style:italic; font-size:12px; margin-bottom:2px; }
+      .fbox .gap  { height:56px; }
+      .fbox .signer { font-weight:bold; font-style:italic; font-size:13px; }
+
+      @page { size: A4 landscape; margin: 7mm; }
+      @media print { body { padding:0; } }
+    </style>
     </head>
     <body onload="setTimeout(function(){window.print();window.close();},500);">
 
