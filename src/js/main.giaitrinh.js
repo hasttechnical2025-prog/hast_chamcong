@@ -1,6 +1,6 @@
 import { supabaseClient } from './supabaseClient.js';
 import { SUPABASE_KEY } from './config.js';
-import { loginAdmin, approveJustification } from './api.js';
+import { loginAdmin, approveJustification, adminWrite } from './api.js';
 import { setSupabaseToken } from './supabaseClient.js';
 
 
@@ -21,8 +21,7 @@ window.SUPABASE_KEY = SUPABASE_KEY;
 
 
 
-// Hàm gửi Telegram (dùng chung)
-)();
+// Hàm gửi Telegram (dùng chung) — gọi qua Edge Function /send-telegram (xem import sendTelegram)
 
 // ══════════════════════════════════════════════
 // AUTH TỪ SUPABASE
@@ -528,7 +527,6 @@ async function sendApproval(id, approveStatus, note) {
     showToast('❌ Lỗi kết nối: ' + e.message, 'error');
   }
 }
-}
 
 // ══════════════════════════════════════════════
 // BATCH DUYỆT HÀNG LOẠT SIÊU TỐC
@@ -607,62 +605,21 @@ async function confirmBatch() {
   document.getElementById('progress-label').textContent   = 'Đang xử lý trên Supabase...';
 
   try {
-    // Chạy song song N updates/inserts lên Supabase qua Promise.all
+    // Chạy song song N lần duyệt lên Supabase qua Promise.all.
+    // Dùng /approve (approveJustification) cho cả bản ghi ảo lẫn thật: endpoint tự
+    // insert-if-missing với bản ghi ảo, giữ kiểm tra phòng ban cho TBP và gửi Telegram
+    // kết quả server-side (không còn vòng lặp Telegram phía client).
     const promises = items.map(item => {
-      const isVirtual = item.rowIndex.toString().startsWith('virtual-');
-      if (isVirtual) {
-        // Nếu là bản ghi ảo thì phải INSERT
-        const dbDate = item.date.split('/').reverse().join('-');
-        return supabaseClient
-          .from('chamcong_attendance_records')
-          .insert([{
-            employee_name: item.name,
-            date: dbDate,
-            grades: 'D, D, D, D',
-            approve_status: _batchAction,
-            approve_note: '',
-            approve_time: new Date().toISOString()
-          }]);
-      } else {
-        // Nếu là bản ghi thật thì UPDATE bình thường
-        return supabaseClient
-          .from('chamcong_attendance_records')
-          .update({
-            approve_status: _batchAction,
-            approve_note: '',
-            approve_time: new Date().toISOString()
-          })
-          .eq('id', item.rowIndex);
-      }
+      const dbDate = item.date.split('/').reverse().join('-');
+      return approveJustification({
+        employee_name: item.name,
+        date: dbDate,
+        approve_status: _batchAction,
+        approve_note: ''
+      });
     });
 
     await Promise.all(promises);
-
-    // ⚡ GỬI TIN NHẮN TELEGRAM BÁO CHO CBNV KẾT QUẢ DUYỆT HÀNG LOẠT (Sự kiện 4)
-    try {
-      (async () => {
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          const { data: emp, error: empErr } = await supabaseClient
-            .from('chamcong_employees')
-            .select('telegram_chat_id')
-            .eq('name', item.name)
-            .maybeSingle();
-
-          if (!empErr && emp && emp.telegram_chat_id) {
-            var icon = actLabel === 'Đồng ý' ? '✅' : '❌';
-            var tgMsg = `${icon} <b>Kết quả duyệt giải trình</b>\n\n`
-              + `📅 Ngày: ${item.date}\n`
-              + `📝 Lý do: ${item.reason}\n`
-              + `${icon} Kết quả: <b>${actLabel}</b> (Duyệt hàng loạt)`;
-
-            await sendTelegram(emp.telegram_chat_id, tgMsg);
-          }
-        }
-      })();
-    } catch(tgE) {
-      console.warn('Lỗi gửi Telegram kết quả duyệt hàng loạt:', tgE);
-    }
 
     // Lưu ý nhỏ: Khi duyệt batch thành công, do ta không lấy id mới của các bản ghi insert trả về (để tiết kiệm code),
     // Giải pháp tốt nhất là buộc trang tải lại dữ liệu mới từ Server để lấy đúng id thật cho các nút Hủy duyệt.
@@ -940,25 +897,18 @@ async function saveNsclScore(inputEl) {
 
   try {
     if (!r) {
-      const { data, error } = await supabaseClient
-        .from('chamcong_attendance_records')
-        .insert([{
-          employee_name: empName,
-          date: dateYMD,
-          grades: 'D, D, D, D',
-          approve_status: 'Chờ',
-          nscl_score: val
-        }]).select();
-      if (error) throw error;
-      if (data && data.length > 0) {
-        _recordMap[key] = data[0]; // Ghi nhận vào RAM
+      const res = await adminWrite('chamcong_attendance_records', 'insert', [{
+        employee_name: empName,
+        date: dateYMD,
+        grades: 'D, D, D, D',
+        approve_status: 'Chờ',
+        nscl_score: val
+      }]);
+      if (res && res.data && res.data.length > 0) {
+        _recordMap[key] = res.data[0]; // Ghi nhận vào RAM
       }
     } else {
-      const { error } = await supabaseClient
-        .from('chamcong_attendance_records')
-        .update({ nscl_score: val })
-        .eq('id', r.id);
-      if (error) throw error;
+      await adminWrite('chamcong_attendance_records', 'update', { nscl_score: val }, 'id', r.id);
       r.nscl_score = val; // Ghi nhận vào RAM
     }
 
@@ -998,24 +948,17 @@ async function saveNsclAdjust(inputEl) {
 
   try {
     if (!r) {
-      const { data, error } = await supabaseClient
-        .from('chamcong_attendance_records')
-        .insert([{
-          employee_name: empName,
-          date: dateYMD,
-          grades: 'D, D, D, D',
-          approve_status: 'Chờ',
-          nscl_score: '',
-          nscl_adjust: dbVal
-        }]).select();
-      if (error) throw error;
-      if (data && data.length > 0) _recordMap[key] = data[0];
+      const res = await adminWrite('chamcong_attendance_records', 'insert', [{
+        employee_name: empName,
+        date: dateYMD,
+        grades: 'D, D, D, D',
+        approve_status: 'Chờ',
+        nscl_score: '',
+        nscl_adjust: dbVal
+      }]);
+      if (res && res.data && res.data.length > 0) _recordMap[key] = res.data[0];
     } else {
-      const { error } = await supabaseClient
-        .from('chamcong_attendance_records')
-        .update({ nscl_adjust: dbVal })
-        .eq('id', r.id);
-      if (error) throw error;
+      await adminWrite('chamcong_attendance_records', 'update', { nscl_adjust: dbVal }, 'id', r.id);
       r.nscl_adjust = dbVal;
     }
     inputEl.style.backgroundColor = '#e6f4ea';
@@ -1400,11 +1343,6 @@ document.addEventListener('click', function(e) {
   }
 });
 
-
-
-  }
-});
-\n
 // Bắt sự kiện phím Enter trên ô mật khẩu (Chạy trực tiếp vì ES Module đã defer)
 {
   const pwInput = document.getElementById('pw-input');
@@ -1417,3 +1355,10 @@ document.addEventListener('click', function(e) {
     });
   }
 }
+
+// Expose các hàm được gọi từ inline handler (onchange/onclick/oninput/onblur trong HTML
+// tĩnh & HTML do JS sinh ra) ra global scope — ES module không tự đặt hàm lên window.
+Object.assign(window, {
+  onMonthChange, onDeptChange, setFilterFromSelect,
+  openReject, sanitizeDayInput, saveNsclScore, sanitizeAdjustInput, saveNsclAdjust
+});

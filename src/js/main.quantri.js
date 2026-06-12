@@ -31,6 +31,52 @@ function initSupabase() {
   }
 }
 
+// ============================================================
+// ĐĂNG NHẬP QUẢN TRỊ (Admin) — xác thực qua Edge Function, lấy JWT
+// ============================================================
+async function adminLogin() {
+  const pwEl  = document.getElementById('admin-pw-input');
+  const errEl = document.getElementById('login-err');
+  const btn   = document.getElementById('btn-admin-login');
+  const pw = (pwEl ? pwEl.value : '').trim();
+  if (!pw) return;
+
+  if (errEl) errEl.style.display = 'none';
+  const _label = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang xác thực...'; }
+
+  try {
+    // Trang quản trị chỉ dùng mật khẩu (username = null -> nhánh password-only ở backend)
+    const res = await loginAdmin(null, pw);
+    if (res.error) throw new Error(res.error);
+
+    const user = res.user;
+    // Cổng quản trị: chỉ tài khoản role 'admin' mới được vào (TBP dùng trang giải trình)
+    if (!user || user.role !== 'admin') {
+      throw new Error('Tài khoản không có quyền quản trị hệ thống.');
+    }
+
+    // Đính JWT vào Supabase client (cho các thao tác ĐỌC theo RLS) và vào header API ghi
+    setSupabaseToken(res.access_token);
+    _isClientReady = true;
+
+    // Ẩn lớp đăng nhập, hiển thị portal
+    const overlay = document.getElementById('login-overlay');
+    if (overlay) overlay.style.display = 'none';
+
+    updateDeployStatusCard();
+  } catch (e) {
+    if (errEl) {
+      errEl.textContent = '❌ ' + e.message;
+      errEl.style.display = 'block';
+    } else {
+      alert('❌ ' + e.message);
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = _label || '🔐 Đăng nhập'; }
+  }
+}
+
 // Chuyển đổi các tab giao diện
 function switchTab(tabId, tabElement) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -843,7 +889,7 @@ async function addHoliday() {
 async function deleteHoliday(date) {
   if (!confirm('Bạn có chắc chắn muốn xóa ngày nghỉ lễ ' + date + ' không?')) return;
   try {
-    const { error } = await adminWrite('chamcong_holidays', 'delete', null, 'date', $4);
+    const { error } = await adminWrite('chamcong_holidays', 'delete', null, 'date', date);
     if (error) throw error;
     alert('🗑️ Đã xóa ngày nghỉ lễ thành công!');
     loadHolidays();
@@ -1232,15 +1278,6 @@ async function startDeployProcess() {
 
 
 // ============================================================
-// TIẾN TRÌNH DEPLOY NHÁP (CHỈ PUSH FILE GỐC CHO ANDROID)
-// ============================================================
-
-
-// Gọi API GitHub
-
-}
-
-// ============================================================
 // TAB: DỮ LIỆU CHẤM CÔNG (attendance_logs)
 // ============================================================
 let allAttendanceLogs = [];
@@ -1476,7 +1513,7 @@ async function deleteLog(){
   const id = document.getElementById('log-id').value;
   if(!confirm('Bạn chắc chắn muốn XÓA lượt chấm công này? Hành động không thể hoàn tác.')) return;
   try {
-    const { error } = await adminWrite('chamcong_attendance_logs', 'delete', null, 'id', $4);
+    const { error } = await adminWrite('chamcong_attendance_logs', 'delete', null, 'id', id);
     if(error) throw error;
     allAttendanceLogs = allAttendanceLogs.filter(x => String(x.id) !== String(id));
     closeLogModal();
@@ -1579,7 +1616,7 @@ document.addEventListener('click', function(e) {
     fnMap[action]();
   }
 });
-\n
+
 // Bắt sự kiện phím Enter trên ô mật khẩu (Chạy trực tiếp vì ES Module đã defer)
 {
   const pwInput = document.getElementById('admin-pw-input');
@@ -1592,3 +1629,9 @@ document.addEventListener('click', function(e) {
     });
   }
 }
+
+// Expose các hàm được gọi từ inline handler (onchange/onclick trong HTML tĩnh & HTML do JS
+// sinh ra) ra global scope — ES module không tự đặt hàm lên window.
+Object.assign(window, {
+  renderEmployeeTable, handleImageSelected, loadAttendanceLogs, renderAttendanceTable, openLogEdit
+});

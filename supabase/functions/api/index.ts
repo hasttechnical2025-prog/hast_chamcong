@@ -392,7 +392,7 @@ serve(async (req) => {
         }
       }
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("chamcong_attendance_records")
         .update({
           approve_status,
@@ -400,9 +400,26 @@ serve(async (req) => {
           approve_time: new Date().toISOString()
         })
         .eq("employee_name", employee_name)
-        .eq("date", date);
+        .eq("date", date)
+        .select();
 
       if (error) throw error;
+
+      // Bản ghi ảo (chưa tồn tại trong DB) -> insert mới để lưu kết quả duyệt.
+      // Đặt sau kiểm tra phòng ban ở trên nên TBP vẫn không thể ghi phòng khác.
+      if (!updated || updated.length === 0) {
+        const { error: insErr } = await supabase
+          .from("chamcong_attendance_records")
+          .insert([{
+            employee_name,
+            date,
+            grades: "D,D,D,D",
+            approve_status,
+            approve_note,
+            approve_time: new Date().toISOString()
+          }]);
+        if (insErr) throw insErr;
+      }
 
       // Gửi Telegram báo kết quả cho nhân viên
       try {

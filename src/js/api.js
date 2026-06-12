@@ -89,3 +89,12 @@ export async function adminWrite(table, action, data, eqColumn, eqValue) {
 export async function triggerDeploy(owner, repo) {
   return await callApi('/admin/deploy', { owner, repo });
 }
+
+/**
+ * Gửi tin nhắn Telegram qua Edge Function (đường gửi an toàn, token nằm ở Secrets)
+ * @param {string|number} chatId
+ * @param {string} message
+ */
+export async function sendTelegram(chatId, message) {
+  return await callApi('/send-telegram', { chat_id: chatId, message });
+}
