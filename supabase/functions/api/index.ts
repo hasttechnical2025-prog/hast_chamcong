@@ -7,12 +7,26 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Base64URL helpers an toàn UTF-8 (btoa thuần chỉ nhận Latin1 -> vỡ với tên/phòng ban
+// tiếng Việt như "Trần Kiên", "Kế toán-Hành chính"). Mã hoá qua bytes UTF-8 trước.
+function bytesToB64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+function b64UrlToBytes(str: string): Uint8Array {
+  const binary = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
 // HMAC-SHA256 JWT implementation using Web Crypto API
 async function signJWT(payload: any, secret: string): Promise<string> {
   const encoder = new TextEncoder();
   const header = { alg: "HS256", typ: "JWT" };
-  const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const encodedHeader = bytesToB64Url(encoder.encode(JSON.stringify(header)));
+  const encodedPayload = bytesToB64Url(encoder.encode(JSON.stringify(payload)));
 
   const tokenInput = `${encodedHeader}.${encodedPayload}`;
 
@@ -30,10 +44,7 @@ async function signJWT(payload: any, secret: string): Promise<string> {
     encoder.encode(tokenInput)
   );
 
-  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+  const encodedSignature = bytesToB64Url(new Uint8Array(signature));
 
   return `${tokenInput}.${encodedSignature}`;
 }
@@ -55,11 +66,7 @@ async function verifyJWT(token: string, secret: string): Promise<any | null> {
 
     const tokenInput = `${header}.${payload}`;
 
-    const binarySign = atob(signature.replace(/-/g, "+").replace(/_/g, "/"));
-    const signBytes = new Uint8Array(binarySign.length);
-    for (let i = 0; i < binarySign.length; i++) {
-      signBytes[i] = binarySign.charCodeAt(i);
-    }
+    const signBytes = b64UrlToBytes(signature);
 
     const isValid = await crypto.subtle.verify(
       "HMAC",
@@ -70,7 +77,7 @@ async function verifyJWT(token: string, secret: string): Promise<any | null> {
 
     if (!isValid) return null;
 
-    const jsonPayload = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    const jsonPayload = new TextDecoder().decode(b64UrlToBytes(payload));
     return JSON.parse(jsonPayload);
   } catch (e) {
     console.error("JWT Verification error:", e);

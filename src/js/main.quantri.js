@@ -714,7 +714,10 @@ function openQRModal(name) {
     return;
   }
 
-  const linkUrl = `https://${ghUser}.github.io/${ghRepo}/nv/${emp.token}/`;
+  // Link gốc kèm ?t=<token>: main.index.js đọc token -> verify -> lưu localStorage.
+  // Chạy ngay không cần deploy tệp cá nhân. (iOS Add-to-Home-Screen có thể mất
+  // localStorage; muốn bền cho iOS thì chạy "Deploy PWA" để có /nv/<token>/.)
+  const linkUrl = `https://${ghUser}.github.io/${ghRepo}/?t=${emp.token}`;
 
   document.getElementById('qr-title-name').textContent = `Mã QR Chấm Công — ${name}`;
   document.getElementById('qr-url-text').textContent = linkUrl;
@@ -797,8 +800,8 @@ function printAllQRCodes() {
   let cardsHtml = '';
 
   filtered.forEach((e, index) => {
-    if (!e.token) return; // Bỏ qua nhân viên chưa có token (chưa Deploy) — tránh QR hỏng
-    const linkUrl = `https://${ghUser}.github.io/${ghRepo}/nv/${e.token}/`;
+    if (!e.token) return; // Bỏ qua nhân viên chưa có token — tránh QR hỏng
+    const linkUrl = `https://${ghUser}.github.io/${ghRepo}/?t=${e.token}`;
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(linkUrl)}`;
 
     cardsHtml += `
