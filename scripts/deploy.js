@@ -93,6 +93,11 @@ export const GPS_EXPIRE_MS = 1 * 60 * 1000; // GPS hết hạn sau 1 phút
               .replace(/Đ/g, 'D');
   }
 
+  // Đường dẫn gốc site GitHub Pages (vd "/hast_chamcong/") để vá đường dẫn tương đối
+  // trong tệp cá nhân đặt sâu ở /nv/<token>/.
+  const repoName = (process.env.GITHUB_REPOSITORY || '').split('/')[1] || '';
+  const baseHref = repoName ? `/${repoName}/` : '/';
+
   for (let i = 0; i < emps.length; i++) {
     const emp = emps[i];
     const token = emp.token;
@@ -105,21 +110,23 @@ export const GPS_EXPIRE_MS = 1 * 60 * 1000; // GPS hết hạn sau 1 phút
     // Inject token định danh cá nhân vào tệp index.html
     let empHtml = baseHtml;
 
-    // Inject token của nhân viên vào thẻ head để main.index.js tự nhận diện không cần URL
-    const tokenScript = `<script>window.employeeToken = "${token}";</script>`;
-    empHtml = empHtml.replace('<head>', `<head>\n${tokenScript}`);
+    // Vá <base> để mọi đường dẫn tương đối (src/js, src/css, icon...) trỏ về gốc site,
+    // và inject token để main.index.js tự nhận diện không cần URL.
+    const headInject = `<base href="${baseHref}">\n<script>window.employeeToken = "${token}";</script>`;
+    empHtml = empHtml.replace('<head>', `<head>\n${headInject}`);
 
     // Sinh Manifest cá nhân dạng inline Base64 Data URI cho iOS Safari
     const manifestObj = {
       name: `${companyName} - ${emp.name}`,
       short_name: "Chấm Công",
-      start_url: `index.html`, // Mở chính trang này
+      start_url: `${baseHref}nv/${token}/`, // Tuyệt đối -> không lệ thuộc <base>, mở đúng tệp cá nhân
+      scope: `${baseHref}nv/${token}/`,
       display: "standalone",
       background_color: "#f0f4f8",
       theme_color: "#1a73e8",
       icons: [
-        { src: "../../icon-192.png", sizes: "192x192", type: "image/png" },
-        { src: "../../icon-512.png", sizes: "512x512", type: "image/png" }
+        { src: `${baseHref}icon-192.png`, sizes: "192x192", type: "image/png" },
+        { src: `${baseHref}icon-512.png`, sizes: "512x512", type: "image/png" }
       ]
     };
 
