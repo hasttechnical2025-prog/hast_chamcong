@@ -698,11 +698,23 @@ function removeAccents(str) {
 }
 
 function openQRModal(name) {
-  const slug = removeAccents(name).replace(/\s+/g, '_');
   const ghUser = document.getElementById('ghUser').value.trim();
   const ghRepo = document.getElementById('ghRepo').value.trim();
 
-  const linkUrl = `https://${ghUser}.github.io/${ghRepo}/nv/${slug}.html`;
+  if (!ghUser || !ghRepo) {
+    alert('⚠️ Chưa có GitHub User/Repo. Vào tab "Cấu Hình Hệ Thống" điền (vd: hasttechnical2025-prog / hast_chamcong) rồi bấm Lưu, sau đó mới tạo mã QR.');
+    return;
+  }
+
+  // Định danh bằng TOKEN ngẫu nhiên (không dùng tên). Link trỏ tới tệp cá nhân
+  // /nv/<token>/ do scripts/deploy.js sinh ra — phải khớp đúng cấu trúc đó.
+  const emp = (allEmployees || []).find(e => e.name === name);
+  if (!emp || !emp.token) {
+    alert('⚠️ Nhân viên này chưa có token định danh trong CSDL. Hãy chạy "Deploy PWA" để sinh tệp cá nhân (và token) trước khi tạo mã QR.');
+    return;
+  }
+
+  const linkUrl = `https://${ghUser}.github.io/${ghRepo}/nv/${emp.token}/`;
 
   document.getElementById('qr-title-name').textContent = `Mã QR Chấm Công — ${name}`;
   document.getElementById('qr-url-text').textContent = linkUrl;
@@ -785,8 +797,8 @@ function printAllQRCodes() {
   let cardsHtml = '';
 
   filtered.forEach((e, index) => {
-    const slug = removeAccents(e.name).replace(/\s+/g, '_');
-    const linkUrl = `https://${ghUser}.github.io/${ghRepo}/nv/${slug}.html`;
+    if (!e.token) return; // Bỏ qua nhân viên chưa có token (chưa Deploy) — tránh QR hỏng
+    const linkUrl = `https://${ghUser}.github.io/${ghRepo}/nv/${e.token}/`;
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(linkUrl)}`;
 
     cardsHtml += `
