@@ -1,14 +1,17 @@
+// Cấu hình các tham số toàn cục của ứng dụng (Tự động sinh từ GitHub Action)
+
 export const SUPABASE_URL = 'https://bkdupkjrafaprvdseued.supabase.co';
-export const SUPABASE_KEY = 'sb_publishable_VPxkr4o9TCHiM-cVNalB5A_z4x_dG5y';
-export const SUPABASE_FUNC_URL = `${SUPABASE_URL}/functions/v1`;
+export const SUPABASE_KEY = 'sb_publishable_VPxkr4o9TCHiM-cVNalB5A_z4x_dG5y'; // Anon key dùng để đọc dữ liệu
+export const SUPABASE_FUNC_URL = 'https://bkdupkjrafaprvdseued.supabase.co/functions/v1';
 
 export const OFFICES = [
-  { name: 'CHẤM CÔNG CBNV', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
+  { name: 'Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
 ];
 
 export const MAX_DISTANCE = 15000;
 
-export const GPS_EXPIRE_MS = 1 * 60 * 1000; // 1 minute
-
 export const ALLOW_HOLIDAY_CHECKIN = false;
 export const ALLOW_MULTIPLE_CHECKIN = false;
+
+export const DAYS = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+export const GPS_EXPIRE_MS = 1 * 60 * 1000; // GPS hết hạn sau 1 phút
