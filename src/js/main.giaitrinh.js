@@ -9,6 +9,11 @@ let _pw = '';
 let _isAdmin = false;
 let _tbpDept = '';
 
+// State module-scope (ES module = strict mode -> bắt buộc khai báo trước khi gán)
+let _allItems = [];      // Danh sách mục giải trình đang hiển thị (record thật + ảo)
+let _filter = 'all';     // Bộ lọc trạng thái: all | pending | approved | rejected
+let _rejectRow = null;   // rowIndex của dòng đang mở popup từ chối
+
 window._isClientReady = false;
 window.supabaseClient = supabaseClient;
 window.SUPABASE_KEY = SUPABASE_KEY;

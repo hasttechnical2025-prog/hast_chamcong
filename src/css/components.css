@@ -14,7 +14,7 @@
   /* Đảm bảo không bị ảnh hưởng bởi body flex */
   margin: 0;
   padding: 0;
-  padding-top: 0 !important
+  padding-top: 0 !important;
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -200,6 +200,11 @@ textarea:focus{border-color:#1a73e8;}
   /* Common UI Elements */
   .card { background: white; border-radius: 8px; border: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
   .card h3 { font-size: 16px; color: #202124; margin-bottom: 16px; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  /* Trang quản trị dùng chung class .card với trang CBNV (định nghĩa ở đầu file có
+     max-width:420px;width:100%). Reset lại để card admin giãn đầy cột flex, tránh
+     bảng bị co rúm. Selector .main-container .card chỉ khớp trang quản trị nên KHÔNG
+     ảnh hưởng card hẹp của trang CBNV. */
+  .main-container .card { max-width: none; width: auto; }
 
   .flex-col-left { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
   .flex-col-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
