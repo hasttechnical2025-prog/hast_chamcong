@@ -708,10 +708,10 @@ function openQRModal(name) {
     return;
   }
 
-  // Link gốc kèm ?t=<token>: main.index.js đọc token -> verify -> lưu localStorage.
-  // Chạy ngay không cần deploy tệp cá nhân. (iOS Add-to-Home-Screen có thể mất
-  // localStorage; muốn bền cho iOS thì chạy "Deploy PWA" để có /nv/<token>/.)
-  const linkUrl = `${appBaseUrl()}?t=${emp.token}`;
+  // Trỏ tới tệp cá nhân /nv/<token>/ (do "Deploy PWA" sinh, token baked sẵn) — bền cho
+  // cả iOS (Add-to-Home-Screen không mất định danh) lẫn Android.
+  // LƯU Ý: thêm nhân viên mới phải chạy lại "Deploy PWA" để sinh tệp /nv/<token>/ cho họ.
+  const linkUrl = `${appBaseUrl()}nv/${emp.token}/`;
 
   document.getElementById('qr-title-name').textContent = `Mã QR Chấm Công — ${name}`;
   document.getElementById('qr-url-text').textContent = linkUrl;
@@ -788,7 +788,7 @@ function printAllQRCodes() {
 
   filtered.forEach((e, index) => {
     if (!e.token) return; // Bỏ qua nhân viên chưa có token — tránh QR hỏng
-    const linkUrl = `${appBaseUrl()}?t=${e.token}`;
+    const linkUrl = `${appBaseUrl()}nv/${e.token}/`;
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(linkUrl)}`;
 
     cardsHtml += `
