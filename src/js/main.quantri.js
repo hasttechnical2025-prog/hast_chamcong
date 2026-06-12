@@ -692,32 +692,26 @@ async function exportPrintReport(name, employeeId) {
   }
 }
 
-// --- TÍNH NĂNG SINH MÃ QRCODE ĐỘC LẬP CHO IPHONE ---
-function removeAccents(str) {
-  return str.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+// --- TÍNH NĂNG SINH MÃ QRCODE CHẤM CÔNG (link ?t=<token>) ---
+// URL gốc của app, suy ra từ chính địa chỉ trang quản trị (bỏ phần "quantri/...").
+// Nhờ vậy QR luôn đúng host/repo hiện tại, KHÔNG phụ thuộc ghUser/ghRepo (chỉ lưu
+// localStorage từng máy, dễ trống -> sinh URL "https://.github.io//..." hỏng).
+function appBaseUrl() {
+  return window.location.href.split('#')[0].split('?')[0].replace(/quantri\/[^/]*$/, '');
 }
 
 function openQRModal(name) {
-  const ghUser = document.getElementById('ghUser').value.trim();
-  const ghRepo = document.getElementById('ghRepo').value.trim();
-
-  if (!ghUser || !ghRepo) {
-    alert('⚠️ Chưa có GitHub User/Repo. Vào tab "Cấu Hình Hệ Thống" điền (vd: hasttechnical2025-prog / hast_chamcong) rồi bấm Lưu, sau đó mới tạo mã QR.');
-    return;
-  }
-
-  // Định danh bằng TOKEN ngẫu nhiên (không dùng tên). Link trỏ tới tệp cá nhân
-  // /nv/<token>/ do scripts/deploy.js sinh ra — phải khớp đúng cấu trúc đó.
+  // Định danh bằng TOKEN ngẫu nhiên (không dùng tên).
   const emp = (allEmployees || []).find(e => e.name === name);
   if (!emp || !emp.token) {
-    alert('⚠️ Nhân viên này chưa có token định danh trong CSDL. Hãy chạy "Deploy PWA" để sinh tệp cá nhân (và token) trước khi tạo mã QR.');
+    alert('⚠️ Nhân viên này chưa có token định danh trong CSDL. Liên hệ kỹ thuật để sinh token trước khi tạo mã QR.');
     return;
   }
 
   // Link gốc kèm ?t=<token>: main.index.js đọc token -> verify -> lưu localStorage.
   // Chạy ngay không cần deploy tệp cá nhân. (iOS Add-to-Home-Screen có thể mất
   // localStorage; muốn bền cho iOS thì chạy "Deploy PWA" để có /nv/<token>/.)
-  const linkUrl = `https://${ghUser}.github.io/${ghRepo}/?t=${emp.token}`;
+  const linkUrl = `${appBaseUrl()}?t=${emp.token}`;
 
   document.getElementById('qr-title-name').textContent = `Mã QR Chấm Công — ${name}`;
   document.getElementById('qr-url-text').textContent = linkUrl;
@@ -789,19 +783,12 @@ function printAllQRCodes() {
     return;
   }
 
-  const ghUser = document.getElementById('ghUser').value.trim();
-  const ghRepo = document.getElementById('ghRepo').value.trim();
-  if (!ghUser || !ghRepo) {
-    alert('Vui lòng thiết lập GitHub User và Repo ở tab Cấu Hình để tạo link chính xác!');
-    return;
-  }
-
   const printWindow = window.open('', '_blank');
   let cardsHtml = '';
 
   filtered.forEach((e, index) => {
     if (!e.token) return; // Bỏ qua nhân viên chưa có token — tránh QR hỏng
-    const linkUrl = `https://${ghUser}.github.io/${ghRepo}/?t=${e.token}`;
+    const linkUrl = `${appBaseUrl()}?t=${e.token}`;
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(linkUrl)}`;
 
     cardsHtml += `
