@@ -642,6 +642,11 @@ async function exportPrintReport(name, employeeId) {
           <td style="text-align:center;">${displayApprove === 'Đồng ý' ? 'Đồng ý' : (displayApprove === 'Từ chối' ? 'Từ chối' : '')}</td>
         </tr>
       `;
+
+      // Ngăn cách giữa các tuần (chèn dòng trống sau Chủ Nhật) — giống bản in mẫu
+      if (dow === 0 && day < daysInMonth) {
+        rowsHtml += `<tr class="week-sep"><td colspan="11"></td></tr>`;
+      }
     }
 
     // 4. Mở cửa sổ in
@@ -650,7 +655,29 @@ async function exportPrintReport(name, employeeId) {
       <html>
       <head>
         <title>Báo cáo chấm công - ${name}</title>
-        
+        <style>
+          * { box-sizing: border-box; }
+          body { font-family: 'Times New Roman', Times, serif; color:#000; margin:0; padding:6mm 8mm;
+            -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+          .header-print { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px; }
+          .header-left { font-weight:bold; font-size:13px; text-transform:uppercase; }
+          .header-right { font-style:italic; font-size:11px; }
+          .title-print { text-align:center; margin:4px 0 10px; }
+          .title-print h2 { font-size:15px; font-weight:bold; text-transform:uppercase; margin:0; }
+          table.tbl-print { width:100%; border-collapse:collapse; border:1.4px solid #000; font-size:12px;
+            table-layout:fixed; }
+          table.tbl-print th, table.tbl-print td { border:0.8px solid #000; padding:3px 5px;
+            overflow:hidden; vertical-align:middle; }
+          table.tbl-print thead th { background:#e0e0e0; font-weight:bold; text-align:center;
+            -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+          /* Tô xám ngày nghỉ (T7/CN/lễ) */
+          tr.weekend td, tr.sunday td, tr.holiday td { background:#f2f2f2;
+            -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+          /* Dòng ngăn cách giữa các tuần (không viền) */
+          tr.week-sep td { border:none; height:7px; padding:0; }
+          @page { size: A4 landscape; margin: 8mm; }
+          @media print { body { padding:0; } }
+        </style>
       </head>
       <body onload="window.print(); window.close();">
         <div class="header-print">
