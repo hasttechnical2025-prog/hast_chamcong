@@ -155,7 +155,7 @@ serve(async (req) => {
         role: "authenticated",
         iss: "supabase",
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (12 * 60 * 60), // Hết hạn sau 12h
+        exp: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60), // Phiên admin/TBP dài 1 năm (gần như không hết hạn)
         user_metadata: {
           type: "admin",
           username: account.username,

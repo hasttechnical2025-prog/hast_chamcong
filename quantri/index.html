@@ -392,6 +392,30 @@
       </div>
 
       <div class="card">
+        <h3>🐙 Cấu Hình Đẩy File Lên GitHub</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>GitHub Username (Tài khoản sở hữu)</label>
+            <input type="text" id="ghUser" placeholder="hasttechnical2025-prog">
+          </div>
+          <div class="form-group">
+            <label>Repository Name (Kho chứa code)</label>
+            <input type="text" id="ghRepo" placeholder="hast_chamcong">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Branch</label>
+            <input type="text" id="ghBranch" value="main">
+          </div>
+          <div class="form-group">
+            <label>GitHub Personal Access Token (PAT)</label>
+            <input type="password" id="ghToken" disabled placeholder="(Đã bảo mật trên Server)">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
         <h3>🔐 Đổi Mật Khẩu Trang Duyệt Giải Trình</h3>
         <div class="form-group">
           <label>Mật khẩu TBP Kinh Doanh</label>
@@ -464,30 +488,6 @@
         <div style="display:flex; gap:10px;">
           <button class="btn btn-blue" style="flex:1;" data-action="saveNsclPrintCfg" data-args="">💾 Lưu cấu hình bản in</button>
           <button class="btn btn-gray" data-action="resetNsclPrintCfg" data-args="">↩️ Mặc định</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>🐙 Cấu Hình Đẩy File Lên GitHub</h3>
-        <div class="form-row">
-          <div class="form-group">
-            <label>GitHub Username (Tài khoản sở hữu)</label>
-            <input type="text" id="ghUser" placeholder="hasttechnical2025-prog">
-          </div>
-          <div class="form-group">
-            <label>Repository Name (Kho chứa code)</label>
-            <input type="text" id="ghRepo" placeholder="hast_chamcong">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Branch</label>
-            <input type="text" id="ghBranch" value="main">
-          </div>
-          <div class="form-group">
-            <label>GitHub Personal Access Token (PAT)</label>
-            <input type="password" id="ghToken" disabled placeholder="(Đã bảo mật trên Server)">
-          </div>
         </div>
       </div>
     </div>
