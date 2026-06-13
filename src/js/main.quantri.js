@@ -594,8 +594,10 @@ async function exportPrintReport(name, employeeId) {
 
       let rowClass = '';
       let displayGrades = '';
-      let displayNote = record.note || '';
-      let displayReason = record.justification || '';
+      // Ghi chú: chỉ để nhãn ngày (Thứ 7/Nghỉ lễ). Lý do/Giải trình: gộp giải trình
+      // HOẶC ghi chú lúc chấm (vd "Lỗi app") — vì cả hai đều là lý do của CBNV.
+      let displayNote = '';
+      let displayReason = record.justification || record.note || '';
       let displayApprove = record.approve_status || '';
       let displayName = name;
 
@@ -639,8 +641,8 @@ async function exportPrintReport(name, employeeId) {
           <td style="text-align:center; font-family:monospace;">${aIn}</td>
           <td style="text-align:center; font-family:monospace;">${aOut}</td>
           <td style="text-align:center; ${gradesStyle}">${displayGrades}</td>
-          <td style="font-size:11.5px;">${displayNote}</td>
-          <td style="font-size:11.5px; white-space:nowrap; overflow:hidden; max-width:280px; text-overflow:ellipsis;">${displayReason}</td>
+          <td style="font-size:11px;">${displayNote}</td>
+          <td style="font-size:11px; white-space:normal; word-wrap:break-word;">${displayReason}</td>
           <td style="text-align:center;">${displayApprove === 'Đồng ý' ? 'Đồng ý' : (displayApprove === 'Từ chối' ? 'Từ chối' : '')}</td>
         </tr>
       `;
@@ -661,10 +663,11 @@ async function exportPrintReport(name, employeeId) {
           .header-right { font-style:italic; font-size:10px; }
           .title-print { text-align:center; margin:2px 0 6px; }
           .title-print h2 { font-size:14px; font-weight:bold; text-transform:uppercase; margin:0; }
-          table.tbl-print { width:100%; border-collapse:collapse; border:1.2px solid #000; font-size:10.5px;
+          table.tbl-print { width:100%; border-collapse:collapse; border:1.2px solid #000; font-size:11px;
             table-layout:fixed; }
-          table.tbl-print th, table.tbl-print td { border:0.6px solid #000; padding:0 4px;
-            line-height:1.25; overflow:hidden; vertical-align:middle; }
+          table.tbl-print th, table.tbl-print td { border:0.6px solid #000; padding:2px 5px;
+            line-height:1.6; overflow:hidden; vertical-align:middle; text-align:center; }
+          table.tbl-print td:nth-child(2), table.tbl-print td:nth-child(10) { text-align:left; }
           table.tbl-print thead th { background:#e0e0e0; font-weight:bold; text-align:center;
             -webkit-print-color-adjust:exact; print-color-adjust:exact; }
           /* Tô xám ngày nghỉ (T7/CN/lễ) */
@@ -689,17 +692,17 @@ async function exportPrintReport(name, employeeId) {
         <table class="tbl-print">
           <thead>
             <tr>
-              <th style="width:25px;">ID</th>
-              <th style="width:130px;">Họ tên</th>
-              <th style="width:70px;">Ngày</th>
-              <th style="width:50px;">Sáng IN</th>
-              <th style="width:50px;">Sáng OUT</th>
-              <th style="width:50px;">Chiều IN</th>
-              <th style="width:50px;">Chiều OUT</th>
-              <th style="width:80px;">Đánh giá công</th>
-              <th style="width:90px;">Ghi chú</th>
-              <th>Lý do / Giải trình</th>
-              <th style="width:65px;">Xác nhận</th>
+              <th style="width:3%;">ID</th>
+              <th style="width:14%;">Họ tên</th>
+              <th style="width:7%;">Ngày</th>
+              <th style="width:6%;">Sáng IN</th>
+              <th style="width:6%;">Sáng OUT</th>
+              <th style="width:6%;">Chiều IN</th>
+              <th style="width:6%;">Chiều OUT</th>
+              <th style="width:9%;">Đánh giá công</th>
+              <th style="width:7%;">Ghi chú</th>
+              <th style="width:28%;">Lý do / Giải trình</th>
+              <th style="width:8%;">Xác nhận</th>
             </tr>
           </thead>
           <tbody>
