@@ -10,7 +10,7 @@ export const OFFICES = [
 
 export const MAX_DISTANCE = 15000;
 
-export const ALLOW_HOLIDAY_CHECKIN = false;
+export const ALLOW_HOLIDAY_CHECKIN = true;
 export const ALLOW_MULTIPLE_CHECKIN = false;
 
 export const DAYS = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
