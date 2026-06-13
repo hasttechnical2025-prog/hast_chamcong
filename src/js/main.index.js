@@ -5,7 +5,7 @@ import { getGPS, closeGPSPrompt, acceptGPSPrompt, setLoc } from './gps.js';
 import { send, confirmOverwrite, cancelOverwrite, resetForm, checkTodayHoliday } from './attendance.js';
 import { showHistory, showMain, changeMonth } from './history.js';
 import { openGuide, closeGuide, showPage } from './guide.js';
-import { submitGiaiTrinh, initJustificationEvents } from './justification.js';
+import { submitGiaiTrinh, initJustificationEvents, closeGiaiTrinh } from './justification.js';
 import { state, setEmployeeName, getEmployeeName } from './state.js';
 import { GPS_EXPIRE_MS } from './config.js';
 import { verifyQRToken } from './api.js';
@@ -115,9 +115,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initPWA();
   initClock();
 
-  // Kiểm tra chặn Desktop (máy tính)
+  // Kiểm tra chặn Desktop (máy tính). Cho phép mở trên PC để gỡ lỗi khi có ?pc=1
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (!isMobile) {
+  const allowPc = new URLSearchParams(window.location.search).has('pc');
+  if (!isMobile && !allowPc) {
     const blocker = document.getElementById('desktop-blocker');
     if (blocker) blocker.style.display = 'flex';
     document.getElementById('main').style.display = 'none';
