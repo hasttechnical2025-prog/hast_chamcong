@@ -489,6 +489,9 @@ serve(async (req) => {
         result = await query.insert(data).select();
       } else if (action === "update") {
         result = await query.update(data).eq(eqColumn, eqValue).select();
+      } else if (action === "upsert") {
+        // Chèn hoặc cập nhật theo khoá chính của bảng (vd system_config.key)
+        result = await query.upsert(data).select();
       } else if (action === "delete") {
         result = await query.delete().eq(eqColumn, eqValue).select();
       } else {

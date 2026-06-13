@@ -9,7 +9,7 @@ import { submitGiaiTrinh, initJustificationEvents, closeGiaiTrinh } from './just
 import { state, setEmployeeName, getEmployeeName } from './state.js';
 import { GPS_EXPIRE_MS } from './config.js';
 import { verifyQRToken } from './api.js';
-import { setSupabaseToken } from './supabaseClient.js';
+import { setSupabaseToken, supabaseClient } from './supabaseClient.js';
 
 async function initEmail() {
   const params = new URLSearchParams(window.location.search);
@@ -102,6 +102,23 @@ async function initEmail() {
   }
 }
 
+// Tải nội dung trang hướng dẫn (p1..p4) từ Supabase. Chỉ thay những trang còn
+// placeholder "Đang tải" (hiện chỉ p1) — giữ nguyên nội dung tĩnh đã nhúng (p2..p4).
+async function loadGuideContent() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('chamcong_guide_content')
+      .select('id, content');
+    if (error || !data) return;
+    data.forEach(row => {
+      const pg = document.getElementById(row.id);
+      if (pg && pg.querySelector('.hist-loading') && row.content) {
+        pg.innerHTML = row.content;
+      }
+    });
+  } catch (e) { /* lỗi mạng -> giữ placeholder */ }
+}
+
 // Gán các hàm cần cho HTML nếu có liên quan
 window.closePopup = function() {
   const overlay = document.getElementById('popup-overlay');
@@ -162,8 +179,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnWarnContinue = document.querySelector('.btn-warn-continue');
   if (btnWarnContinue) btnWarnContinue.addEventListener('click', confirmOverwrite);
 
-  const btnCloseGuide = document.getElementById('btn-close-guide');
+  const btnCloseGuide = document.querySelector('.g-back-btn') || document.getElementById('btn-close-guide');
   if (btnCloseGuide) btnCloseGuide.addEventListener('click', closeGuide);
+
+  // Tải nội dung trang hướng dẫn từ DB (chỉ điền các trang còn placeholder "Đang tải")
+  loadGuideContent();
 
   const btnPromptCancel = document.querySelector('.btn-prompt-cancel');
   if (btnPromptCancel) btnPromptCancel.addEventListener('click', closeGPSPrompt);
