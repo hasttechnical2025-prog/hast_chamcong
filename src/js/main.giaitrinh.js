@@ -1393,7 +1393,7 @@ document.addEventListener('click', function(e) {
     logout: () => logout(),
     switchMainTab: () => switchMainTab(args[0]),
     loadData: () => loadData(),
-    openBatch: () => openBatch(),
+    openBatch: () => openBatch(args[0]),
     autofillPoints10: () => autofillPoints10(),
     printNsclReport: () => printNsclReport(),
     closeUndo: () => closeUndo(),

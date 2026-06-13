@@ -26,7 +26,10 @@
 /* Khi đang xem Lịch sử chấm công: ghim thẻ lên trên cùng để bảng KHÔNG bị
    "nhảy ra giữa màn hình" mỗi khi đổi tháng (số dòng thay đổi → chiều cao thẻ
    thay đổi → flex center kéo thẻ về giữa). Ghim top giúp thẻ đứng yên. */
-body.viewing-history{align-items:flex-start;}
+/* Khi xem lịch sử: ghim thẻ lên trên cùng (dùng !important để thắng style inline
+   align-items/justify-content:center trên <body> — nếu không, đổi tháng đổi chiều
+   cao -> thẻ bị căn giữa lại -> nhảy lên xuống). */
+body.viewing-history{align-items:flex-start !important; justify-content:flex-start !important;}
 .card{background:white;border-radius:18px;box-shadow:0 4px 28px rgba(0,0,0,.12);
   padding:28px 22px;max-width:420px;width:100%;}
 

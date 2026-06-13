@@ -53,21 +53,20 @@ export async function checkAttendanceBeforeSend() {
     let sessionLabel = '';
 
     if (hhmm <= 900) {
-      if (record.morning_in) { existingTime = record.morning_in; sessionLabel = 'Check In sáng'; }
+      if (record.morning_in) { existingTime = record.morning_in; sessionLabel = 'checkin sáng'; }
     } else if (hhmm <= 1245) {
-      if (record.morning_out) { existingTime = record.morning_out; sessionLabel = 'Check Out sáng'; }
+      if (record.morning_out) { existingTime = record.morning_out; sessionLabel = 'checkout sáng'; }
     } else if (hhmm <= 1500) {
-      if (record.afternoon_in) { existingTime = record.afternoon_in; sessionLabel = 'Check In chiều'; }
+      if (record.afternoon_in) { existingTime = record.afternoon_in; sessionLabel = 'checkin chiều'; }
     } else {
-      if (record.afternoon_out) { existingTime = record.afternoon_out; sessionLabel = 'Check Out chiều'; }
+      if (record.afternoon_out) { existingTime = record.afternoon_out; sessionLabel = 'checkout chiều'; }
     }
 
     if (existingTime) {
+      const hhmmStr = String(existingTime).substring(0, 5); // hh:mm
       document.getElementById('warn-msg').innerHTML =
-        `Bạn đã có giờ <b>${existingTime}</b> cho ca <b>${sessionLabel}</b> hôm nay.`;
-      document.getElementById('warn-detail').innerHTML =
-        `Nếu tiếp tục chấm lại, hệ thống sẽ <b>thay thế giờ cũ bằng giờ mới nhất</b>.<br>` +
-        `Bạn có chắc chắn muốn ghi đè không?`;
+        `Bạn đã <b>${sessionLabel}</b> vào lúc <b>${hhmmStr}</b>.`;
+      document.getElementById('warn-detail').innerHTML = `Có tiếp tục chấm công?`;
       document.getElementById('checkin-warn-overlay').classList.add('show');
     } else {
       doSend(state.gpsCoords.latitude, state.gpsCoords.longitude, state.gpsCoords.accuracy);

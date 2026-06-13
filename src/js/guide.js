@@ -5,8 +5,8 @@ export function openGuide(event) {
   const guideOverlay = document.getElementById('guide-overlay');
   if (guideOverlay) {
     guideOverlay.classList.add('show');
-    // Mặc định tab 1
-    showPage('page1', document.getElementById('tab1'));
+    // Mặc định mở trang hướng dẫn 1 (id thật là p1..p4)
+    showPage('p1', document.getElementById('tab1'));
   }
 }
 

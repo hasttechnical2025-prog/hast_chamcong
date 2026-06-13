@@ -51,7 +51,8 @@ export function initPWA() {
 function checkVersion() {
   const base = window.location.href
     .split('?')[0].split('#')[0]
-    .replace(/\/nv\/[^\/]+\.html$/, '')
+    .replace(/\/nv\/[^\/]+\.html$/, '')   // tệp cá nhân kiểu cũ /nv/<ten>.html
+    .replace(/\/nv\/[^\/]+\/?$/, '')      // tệp cá nhân /nv/<token>/ (thư mục) -> về gốc site
     .replace(/\/[^\/]+\.html$/, '')
     .replace(/\/$/, '');
 
