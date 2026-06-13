@@ -1,9 +1,26 @@
 // Attendance Module (Chấm công)
 import { supabaseClient } from './supabaseClient.js';
-import { ALLOW_MULTIPLE_CHECKIN, ALLOW_HOLIDAY_CHECKIN, GPS_EXPIRE_MS } from './config.js';
+import { GPS_EXPIRE_MS } from './config.js';
 import { state, getEmployeeName } from './state.js';
 import { checkOffice, getGPS, setLoc, showPopup } from './gps.js';
 import { logAttendance } from './api.js';
+
+// Đọc 2 cờ cấu hình TRỰC TIẾP từ chamcong_system_config lúc chạy -> đổi checkbox ở
+// trang quản trị có hiệu lực NGAY trên app CBNV mà không cần deploy lại.
+export async function loadSystemFlags() {
+  try {
+    const { data } = await supabaseClient
+      .from('chamcong_system_config')
+      .select('key, value')
+      .in('key', ['allow_holiday', 'allow_multiple']);
+    if (data) {
+      data.forEach(r => {
+        if (r.key === 'allow_holiday')  state.allowHoliday  = (r.value === 'true');
+        if (r.key === 'allow_multiple') state.allowMultiple = (r.value === 'true');
+      });
+    }
+  } catch (e) { /* lỗi mạng -> giữ mặc định trong state */ }
+}
 
 export function send() {
   if (!state.gpsCoords) {
@@ -27,7 +44,7 @@ export function send() {
 
 export async function checkAttendanceBeforeSend() {
   const name = getEmployeeName();
-  if (!name || ALLOW_MULTIPLE_CHECKIN) {
+  if (!name || state.allowMultiple) {
     doSend(state.gpsCoords.latitude, state.gpsCoords.longitude, state.gpsCoords.accuracy);
     return;
   }
@@ -206,7 +223,7 @@ export function resetForm() {
 }
 
 export async function checkTodayHoliday() {
-  if (ALLOW_HOLIDAY_CHECKIN) return;
+  if (state.allowHoliday) return;
 
   const today = new Date();
   const dow = today.getDay();

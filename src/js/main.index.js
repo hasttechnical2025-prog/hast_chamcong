@@ -2,7 +2,7 @@
 import { initPWA } from './pwa.js';
 import { initClock } from './clock.js';
 import { getGPS, closeGPSPrompt, acceptGPSPrompt, setLoc } from './gps.js';
-import { send, confirmOverwrite, cancelOverwrite, resetForm, checkTodayHoliday } from './attendance.js';
+import { send, confirmOverwrite, cancelOverwrite, resetForm, checkTodayHoliday, loadSystemFlags } from './attendance.js';
 import { showHistory, showMain, changeMonth } from './history.js';
 import { openGuide, closeGuide, showPage } from './guide.js';
 import { submitGiaiTrinh, initJustificationEvents, closeGiaiTrinh } from './justification.js';
@@ -94,11 +94,14 @@ async function initEmail() {
     const btnHistMain = document.getElementById('btn-history-main');
     if (btnHistMain) btnHistMain.style.display = 'flex';
 
-    checkTodayHoliday().then(() => {
-      if (!state.isHolidayToday) {
-        getGPS();
-      }
-    });
+    // Tải cờ cấu hình (allow_holiday/allow_multiple) từ DB TRƯỚC khi kiểm tra ngày nghỉ
+    loadSystemFlags()
+      .then(() => checkTodayHoliday())
+      .then(() => {
+        if (!state.isHolidayToday) {
+          getGPS();
+        }
+      });
   }
 }
 
