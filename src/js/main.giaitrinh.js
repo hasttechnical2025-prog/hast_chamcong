@@ -1181,6 +1181,13 @@ function printNsclReport() {
   const today = new Date();
   const dateLine = 'Hà Nội, ngày ' + pad(today.getDate()) + ' tháng ' + pad(today.getMonth() + 1) + ' năm ' + today.getFullYear();
 
+  // Chữ ký điện tử nội bộ: thời gian ký + ảnh chữ ký (nếu đã upload tại chuky/<slug>.png)
+  const _appRoot = lhUrl.replace('letterhead.png', '');
+  const _slug = nguoiLap.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/\s+/g, '_');
+  const signImgUrl = _slug ? `${_appRoot}chuky/${_slug}.png` : '';
+  const signTime = pad(today.getDate()) + '/' + pad(today.getMonth() + 1) + '/' + today.getFullYear()
+    + ' ' + pad(today.getHours()) + ':' + pad(today.getMinutes());
+
   const w = window.open('', '_blank');
   w.document.write(`
     <html>
@@ -1246,6 +1253,10 @@ function printNsclReport() {
       .fbox .date { font-style:italic; font-size:12px; margin-bottom:2px; }
       .fbox .gap  { height:56px; }
       .fbox .signer { font-weight:bold; font-style:italic; font-size:13px; }
+      /* Chữ ký điện tử nội bộ */
+      .fbox .esign { font-size:11px; color:#137333; font-weight:bold; margin-top:2px; }
+      .fbox .sign-img { max-height:46px; max-width:80%; object-fit:contain; display:block; margin:2px auto 0; }
+      .fbox .esign-time { font-size:10px; font-style:italic; color:#555; margin-top:1px; }
 
       @page { size: A4 landscape; margin: 7mm; }
       @media print { body { padding:0; } }
@@ -1304,8 +1315,10 @@ function printNsclReport() {
         <div class="fbox">
           <div class="date">${dateLine}</div>
           <div class="role">NGƯỜI LẬP</div>
-          <div class="gap"></div>
+          <div class="esign">(Đã ký điện tử)</div>
+          ${signImgUrl ? `<img src="${signImgUrl}" class="sign-img" onerror="this.style.display='none'">` : ''}
           <div class="signer">${escHtml(nguoiLap)}</div>
+          <div class="esign-time">Ký lúc: ${signTime}</div>
         </div>
       </div>
 
