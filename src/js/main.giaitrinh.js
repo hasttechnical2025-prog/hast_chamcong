@@ -160,7 +160,7 @@ async function loadData() {
     // 1. Lấy thông tin phòng ban của tất cả Employees (Thêm điều kiện status active)
     const { data: emps, error: empErr } = await supabaseClient
       .from('chamcong_employees')
-      .select('name, department, status, role');
+      .select('name, department, status, role, ngay_vao_lam');
 
     if (empErr) throw empErr;
 
@@ -256,6 +256,9 @@ async function loadData() {
 
         // TBP: Lọc theo phòng ban TBP quản lý
         if (!_isAdmin && _tbpDept && userDept !== _tbpDept) return;
+
+        // Chưa vào làm: bỏ qua các ngày trước ngày vào làm (không sinh record D, không cần giải trình)
+        if (e.ngay_vao_lam && curDateYMD < e.ngay_vao_lam) return;
 
         const key = e.name.toLowerCase() + '_' + curDateYMD;
         let r = recordMap[key];
@@ -767,6 +770,10 @@ function renderNsclTable() {
       else if (dow === 6) { tdClass = 't7'; readonly = 'readonly'; }
       else if (dow === 0) { tdClass = 'cn'; readonly = 'readonly'; }
 
+      // Chưa vào làm: khóa ô, để trống, không tính điểm
+      const beforeJoin = emp.ngay_vao_lam && curDateYMD < emp.ngay_vao_lam;
+      if (beforeJoin) { readonly = 'readonly'; if (!tdClass) tdClass = 'cn'; }
+
       const r = _recordMap[emp.name.toLowerCase() + '_' + curDateYMD];
       let val = (r && r.nscl_score) ? String(r.nscl_score).trim() : '';
 
@@ -778,6 +785,7 @@ function renderNsclTable() {
 
       // Ngày lễ/tết -> hiển thị N (không sửa, không tính điểm)
       if (isHoliday) val = 'N';
+      if (beforeJoin) val = '';
 
       // Tính toán tổng hợp
       if (val === 'P') sumPhep += 1;
@@ -1127,6 +1135,8 @@ function printNsclReport() {
       else if (u === 'N') v = 'N';
       // Ngày lễ/tết -> N
       if (cls === 'le') v = 'N';
+      // Chưa vào làm -> để trống, không tính điểm
+      if (emp.ngay_vao_lam && ymd < emp.ngay_vao_lam) v = '';
 
       if (v === 'P') phep += 1;
       else if (u === 'P/2') phep += 0.5;          // dữ liệu cũ

@@ -179,9 +179,15 @@
             </select>
           </div>
         </div>
-        <div class="form-group">
-          <label>Telegram Chat ID</label>
-          <input type="number" id="emp-telegram" placeholder="Điền số chat ID để nhận thông báo">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Telegram Chat ID</label>
+            <input type="number" id="emp-telegram" placeholder="Số chat ID để nhận thông báo">
+          </div>
+          <div class="form-group">
+            <label>Ngày vào làm (trống = từ đầu)</label>
+            <input type="date" id="emp-startdate">
+          </div>
         </div>
         <div style="display:flex; gap:10px; margin-top: 10px;">
           <button class="btn btn-blue" style="flex: 1;" data-action="saveEmployee" data-args="">💾 Lưu nhân viên</button>
@@ -653,6 +659,6 @@
   </div>
 </div>
 
-<script type="module" src="../src/js/main.quantri.js?v=11"></script>
+<script type="module" src="../src/js/main.quantri.js?v=12"></script>
 </body>
 </html>

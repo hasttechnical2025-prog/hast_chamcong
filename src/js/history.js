@@ -115,11 +115,23 @@ export async function loadHistory(name) {
 
     if (rowsErr) throw rowsErr;
 
+    // Ngày vào làm: các ngày trước đó coi như "chưa vào làm" -> bỏ qua (không D, không tính)
+    let ngayVaoLam = null;
+    try {
+      const { data: empRow } = await supabaseClient
+        .from('chamcong_employees')
+        .select('ngay_vao_lam')
+        .eq('name', name)
+        .maybeSingle();
+      if (empRow && empRow.ngay_vao_lam) ngayVaoLam = empRow.ngay_vao_lam;
+    } catch (e) { /* bỏ qua nếu lỗi/đọc không được */ }
+
     let congChuan = 0;
     const daysInMonth = new Date(state.histYear, state.histMonth, 0).getDate();
     for (let d = 1; d <= daysInMonth; d++) {
+      const curD = `${state.histYear}-${padStr(state.histMonth)}-${padStr(d)}`;
       const dow = new Date(state.histYear, state.histMonth - 1, d).getDay();
-      if (dow !== 0 && dow !== 6) congChuan++;
+      if (dow !== 0 && dow !== 6 && !(ngayVaoLam && curD < ngayVaoLam)) congChuan++;
     }
 
     let congThucTe = 0;
@@ -141,6 +153,9 @@ export async function loadHistory(name) {
     for (let d = 1; d <= daysInMonth; d++) {
       const curDateYMD = `${state.histYear}-${padStr(state.histMonth)}-${padStr(d)}`;
       const dateStr = `${padStr(d)}/${padStr(state.histMonth)}/${state.histYear}`;
+
+      // Chưa vào làm -> bỏ qua hẳn ngày này
+      if (ngayVaoLam && curDateYMD < ngayVaoLam) continue;
 
       const isHoliday = !!holidaysMap[dateStr];
       const dow = new Date(curDateYMD).getDay();

@@ -446,6 +446,7 @@ async function saveEmployee() {
   const loai_ca = document.getElementById('emp-shift').value;
   const status = document.getElementById('emp-status').value;
   const telegram = document.getElementById('emp-telegram').value.trim();
+  const ngayVaoLam = document.getElementById('emp-startdate').value || null;
 
   if (!name) { alert('Vui lòng điền họ và tên nhân viên!'); return; }
 
@@ -455,7 +456,8 @@ async function saveEmployee() {
     role: role,
     loai_ca: loai_ca,
     status: status,
-    telegram_chat_id: telegram ? parseInt(telegram) : null
+    telegram_chat_id: telegram ? parseInt(telegram) : null,
+    ngay_vao_lam: ngayVaoLam
   };
 
   try {
@@ -503,6 +505,7 @@ function editEmployee(id) {
   document.getElementById('emp-status').value = isActive ? 'active' : 'inactive';
 
   document.getElementById('emp-telegram').value = emp.telegram_chat_id || '';
+  document.getElementById('emp-startdate').value = emp.ngay_vao_lam || '';
 
   document.getElementById('emp-form-title').textContent = '📝 Chỉnh sửa thông tin nhân viên';
   document.getElementById('btn-emp-cancel').style.display = 'inline-flex';
@@ -516,6 +519,7 @@ function cancelEmployeeEdit() {
   document.getElementById('emp-shift').selectedIndex = 0;
   document.getElementById('emp-status').selectedIndex = 0;
   document.getElementById('emp-telegram').value = '';
+  document.getElementById('emp-startdate').value = '';
 
   document.getElementById('emp-form-title').textContent = '👤 Thêm nhân viên mới';
   document.getElementById('btn-emp-cancel').style.display = 'none';
@@ -526,6 +530,10 @@ async function exportPrintReport(name, employeeId) {
   const now = new Date();
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
+
+  // Ngày vào làm: các ngày trước đó coi như "chưa vào làm" -> để trống, không tính D
+  const _empRec = (allEmployees || []).find(e => e.name === name);
+  const ngayVaoLam = (_empRec && _empRec.ngay_vao_lam) ? _empRec.ngay_vao_lam : null;
 
   const padStr = n => n < 10 ? '0' + n : '' + n;
   const startDate = `${year}-${padStr(month)}-01`;
@@ -611,7 +619,11 @@ async function exportPrintReport(name, employeeId) {
       let aIn = fmt(record.afternoon_in);
       let aOut = fmt(record.afternoon_out);
 
-      if (isHoliday) {
+      if (ngayVaoLam && currentDateStr < ngayVaoLam) {
+        // Chưa vào làm: để trống toàn bộ, KHÔNG tính D, không cần giải trình
+        displayGrades = ''; displayReason = ''; displayNote = '';
+        mIn = ''; mOut = ''; aIn = ''; aOut = ''; displayName = '';
+      } else if (isHoliday) {
         rowClass = 'class="holiday"';
         displayReason = `Nghỉ lễ: ${holidayLabel}`;
         displayGrades = ''; // Ẩn đánh giá công vào ngày Lễ
