@@ -96,8 +96,8 @@
   </div>
 
   <!-- ==================== PANEL 2: NHÂN VIÊN ==================== -->
-  <div id="panel-employees" class="tab-panel">
-    <div class="flex-col-left" style="flex: 1.6;">
+  <div id="panel-employees" class="tab-panel" style="flex-direction:column; gap:16px;">
+    <div class="flex-col-left" style="order:2; flex:1; min-height:0;">
       <div class="card" style="flex: 1; overflow: hidden;">
         <h3 style="justify-content: space-between;">
           <div style="display:flex; align-items:center; gap:8px;">👥 Danh sách cán bộ nhân viên</div>
@@ -138,7 +138,7 @@
       </div>
     </div>
 
-    <div class="flex-col-right" style="flex: 0.9;">
+    <div class="flex-col-right" style="order:1; flex:0 0 auto;">
       <div class="card">
         <h3 id="emp-form-title">👤 Thêm nhân viên mới</h3>
         <input type="hidden" id="emp-id">
@@ -238,8 +238,8 @@
   </div>
 
   <!-- ==================== PANEL 4: CÀI ĐẶT CA ==================== -->
-  <div id="panel-shifts" class="tab-panel">
-    <div class="flex-col-left" style="flex: 1.4;">
+  <div id="panel-shifts" class="tab-panel" style="flex-direction:column; gap:16px;">
+    <div class="flex-col-left" style="order:2; flex:1; min-height:0;">
       <div class="card" style="flex: 1; overflow: hidden;">
         <h3>⚙️ Cài đặt mốc giờ ca làm việc</h3>
         <div class="table-container">
@@ -263,7 +263,7 @@
       </div>
     </div>
 
-    <div class="flex-col-right" style="flex: 0.8;">
+    <div class="flex-col-right" style="order:1; flex:0 0 auto;">
       <div class="card">
         <h3 id="shift-form-title">📝 Cập nhật ca làm việc</h3>
         <input type="hidden" id="shift-id">
@@ -668,6 +668,6 @@
   </div>
 </div>
 
-<script type="module" src="../src/js/main.quantri.js?v=16"></script>
+<script type="module" src="../src/js/main.quantri.js?v=17"></script>
 </body>
 </html>

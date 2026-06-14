@@ -9,6 +9,7 @@ let _pw = '';
 let _isAdmin = false;
 let _tbpDept = '';
 let _viewAll = false; // TBP Kế toán-HC: xem toàn công ty, nhưng chỉ duyệt phòng mình
+let _nsclLocks = {};  // map phòng ban -> { nguoi_ky, thoi_gian_ky } đã ký & khóa bảng điểm tháng đang xem
 
 // State module-scope (ES module = strict mode -> bắt buộc khai báo trước khi gán)
 let _allItems = [];      // Danh sách mục giải trình đang hiển thị (record thật + ảo)
@@ -235,6 +236,16 @@ async function loadData() {
     records.forEach(r => {
       recordMap[r.employee_name.toLowerCase() + '_' + r.date] = r;
     });
+
+    // 3b. Lấy trạng thái KÝ & KHÓA bảng điểm NSCL của tháng (theo phòng ban)
+    _nsclLocks = {};
+    try {
+      const { data: locks } = await supabaseClient
+        .from('chamcong_nscl_lock')
+        .select('id, department, nguoi_ky, thoi_gian_ky')
+        .eq('thang', month).eq('nam', year);
+      if (locks) locks.forEach(l => { _nsclLocks[l.department] = { id: l.id, nguoi_ky: l.nguoi_ky, thoi_gian_ky: l.thoi_gian_ky }; });
+    } catch (e) { /* bảng chưa tạo -> coi như chưa khóa */ }
 
     // 4. Khởi tạo & filter giải trình theo quyền hạn (Kết hợp tạo Record Ảo)
     var items = [];
@@ -679,8 +690,16 @@ function renderNsclTable() {
 
   // Cập nhật tiêu đề tháng/năm để TBP biết đang chấm điểm cho tháng nào
   const _titleEl = document.getElementById('nscl-title');
-  if (_titleEl) _titleEl.textContent =
-    `BẢNG CHẤM CÔNG & CHẤM ĐIỂM NSCL THÁNG ${padStr(selMonth)} NĂM ${selYear}`;
+  if (_titleEl) {
+    _titleEl.innerHTML =
+      `BẢNG CHẤM CÔNG & CHẤM ĐIỂM NSCL THÁNG ${padStr(selMonth)} NĂM ${selYear}`;
+    // Báo trạng thái đã ký & khóa cho phòng đang xem (TBP/view_all)
+    const _vd = _isAdmin ? ((document.getElementById('sel-dept') || {}).value || '') : _tbpDept;
+    const _lk = _vd && _nsclLocks[_vd];
+    if (_lk) {
+      _titleEl.innerHTML += `<div style="font-size:11px;color:#137333;font-weight:600;margin-top:2px;">🔏 Đã ký & khóa bởi ${escHtml(_lk.nguoi_ky || '')}${_lk.thoi_gian_ky ? ' lúc ' + new Date(_lk.thoi_gian_ky).toLocaleString('vi-VN') : ''}${_isAdmin ? ' — Admin có thể "Mở khóa" để chấm lại' : ''}</div>`;
+    }
+  }
 
   const daysInMonth = new Date(selYear, selMonth, 0).getDate();
 
@@ -769,8 +788,10 @@ function renderNsclTable() {
   let totalOm = 0;
 
   empsToShow.forEach((emp, index) => {
-    // view_all (TBP KTHC) chỉ được CHẤM ĐIỂM phòng mình; admin chấm tất cả.
-    const canEditEmp = _isAdmin || emp.department === _tbpDept;
+    // view_all (TBP KTHC) chỉ chấm phòng mình; bảng đã KÝ & KHÓA thì TBP không sửa
+    // (chỉ admin mới sửa được bảng đã khóa).
+    const _isDeptLocked = !!_nsclLocks[emp.department];
+    const canEditEmp = _isAdmin || (emp.department === _tbpDept && !_isDeptLocked);
     html += `<tr>
       <td class="sticky-tt">${index + 1}</td>
       <td class="sticky-name">${emp.name}</td>`;
@@ -1088,6 +1109,54 @@ async function loadPrintConfig(){
 }
 
 
+// ══════════════════════════════════════════════
+// KÝ SỐ & KHÓA BẢNG ĐIỂM NSCL (#3)
+// ══════════════════════════════════════════════
+// Người ký = TBP của phòng (role TBP); nếu không có thì lấy tên phòng.
+function _nsclSignerName(dept) {
+  const tbp = (_allActiveEmployees || []).find(e => e.department === dept && (e.role || '').toUpperCase() === 'TBP');
+  return tbp ? tbp.name : dept;
+}
+// Phòng đang thao tác: TBP -> phòng mình; admin -> phòng đang chọn ở dropdown.
+function _nsclCurrentDept() {
+  if (!_isAdmin) return _tbpDept;
+  return (document.getElementById('sel-dept') || {}).value || '';
+}
+
+async function signAndLockNscl() {
+  const selMonth = parseInt(document.getElementById('sel-month').value, 10);
+  const selYear  = parseInt(document.getElementById('sel-year').value, 10);
+  const dept = _nsclCurrentDept();
+  if (!dept) { showToast('⚠️ Hãy chọn 1 phòng ban cụ thể để ký & khóa.', 'error'); return; }
+  if (_nsclLocks[dept]) { showToast('Bảng điểm phòng này đã được ký & khóa rồi.', ''); return; }
+  const signer = _nsclSignerName(dept);
+  if (!confirm(`KÝ & KHÓA bảng điểm phòng "${dept}" tháng ${selMonth}/${selYear}?\n\nNgười ký: ${signer}\nSau khi khóa, chỉ Admin mới mở lại để chấm điểm.`)) return;
+  try {
+    await adminWrite('chamcong_nscl_lock', 'insert', [{
+      department: dept, thang: selMonth, nam: selYear,
+      nguoi_ky: signer, thoi_gian_ky: new Date().toISOString()
+    }]);
+    showToast('🔏 Đã ký & khóa bảng điểm.', 'success');
+    loadData();
+  } catch (e) { showToast('❌ Lỗi ký & khóa: ' + e.message, 'error'); }
+}
+
+async function unlockNscl() {
+  if (!_isAdmin) { showToast('⚠️ Chỉ Admin mới được mở khóa bảng điểm.', 'error'); return; }
+  const selMonth = parseInt(document.getElementById('sel-month').value, 10);
+  const selYear  = parseInt(document.getElementById('sel-year').value, 10);
+  const dept = (document.getElementById('sel-dept') || {}).value || '';
+  if (!dept) { showToast('⚠️ Chọn phòng ban cần mở khóa ở dropdown.', 'error'); return; }
+  const lk = _nsclLocks[dept];
+  if (!lk) { showToast('Phòng này chưa bị khóa.', ''); return; }
+  if (!confirm(`Mở khóa bảng điểm phòng "${dept}" tháng ${selMonth}/${selYear} để chấm lại?`)) return;
+  try {
+    await adminWrite('chamcong_nscl_lock', 'delete', null, 'id', lk.id);
+    showToast('🔓 Đã mở khóa. Có thể chấm điểm lại.', 'success');
+    loadData();
+  } catch (e) { showToast('❌ Lỗi mở khóa: ' + e.message, 'error'); }
+}
+
 // In Bảng — dựng bảng in sạch trực tiếp từ dữ liệu (không clone bảng màn hình)
 function printNsclReport() {
   const cfg = Object.assign({
@@ -1213,12 +1282,18 @@ function printNsclReport() {
   const today = new Date();
   const dateLine = 'Hà Nội, ngày ' + pad(today.getDate()) + ' tháng ' + pad(today.getMonth() + 1) + ' năm ' + today.getFullYear();
 
-  // Chữ ký điện tử nội bộ: thời gian ký + ảnh chữ ký (nếu đã upload tại chuky/<slug>.png)
+  // Chữ ký điện tử nội bộ: ưu tiên dữ liệu KÝ & KHÓA (chính xác người ký + thời điểm ký);
+  // nếu chưa khóa thì dùng TBP của phòng + thời điểm in.
+  const _lock = _nsclLocks[deptName];
+  const _signerName = _lock && _lock.nguoi_ky ? _lock.nguoi_ky : nguoiLap;
+  const _eSignLabel = _lock ? '(Đã ký & khóa)' : '(Đã ký điện tử)';
   const _appRoot = lhUrl.replace('letterhead.png', '');
-  const _slug = nguoiLap.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/\s+/g, '_');
+  const _slug = _signerName.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/\s+/g, '_');
   const signImgUrl = _slug ? `${_appRoot}chuky/${_slug}.png` : '';
-  const signTime = pad(today.getDate()) + '/' + pad(today.getMonth() + 1) + '/' + today.getFullYear()
-    + ' ' + pad(today.getHours()) + ':' + pad(today.getMinutes());
+  const signTime = (_lock && _lock.thoi_gian_ky)
+    ? new Date(_lock.thoi_gian_ky).toLocaleString('vi-VN')
+    : pad(today.getDate()) + '/' + pad(today.getMonth() + 1) + '/' + today.getFullYear()
+      + ' ' + pad(today.getHours()) + ':' + pad(today.getMinutes());
 
   const w = window.open('', '_blank');
   w.document.write(`
@@ -1347,9 +1422,9 @@ function printNsclReport() {
         <div class="fbox">
           <div class="date">${dateLine}</div>
           <div class="role">NGƯỜI LẬP</div>
-          <div class="esign">(Đã ký điện tử)</div>
+          <div class="esign">${_eSignLabel}</div>
           ${signImgUrl ? `<img src="${signImgUrl}" class="sign-img" onerror="this.style.display='none'">` : ''}
-          <div class="signer">${escHtml(nguoiLap)}</div>
+          <div class="signer">${escHtml(_signerName)}</div>
           <div class="esign-time">Ký lúc: ${signTime}</div>
         </div>
       </div>
@@ -1450,6 +1525,8 @@ document.addEventListener('click', function(e) {
     loadData: () => loadData(),
     openBatch: () => openBatch(args[0]),
     autofillPoints10: () => autofillPoints10(),
+    signAndLockNscl: () => signAndLockNscl(),
+    unlockNscl: () => unlockNscl(),
     printNsclReport: () => printNsclReport(),
     closeUndo: () => closeUndo(),
     confirmUndo: () => confirmUndo(),

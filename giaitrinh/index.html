@@ -153,7 +153,11 @@
         <button class="btn-nscl-action primary" data-action="autofillPoints10" data-args="">⚡ Điền nhanh điểm 10</button>
       </div>
       <div id="nscl-title" class="nscl-title"></div>
-      <button class="btn-nscl-action" data-action="printNsclReport" data-args="">🖨️ In Bảng Điểm NSCL</button>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn-nscl-action" data-action="signAndLockNscl" data-args="" style="background:#137333;">🔏 Ký & Khóa</button>
+        <button class="btn-nscl-action" data-action="unlockNscl" data-args="" style="background:#b06000;">🔓 Mở khóa</button>
+        <button class="btn-nscl-action" data-action="printNsclReport" data-args="">🖨️ In Bảng Điểm NSCL</button>
+      </div>
     </div>
 
     <div style="display:flex;flex-direction:column;overflow:hidden;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.08); height: fit-content; max-height: 100%;">
@@ -227,7 +231,7 @@
   </div>
 </div>
 
-<script type="module" src="../src/js/main.giaitrinh.js?v=12"></script>
+<script type="module" src="../src/js/main.giaitrinh.js?v=13"></script>
 
 </body>
 </html>
