@@ -580,62 +580,33 @@ function cancelEmployeeEdit() {
   document.getElementById('btn-emp-cancel').style.display = 'none';
 }
 
-// --- TÍNH NĂNG IN BÁO CÁO CHẤM CÔNG CÁ NHÂN (XUẤT BẢN CỨNG 1-TO-1) ---
-async function exportPrintReport(name, employeeId) {
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
+// --- TÍNH NĂNG IN BÁO CÁO CHẤM CÔNG CÁ NHÂN ---
 
-  // Ngày vào làm: các ngày trước đó coi như "chưa vào làm" -> để trống, không tính D
-  const _empRec = (allEmployees || []).find(e => e.name === name);
-  const ngayVaoLam = (_empRec && _empRec.ngay_vao_lam) ? _empRec.ngay_vao_lam : null;
+// CSS bản in (dùng chung cho in 1 người và in toàn bộ)
+const _REPORT_PRINT_STYLE = `<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Times New Roman', Times, serif; color:#000; margin:0; padding:4mm 6mm;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .header-print { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1px; }
+  .header-left { font-weight:bold; font-size:12px; text-transform:uppercase; }
+  .header-right { font-style:italic; font-size:10px; }
+  .title-print { text-align:center; margin:2px 0 6px; }
+  .title-print h2 { font-size:14px; font-weight:bold; text-transform:uppercase; margin:0; }
+  table.tbl-print { width:100%; border-collapse:collapse; border:0.7px solid #000; font-size:11px; table-layout:fixed; }
+  table.tbl-print th, table.tbl-print td { border:0.7px solid #000; padding:1px 5px; line-height:1.4; overflow:hidden; vertical-align:middle; text-align:center; }
+  table.tbl-print td:nth-child(2), table.tbl-print td:nth-child(10) { text-align:left; }
+  table.tbl-print thead th { background:#e0e0e0; font-weight:bold; text-align:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  tr.weekend td, tr.sunday td, tr.holiday td { background:#f2f2f2; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  tr { page-break-inside: avoid; }
+  .report-section { page-break-after: always; }
+  .report-section:last-child { page-break-after: auto; }
+  @page { size: A4 landscape; margin: 6mm; }
+  @media print { body { padding:0; } }
+</style>`;
 
-  const padStr = n => n < 10 ? '0' + n : '' + n;
-  const startDate = `${year}-${padStr(month)}-01`;
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const endDate = `${year}-${padStr(month)}-${padStr(daysInMonth)}`;
-
-  try {
-    // 1. Tải dữ liệu chấm công từ Supabase
-    const { data: records, error: recErr } = await supabaseClient
-      .from('chamcong_attendance_records')
-      .select('*')
-      .eq('employee_name', name)
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: true });
-
-    if (recErr) throw recErr;
-
-    // 2. Tải ngày nghỉ lễ trong tháng
-    const { data: hld, error: hldErr } = await supabaseClient
-      .from('chamcong_holidays')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate);
-
-    if (hldErr) throw hldErr;
-
-    const holidaysMap = {};
-    if (hld) {
-      hld.forEach(h => {
-        const parts = h.date.split('-');
-        holidaysMap[`${parts[2]}/${parts[1]}/${parts[0]}`] = h.description;
-      });
-    }
-
-    // Map dữ liệu chấm công theo ngày
-    const recordsMap = {};
-    if (records) {
-      records.forEach(r => {
-        recordsMap[r.date] = r;
-      });
-    }
-
-    // 3. Xây dựng nội dung HTML trang in ấn
+// Dựng các dòng ngày của 1 nhân viên (trả về HTML <tr>...)
+function _buildReportRows(name, employeeId, ngayVaoLam, recordsMap, holidaysMap, month, year, daysInMonth, padStr) {
     let rowsHtml = '';
-    const DOW_LABEL = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDateStr = `${year}-${padStr(month)}-${padStr(day)}`;
       const displayDateStr = `${padStr(day)}/${padStr(month)}/${year}`;
@@ -714,75 +685,107 @@ async function exportPrintReport(name, employeeId) {
         </tr>
       `;
     }
+    return rowsHtml;
+}
 
-    // 4. Mở cửa sổ in
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html>
-      <head>
-        <title>Báo cáo chấm công - ${name}</title>
-        <style>
-          * { box-sizing: border-box; }
-          body { font-family: 'Times New Roman', Times, serif; color:#000; margin:0; padding:4mm 6mm;
-            -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-          .header-print { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1px; }
-          .header-left { font-weight:bold; font-size:12px; text-transform:uppercase; }
-          .header-right { font-style:italic; font-size:10px; }
-          .title-print { text-align:center; margin:2px 0 6px; }
-          .title-print h2 { font-size:14px; font-weight:bold; text-transform:uppercase; margin:0; }
-          table.tbl-print { width:100%; border-collapse:collapse; border:0.7px solid #000; font-size:11px;
-            table-layout:fixed; }
-          table.tbl-print th, table.tbl-print td { border:0.7px solid #000; padding:1px 5px;
-            line-height:1.4; overflow:hidden; vertical-align:middle; text-align:center; }
-          table.tbl-print td:nth-child(2), table.tbl-print td:nth-child(10) { text-align:left; }
-          table.tbl-print thead th { background:#e0e0e0; font-weight:bold; text-align:center;
-            -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-          /* Tô xám ngày nghỉ (T7/CN/lễ) */
-          tr.weekend td, tr.sunday td, tr.holiday td { background:#f2f2f2;
-            -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-          tr { page-break-inside: avoid; }
-          /* Nén vừa 1 trang A4 ngang (đủ 31 ngày) */
-          @page { size: A4 landscape; margin: 6mm; }
-          @media print { body { padding:0; } }
-        </style>
-      </head>
-      <body onload="window.print(); window.close();">
-        <div class="header-print">
-          <div class="header-left">CÔNG TY CỔ PHẦN SIÊU THANH HÀ NỘI</div>
-          <div class="header-right">Ngày in: ${padStr(now.getDate())}/${padStr(month)}/${year}</div>
-        </div>
+// Dựng 1 section báo cáo (header + tiêu đề + bảng) cho 1 nhân viên
+function _buildReportSection(name, employeeId, ngayVaoLam, recordsMap, holidaysMap, month, year, daysInMonth, padStr, nowDateStr) {
+  const rowsHtml = _buildReportRows(name, employeeId, ngayVaoLam, recordsMap, holidaysMap, month, year, daysInMonth, padStr);
+  return `
+    <div class="report-section">
+      <div class="header-print">
+        <div class="header-left">CÔNG TY CỔ PHẦN SIÊU THANH HÀ NỘI</div>
+        <div class="header-right">Ngày in: ${nowDateStr}</div>
+      </div>
+      <div class="title-print"><h2>DỮ LIỆU CHẤM CÔNG CBNV THÁNG ${month} NĂM ${year}</h2></div>
+      <table class="tbl-print">
+        <thead><tr>
+          <th style="width:3%;">ID</th><th style="width:14%;">Họ tên</th><th style="width:7%;">Ngày</th>
+          <th style="width:6%;">Sáng IN</th><th style="width:6%;">Sáng OUT</th><th style="width:6%;">Chiều IN</th><th style="width:6%;">Chiều OUT</th>
+          <th style="width:9%;">Đánh giá công</th><th style="width:7%;">Ghi chú</th><th style="width:28%;">Lý do / Giải trình</th><th style="width:8%;">Xác nhận</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+}
 
-        <div class="title-print">
-          <h2>DỮ LIỆU CHẤM CÔNG CBNV THÁNG ${month} NĂM ${year}</h2>
-        </div>
+// Tải records (1 người hoặc tất cả) + holidays của 1 tháng
+async function _fetchMonthData(startDate, endDate, name) {
+  let q = supabaseClient.from('chamcong_attendance_records').select('*').gte('date', startDate).lte('date', endDate);
+  if (name) q = q.eq('employee_name', name);
+  const { data: records, error: recErr } = await q;
+  if (recErr) throw recErr;
+  const { data: hld, error: hldErr } = await supabaseClient.from('chamcong_holidays').select('*').gte('date', startDate).lte('date', endDate);
+  if (hldErr) throw hldErr;
+  const holidaysMap = {};
+  if (hld) hld.forEach(h => { const p = h.date.split('-'); holidaysMap[`${p[2]}/${p[1]}/${p[0]}`] = h.description; });
+  return { records: records || [], holidaysMap };
+}
 
-        <table class="tbl-print">
-          <thead>
-            <tr>
-              <th style="width:3%;">ID</th>
-              <th style="width:14%;">Họ tên</th>
-              <th style="width:7%;">Ngày</th>
-              <th style="width:6%;">Sáng IN</th>
-              <th style="width:6%;">Sáng OUT</th>
-              <th style="width:6%;">Chiều IN</th>
-              <th style="width:6%;">Chiều OUT</th>
-              <th style="width:9%;">Đánh giá công</th>
-              <th style="width:7%;">Ghi chú</th>
-              <th style="width:28%;">Lý do / Giải trình</th>
-              <th style="width:8%;">Xác nhận</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-
+async function exportPrintReport(name, employeeId) {
+  const now = new Date();
+  const month = now.getMonth() + 1, year = now.getFullYear();
+  const padStr = n => n < 10 ? '0' + n : '' + n;
+  const startDate = `${year}-${padStr(month)}-01`;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${padStr(month)}-${padStr(daysInMonth)}`;
+  const nowDateStr = `${padStr(now.getDate())}/${padStr(month)}/${year}`;
+  const _empRec = (allEmployees || []).find(e => e.name === name);
+  const ngayVaoLam = (_empRec && _empRec.ngay_vao_lam) ? _empRec.ngay_vao_lam : null;
+  try {
+    const { records, holidaysMap } = await _fetchMonthData(startDate, endDate, name);
+    const recordsMap = {};
+    records.forEach(r => { recordsMap[r.date] = r; });
+    const section = _buildReportSection(name, employeeId, ngayVaoLam, recordsMap, holidaysMap, month, year, daysInMonth, padStr, nowDateStr);
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><meta charset="UTF-8"><title>Báo cáo chấm công - ${name}</title>${_REPORT_PRINT_STYLE}</head><body onload="window.print(); window.close();">${section}</body></html>`);
+    w.document.close();
   } catch(e) {
     alert('❌ Lỗi xuất báo cáo in ấn: ' + e.message);
+  }
+}
+
+// In TOÀN BỘ báo cáo của các nhân viên đang hiển thị (mỗi người 1 trang)
+async function exportPrintReportAll() {
+  const filterDept = (document.getElementById('filter-dept') || {}).value || 'all';
+  const filterShift = (document.getElementById('filter-shift') || {}).value || 'all';
+  let emps = (allEmployees || []).filter(e => {
+    const st = e.status ? e.status.toString().trim().toLowerCase() : '';
+    const isActive = !st || st.indexOf('đang') !== -1 || st.indexOf('active') !== -1 || st.indexOf('làm') !== -1 || st.indexOf('lam') !== -1;
+    if (!isActive) return false;
+    if (filterDept !== 'all' && e.department !== filterDept) return false;
+    if (filterShift !== 'all') {
+      const lc = (e.loai_ca || '').toString().toLowerCase();
+      const s1 = lc.indexOf('1') !== -1, s2 = lc.indexOf('2') !== -1, tc = !s1 && !s2;
+      if (filterShift === 'tieu_chuan' && !tc) return false;
+      if (filterShift === 'ngoai_le_1' && !s1) return false;
+      if (filterShift === 'ngoai_le_2' && !s2) return false;
+    }
+    return true;
+  });
+  if (!emps.length) { alert('Không có nhân viên nào phù hợp bộ lọc để in!'); return; }
+  emps.sort((a, b) => (a.department || '').localeCompare(b.department || '', 'vi') || a.name.localeCompare(b.name, 'vi'));
+
+  const now = new Date();
+  const month = now.getMonth() + 1, year = now.getFullYear();
+  const padStr = n => n < 10 ? '0' + n : '' + n;
+  const startDate = `${year}-${padStr(month)}-01`;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${padStr(month)}-${padStr(daysInMonth)}`;
+  const nowDateStr = `${padStr(now.getDate())}/${padStr(month)}/${year}`;
+  try {
+    const { records, holidaysMap } = await _fetchMonthData(startDate, endDate, null);
+    const byEmp = {};
+    records.forEach(r => { (byEmp[r.employee_name] = byEmp[r.employee_name] || {})[r.date] = r; });
+    let allSections = '';
+    emps.forEach(e => {
+      allSections += _buildReportSection(e.name, e.id, e.ngay_vao_lam || null, byEmp[e.name] || {}, holidaysMap, month, year, daysInMonth, padStr, nowDateStr);
+    });
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><meta charset="UTF-8"><title>Báo cáo chấm công toàn bộ - Tháng ${month}/${year}</title>${_REPORT_PRINT_STYLE}</head><body onload="window.print(); window.close();">${allSections}</body></html>`);
+    w.document.close();
+  } catch(e) {
+    alert('❌ Lỗi in toàn bộ: ' + e.message);
   }
 }
 
@@ -1685,6 +1688,7 @@ document.addEventListener('click', function(e) {
     editEmployee: () => editEmployee(args[0]),
     openQRModal: () => openQRModal(args[0]),
     exportPrintReport: () => exportPrintReport(args[0], args[1]),
+    exportPrintReportAll: () => exportPrintReportAll(),
     deleteHoliday: () => deleteHoliday(args[0]),
     editShiftConfig: () => editShiftConfig(args[0]),
     editGuideContent: () => editGuideContent(args[0]),

@@ -105,6 +105,37 @@ async function initEmail() {
   }
 }
 
+// Chuyển cú pháp soạn thảo rút gọn -> HTML (giống bản cũ). Nếu nội dung đã là HTML thô
+// (có thẻ đóng) thì giữ nguyên. Cú pháp: "1. Tiêu đề: nội dung" (bước), "[!NOTE] ..." (hộp
+// cam), "[IMAGE] url" (ảnh bo góc), "- ..." (gạch đầu dòng), "**đậm**".
+function parseGuideShorthand(text) {
+  if (!text) return '';
+  if (/<\/(div|p|ul|ol|li|h[1-6]|table|span|strong|b|img)>/i.test(text) || /<(div|img|br)\b/i.test(text)) return text;
+  const bold = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const lines = text.split(/\r?\n/);
+  let html = '', listBuf = [], stepNum = 0;
+  const flushList = () => { if (listBuf.length) { html += '<ul>' + listBuf.map(li => `<li>${li}</li>`).join('') + '</ul>'; listBuf = []; } };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { flushList(); continue; }
+    let m;
+    if ((m = line.match(/^\[!NOTE\]\s*(.*)$/i))) {
+      flushList(); html += `<div class="note">⚠️ ${bold(m[1])}</div>`;
+    } else if ((m = line.match(/^\[IMAGE\]\s*(\S+)/i))) {
+      flushList(); html += `<div class="img-wrap"><img src="${m[1]}" class="guide-img-sm"></div>`;
+    } else if ((m = line.match(/^\d+\.\s*([^:]+):\s*(.*)$/))) {
+      flushList(); stepNum++;
+      html += `<div class="step"><div class="step-num">${stepNum}</div><div class="step-body"><strong>${bold(m[1].trim())}:</strong> ${bold(m[2])}</div></div>`;
+    } else if ((m = line.match(/^-\s+(.*)$/))) {
+      listBuf.push(bold(m[1]));
+    } else {
+      flushList(); html += `<p>${bold(line)}</p>`;
+    }
+  }
+  flushList();
+  return html;
+}
+
 // Tải nội dung trang hướng dẫn (p1..p4) từ Supabase. Chỉ thay những trang còn
 // placeholder "Đang tải" (hiện chỉ p1) — giữ nguyên nội dung tĩnh đã nhúng (p2..p4).
 async function loadGuideContent() {
@@ -115,8 +146,10 @@ async function loadGuideContent() {
     if (error || !data) return;
     data.forEach(row => {
       const pg = document.getElementById(row.id);
-      if (pg && pg.querySelector('.hist-loading') && row.content) {
-        pg.innerHTML = row.content;
+      // Nạp & parse nội dung từ DB cho mọi trang có nội dung (admin sửa tab nào -> hiện tab đó).
+      // Trang nào DB trống thì giữ nội dung tĩnh nhúng sẵn.
+      if (pg && row.content && row.content.trim()) {
+        pg.innerHTML = parseGuideShorthand(row.content);
       }
     });
   } catch (e) { /* lỗi mạng -> giữ placeholder */ }

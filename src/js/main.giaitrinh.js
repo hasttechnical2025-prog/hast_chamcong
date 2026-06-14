@@ -769,6 +769,8 @@ function renderNsclTable() {
   let totalOm = 0;
 
   empsToShow.forEach((emp, index) => {
+    // view_all (TBP KTHC) chỉ được CHẤM ĐIỂM phòng mình; admin chấm tất cả.
+    const canEditEmp = _isAdmin || emp.department === _tbpDept;
     html += `<tr>
       <td class="sticky-tt">${index + 1}</td>
       <td class="sticky-name">${emp.name}</td>`;
@@ -814,8 +816,11 @@ function renderNsclTable() {
         if (!isNaN(nv)) { sumDiem += nv; if (nv === 5) sumPhep += 0.5; } // điểm 5 = 0.5 ngày phép
       }
 
+      // view_all không được sửa điểm phòng khác -> khóa ô
+      if (!canEditEmp) readonly = 'readonly';
       const inputDisabled = readonly ? 'disabled tabindex="-1"' : '';
-      const oninput = readonly ? '' : 'oninput="sanitizeDayInput(this)"';
+      // onfocus select-all: bấm vào ô là bôi đen sẵn -> gõ đè hoặc Delete xóa ngay (dễ xóa hơn)
+      const oninput = readonly ? '' : 'oninput="sanitizeDayInput(this)" onfocus="this.select()"';
       html += `<td class="${tdClass}"><input type="text" class="nscl-input" ${readonly} ${inputDisabled} value="${val}" data-emp="${emp.name}" data-date="${curDateYMD}" ${oninput} onblur="saveNsclScore(this)"></td>`;
     }
 
@@ -902,6 +907,16 @@ function isValidDayValue(v) {
 async function saveNsclScore(inputEl) {
   const empName = inputEl.getAttribute('data-emp');
   const dateYMD = inputEl.getAttribute('data-date');
+
+  // Chặn TBP (view_all) chấm điểm cho nhân viên phòng khác
+  if (!_isAdmin) {
+    const _emp = (_allActiveEmployees || []).find(e => e.name === empName);
+    if (_emp && _tbpDept && _emp.department !== _tbpDept) {
+      showToast('⚠️ Bạn chỉ được chấm điểm cho phòng của mình.', 'error');
+      return;
+    }
+  }
+
   let val = inputEl.value.trim();
 
   // Chuẩn hóa IN HOA
