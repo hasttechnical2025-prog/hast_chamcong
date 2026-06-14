@@ -578,6 +578,7 @@ async function exportPrintReport(name, employeeId) {
       const displayDateStr = `${padStr(day)}/${padStr(month)}/${year}`;
       const dateObj = new Date(year, month - 1, day);
       const dow = dateObj.getDay();
+      if (dow === 0) continue; // Bỏ hẳn dòng Chủ Nhật khỏi bản in
       const isWeekend = (dow === 0 || dow === 6);
       const dowLabel = isWeekend ? `<b>Thứ ${dow === 0 ? '7' : '7'}</b>` : `Thứ ${dow + 1}`; // DOW_LABEL match
 
@@ -642,8 +643,8 @@ async function exportPrintReport(name, employeeId) {
           <td style="text-align:center; font-family:monospace;">${aOut}</td>
           <td style="text-align:center; ${gradesStyle}">${displayGrades}</td>
           <td style="font-size:11px;">${displayNote}</td>
-          <td style="font-size:11px; white-space:normal; word-wrap:break-word;">${displayReason}</td>
-          <td style="text-align:center;">${displayApprove === 'Đồng ý' ? 'Đồng ý' : (displayApprove === 'Từ chối' ? 'Từ chối' : '')}</td>
+          <td style="font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${displayReason}</td>
+          <td style="text-align:center;">${record.justification ? (displayApprove === 'Đồng ý' ? 'Đồng ý' : (displayApprove === 'Từ chối' ? 'Từ chối' : '')) : ''}</td>
         </tr>
       `;
     }
