@@ -200,7 +200,7 @@ function loadSavedConfig() {
     document.getElementById('ghBranch').value = config.ghBranch || 'main';
     document.getElementById('ghToken').value = ''; // Yêu cầu nhập thủ công
     initSupabase();
-    if (_isClientReady) { loadAdminPasswords(); loadNsclPrintCfg(); }
+    if (_isClientReady) { loadAdminPasswords(); loadNsclPrintCfg(); loadAccounts(); }
     _pcfgBindColorSync();
   }
 }
@@ -227,6 +227,65 @@ async function updatePassword(key, inputId) {
     document.getElementById(inputId).value = ''; // Xóa trường nhập sau khi đổi thành công
   } catch (e) {
     alert('❌ Lỗi cập nhật mật khẩu: ' + e.message);
+  }
+}
+
+// ============================================================
+// QUẢN LÝ TÀI KHOẢN TBP / PHÒNG BAN (#2) — qua RPC SECURITY DEFINER
+// ============================================================
+async function loadAccounts() {
+  const el = document.getElementById('acc-list');
+  if (!el) return;
+  try {
+    const { data, error } = await supabaseClient.rpc('chamcong_list_accounts');
+    if (error) throw error;
+    if (!data || !data.length) { el.innerHTML = '<i style="color:#888;">Chưa có tài khoản nào.</i>'; return; }
+    el.innerHTML = '<table class="data-table" style="font-size:12px;"><thead><tr>'
+      + '<th>Username</th><th>Vai trò</th><th>Phòng ban</th><th style="text-align:center;">Xóa</th></tr></thead><tbody>'
+      + data.map(a =>
+          '<tr><td>' + escHtmlA(a.username) + '</td><td>' + escHtmlA(a.role || '') + '</td><td>' + escHtmlA(a.department || '') + '</td>'
+          + '<td style="text-align:center;"><button class="btn btn-gray" style="padding:2px 8px; font-size:11px;" '
+          + 'data-action="deleteAccount" data-args="\'' + a.id + '\',\'' + escHtmlA(a.username) + '\'">🗑</button></td></tr>'
+        ).join('')
+      + '</tbody></table>';
+  } catch (e) {
+    el.innerHTML = '<span style="color:#c5221f;">❌ Lỗi tải tài khoản: ' + e.message
+      + ' (cần chạy SQL tạo các hàm chamcong_list_accounts/upsert/delete).</span>';
+  }
+}
+
+async function saveAccount() {
+  const username = document.getElementById('acc-username').value.trim();
+  const dept = document.getElementById('acc-dept').value.trim();
+  const role = document.getElementById('acc-role').value;
+  const password = document.getElementById('acc-password').value;
+
+  if (!username) { alert('Vui lòng nhập Username!'); return; }
+  if (role === 'TBP' && !dept) { alert('Tài khoản TBP cần điền Phòng ban!'); return; }
+
+  try {
+    const { error } = await supabaseClient.rpc('chamcong_upsert_account', {
+      p_username: username, p_password: password, p_role: role, p_department: dept || null
+    });
+    if (error) throw error;
+    alert('✅ Đã lưu tài khoản "' + username + '"!');
+    document.getElementById('acc-username').value = '';
+    document.getElementById('acc-dept').value = '';
+    document.getElementById('acc-password').value = '';
+    loadAccounts();
+  } catch (e) {
+    alert('❌ Lỗi lưu tài khoản: ' + e.message);
+  }
+}
+
+async function deleteAccount(id, username) {
+  if (!confirm('Xóa tài khoản "' + username + '"? (Tài khoản này sẽ không đăng nhập được nữa)')) return;
+  try {
+    const { error } = await supabaseClient.rpc('chamcong_delete_account', { p_id: parseInt(id, 10) });
+    if (error) throw error;
+    loadAccounts();
+  } catch (e) {
+    alert('❌ Lỗi xóa tài khoản: ' + e.message);
   }
 }
 
@@ -514,7 +573,7 @@ function editEmployee(id) {
 function cancelEmployeeEdit() {
   document.getElementById('emp-id').value = '';
   document.getElementById('emp-name').value = '';
-  document.getElementById('emp-dept').selectedIndex = 0;
+  document.getElementById('emp-dept').value = '';
   document.getElementById('emp-role').selectedIndex = 0;
   document.getElementById('emp-shift').selectedIndex = 0;
   document.getElementById('emp-status').selectedIndex = 0;
@@ -1616,6 +1675,8 @@ document.addEventListener('click', function(e) {
     cancelGuideEdit: () => cancelGuideEdit(),
     uploadImageToGithub: () => uploadImageToGithub(),
     updatePassword: () => updatePassword(args[0], args[1]),
+    saveAccount: () => saveAccount(),
+    deleteAccount: () => deleteAccount(args[0], args[1]),
     saveNsclPrintCfg: () => saveNsclPrintCfg(),
     resetNsclPrintCfg: () => resetNsclPrintCfg(),
     saveSystemConfig: () => saveSystemConfig(),

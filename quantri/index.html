@@ -147,12 +147,13 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Phòng ban</label>
-            <select id="emp-dept">
-              <option value="Kinh doanh">Kinh doanh</option>
-              <option value="Kế toán-Hành chính">Kế toán-Hành chính</option>
-              <option value="Kỹ thuật">Kỹ thuật</option>
-            </select>
+            <label>Phòng ban (chọn hoặc gõ phòng mới)</label>
+            <input type="text" id="emp-dept" list="emp-dept-options" placeholder="vd: Kinh doanh">
+            <datalist id="emp-dept-options">
+              <option value="Kinh doanh"></option>
+              <option value="Kế toán-Hành chính"></option>
+              <option value="Kỹ thuật"></option>
+            </datalist>
           </div>
           <div class="form-group">
             <label>Vai trò</label>
@@ -447,6 +448,38 @@
       </div>
 
       <div class="card">
+        <h3>👥 Quản Lý Tài Khoản TBP / Phòng Ban</h3>
+        <p style="font-size:12px; color:#5f6368; margin-bottom:10px;">
+          Thêm phòng ban mới = thêm 1 tài khoản TBP cho phòng đó. Sửa: nhập trùng Username, mật khẩu để trống nếu giữ nguyên.
+        </p>
+        <div id="acc-list" style="margin-bottom:14px; font-size:12px;">Đang tải danh sách tài khoản...</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Username (định danh đăng nhập)</label>
+            <input type="text" id="acc-username" placeholder="vd: tbp_marketing">
+          </div>
+          <div class="form-group">
+            <label>Phòng ban</label>
+            <input type="text" id="acc-dept" placeholder="vd: Marketing">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Vai trò</label>
+            <select id="acc-role">
+              <option value="TBP">Trưởng bộ phận (TBP)</option>
+              <option value="admin">Admin (toàn quyền)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mật khẩu (trống = giữ nguyên khi sửa)</label>
+            <input type="text" id="acc-password" placeholder="Mật khẩu đăng nhập">
+          </div>
+        </div>
+        <button class="btn btn-blue" style="width:100%;" data-action="saveAccount" data-args="">💾 Lưu tài khoản</button>
+      </div>
+
+      <div class="card">
         <h3>🖨️ Cấu Hình Bản In Bảng Điểm NSCL</h3>
         <p style="font-size:12px; color:#5f6368; margin-bottom:12px;">
           Áp dụng cho nút “In Bảng Điểm NSCL” ở trang Duyệt Giải Trình. Lưu chung trên Supabase nên mọi TBP đều dùng cùng định dạng.
@@ -659,6 +692,6 @@
   </div>
 </div>
 
-<script type="module" src="../src/js/main.quantri.js?v=13"></script>
+<script type="module" src="../src/js/main.quantri.js?v=14"></script>
 </body>
 </html>
