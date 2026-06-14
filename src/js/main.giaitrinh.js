@@ -8,6 +8,7 @@ import { setSupabaseToken } from './supabaseClient.js';
 let _pw = '';
 let _isAdmin = false;
 let _tbpDept = '';
+let _viewAll = false; // TBP Kế toán-HC: xem toàn công ty, nhưng chỉ duyệt phòng mình
 
 // State module-scope (ES module = strict mode -> bắt buộc khai báo trước khi gán)
 let _allItems = [];      // Danh sách mục giải trình đang hiển thị (record thật + ảo)
@@ -48,6 +49,8 @@ async function login() {
     _pw = pw;
     _isAdmin = user.role === 'admin';
     _tbpDept = user.department;
+    // TBP phòng Kế toán-Hành chính được xem dữ liệu toàn công ty (chỉ xem, duyệt vẫn theo phòng)
+    _viewAll = (user.role === 'TBP' && (user.department || '').indexOf('Kế toán') !== -1);
 
     // Tải cấu hình in từ settings (mở bằng RLS cho mọi authenticated user)
     const { data: settings } = await supabaseClient.from('chamcong_admin_settings').select('*');
@@ -81,6 +84,7 @@ function logout() {
   sessionStorage.removeItem('hstc_sel_year');
   _isAdmin = false;
   _tbpDept = '';
+  _viewAll = false;
   document.getElementById('main-screen').style.display  = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('pw-input').value = '';
@@ -183,7 +187,7 @@ async function loadData() {
     var deptSel = document.getElementById('sel-dept');
     if (deptSel) {
       deptSel.innerHTML = '';
-      if (_isAdmin) {
+      if (_isAdmin || _viewAll) {
         var allOpt = document.createElement('option');
         allOpt.value = ''; allOpt.textContent = '🏢 Tất cả phòng ban';
         deptSel.appendChild(allOpt);
@@ -195,8 +199,8 @@ async function loadData() {
       });
       if (_tbpDept) deptSel.value = _tbpDept;
 
-      deptSel.disabled = !_isAdmin;
-      deptSel.style.opacity = _isAdmin ? '1' : '0.7';
+      deptSel.disabled = !(_isAdmin || _viewAll);
+      deptSel.style.opacity = (_isAdmin || _viewAll) ? '1' : '0.7';
     }
 
     // 2. Lấy dữ liệu ngày lễ trong tháng
@@ -255,7 +259,7 @@ async function loadData() {
         const userDept = e.department || '';
 
         // TBP: Lọc theo phòng ban TBP quản lý
-        if (!_isAdmin && _tbpDept && userDept !== _tbpDept) return;
+        if (!_isAdmin && !_viewAll && _tbpDept && userDept !== _tbpDept) return;
 
         // Chưa vào làm: bỏ qua các ngày trước ngày vào làm (không sinh record D, không cần giải trình)
         if (e.ngay_vao_lam && curDateYMD < e.ngay_vao_lam) return;
@@ -336,7 +340,7 @@ function setFilter(f) {
 }
 
 function getFilteredItems() {
-  if (!_isAdmin) {
+  if (!_isAdmin && !_viewAll) {
     return _allItems.slice();
   }
   var selDept = (document.getElementById('sel-dept') || {}).value || '';
@@ -402,13 +406,20 @@ function renderTable() {
         ? '<span class="badge badge-approved">✅ Đồng ý</span>'
         : '<span class="badge badge-rejected">❌ Từ chối</span>';
 
+    // Chỉ được duyệt phòng của mình (admin duyệt tất cả). view_all xem phòng khác = chỉ xem.
+    var _canApproveDept = _isAdmin || (item.dept === _tbpDept);
     var _canApprove = hasJustification(item);
-    var actionHtml = !item.approve
-      ? (_canApprove
+    var actionHtml;
+    if (!_canApproveDept) {
+      actionHtml = '<span style="color:#999;font-size:12px;font-style:italic;">— chỉ xem —</span>';
+    } else if (!item.approve) {
+      actionHtml = (_canApprove
           ? `<button class="btn-approve" data-action="doApprove" data-args="'${item.rowIndex}'">✅ Đồng ý</button>`
           : `<button class="btn-approve" style="background:#c4c7c5;cursor:not-allowed;" title="Chưa có lý do giải trình" data-action="warnNoReason" data-args="">✅ Đồng ý</button>`)
-        + `<button class="btn-reject"  onclick="openReject('${item.rowIndex}','${escHtml(item.name)}','${item.date}')">❌ Từ chối</button>`
-      : `<button class="btn-undo" data-action="undoApprove" data-args="'${item.rowIndex}'" title="Hủy duyệt">↩ Hủy</button>`;
+        + `<button class="btn-reject"  onclick="openReject('${item.rowIndex}','${escHtml(item.name)}','${item.date}')">❌ Từ chối</button>`;
+    } else {
+      actionHtml = `<button class="btn-undo" data-action="undoApprove" data-args="'${item.rowIndex}'" title="Hủy duyệt">↩ Hủy</button>`;
+    }
 
     html += '<tr>'
       + '<td class="name">' + escHtml(item.name) + '</td>'
@@ -543,7 +554,10 @@ var _batchAction = '';
 var _batchApproveList = [];
 
 function openBatch(action) {
-  var pending = getDisplayItems().filter(function(i){ return !i.approve; });
+  // Batch chỉ áp dụng cho phòng được duyệt (admin = tất cả; view_all không duyệt phòng khác)
+  var pending = getDisplayItems().filter(function(i){
+    return !i.approve && (_isAdmin || i.dept === _tbpDept);
+  });
   if (pending.length === 0) {
     showToast('Không có mục nào cần duyệt', '');
     return;
@@ -669,7 +683,7 @@ function renderNsclTable() {
 
   // Lọc nhân viên theo phòng ban được chọn
   let empsToShow = _allActiveEmployees;
-  if (!_isAdmin) {
+  if (!_isAdmin && !_viewAll) {
     empsToShow = empsToShow.filter(e => e.department === _tbpDept);
   } else {
     const selDept = document.getElementById('sel-dept').value;
@@ -1072,7 +1086,7 @@ function printNsclReport() {
 
   // Lọc nhân viên đúng như bảng đang hiển thị
   let emps = (_allActiveEmployees || []).slice();
-  if (!_isAdmin) {
+  if (!_isAdmin && !_viewAll) {
     emps = emps.filter(e => e.department === _tbpDept);
   } else {
     const selDept = (document.getElementById('sel-dept') || {}).value || '';
@@ -1090,7 +1104,7 @@ function printNsclReport() {
     return;
   }
 
-  const deptName = (!_isAdmin && _tbpDept)
+  const deptName = (!_isAdmin && !_viewAll && _tbpDept)
     ? _tbpDept
     : ((document.getElementById('sel-dept') || {}).value || 'Toàn Công Ty');
 
