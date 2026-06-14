@@ -586,7 +586,6 @@ async function exportPrintReport(name, employeeId) {
       const displayDateStr = `${padStr(day)}/${padStr(month)}/${year}`;
       const dateObj = new Date(year, month - 1, day);
       const dow = dateObj.getDay();
-      if (dow === 0) continue; // Bỏ hẳn dòng Chủ Nhật khỏi bản in
       const isWeekend = (dow === 0 || dow === 6);
       const dowLabel = isWeekend ? `<b>Thứ ${dow === 0 ? '7' : '7'}</b>` : `Thứ ${dow + 1}`; // DOW_LABEL match
 
@@ -676,10 +675,10 @@ async function exportPrintReport(name, employeeId) {
           .header-right { font-style:italic; font-size:10px; }
           .title-print { text-align:center; margin:2px 0 6px; }
           .title-print h2 { font-size:14px; font-weight:bold; text-transform:uppercase; margin:0; }
-          table.tbl-print { width:100%; border-collapse:collapse; border:1.2px solid #000; font-size:11px;
+          table.tbl-print { width:100%; border-collapse:collapse; border:0.7px solid #000; font-size:11px;
             table-layout:fixed; }
-          table.tbl-print th, table.tbl-print td { border:0.6px solid #000; padding:2px 5px;
-            line-height:1.6; overflow:hidden; vertical-align:middle; text-align:center; }
+          table.tbl-print th, table.tbl-print td { border:0.7px solid #000; padding:1px 5px;
+            line-height:1.4; overflow:hidden; vertical-align:middle; text-align:center; }
           table.tbl-print td:nth-child(2), table.tbl-print td:nth-child(10) { text-align:left; }
           table.tbl-print thead th { background:#e0e0e0; font-weight:bold; text-align:center;
             -webkit-print-color-adjust:exact; print-color-adjust:exact; }
