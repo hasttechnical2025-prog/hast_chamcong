@@ -84,6 +84,15 @@ export async function adminWrite(table, action, data, eqColumn, eqValue) {
 }
 
 /**
+ * Quản lý tài khoản TBP/Admin (chỉ admin) qua Edge Function — chống leo thang quyền.
+ * @param {'list'|'save'|'delete'|'password'} op
+ * @param {Object} [payload] - { username, password, role, department, id }
+ */
+export async function adminAccount(op, payload) {
+  return await callApi('/admin/account', Object.assign({ op }, payload || {}));
+}
+
+/**
  * Tác vụ Admin: Kích hoạt quá trình Deploy qua GitHub Actions
  */
 export async function triggerDeploy(owner, repo) {

@@ -1,6 +1,6 @@
 import { supabaseClient, recreateSupabaseClient } from './supabaseClient.js';
 import { SUPABASE_KEY } from './config.js';
-import { adminWrite, loginAdmin } from './api.js';
+import { adminWrite, loginAdmin, adminAccount } from './api.js';
 import { setSupabaseToken } from './supabaseClient.js';
 
 
@@ -200,7 +200,7 @@ function loadSavedConfig() {
     document.getElementById('ghBranch').value = config.ghBranch || 'main';
     document.getElementById('ghToken').value = ''; // Yêu cầu nhập thủ công
     initSupabase();
-    if (_isClientReady) { loadAdminPasswords(); loadNsclPrintCfg(); loadAccounts(); }
+    if (_isClientReady) { loadNsclPrintCfg(); loadAccounts(); }
     _pcfgBindColorSync();
   }
 }
@@ -237,8 +237,8 @@ async function loadAccounts() {
   const el = document.getElementById('acc-list');
   if (!el) return;
   try {
-    const { data, error } = await supabaseClient.rpc('chamcong_list_accounts');
-    if (error) throw error;
+    const res = await adminAccount('list');
+    const data = res.data;
     if (!data || !data.length) { el.innerHTML = '<i style="color:#888;">Chưa có tài khoản nào.</i>'; return; }
     el.innerHTML = '<table class="data-table" style="font-size:12px;"><thead><tr>'
       + '<th>Username</th><th>Vai trò</th><th>Phòng ban</th><th style="text-align:center;">Xóa</th></tr></thead><tbody>'
@@ -264,10 +264,7 @@ async function saveAccount() {
   if (role === 'TBP' && !dept) { alert('Tài khoản TBP cần điền Phòng ban!'); return; }
 
   try {
-    const { error } = await supabaseClient.rpc('chamcong_upsert_account', {
-      p_username: username, p_password: password, p_role: role, p_department: dept || null
-    });
-    if (error) throw error;
+    await adminAccount('save', { username: username, password: password, role: role, department: dept || null });
     alert('✅ Đã lưu tài khoản "' + username + '"!');
     document.getElementById('acc-username').value = '';
     document.getElementById('acc-dept').value = '';
@@ -281,8 +278,7 @@ async function saveAccount() {
 async function deleteAccount(id, username) {
   if (!confirm('Xóa tài khoản "' + username + '"? (Tài khoản này sẽ không đăng nhập được nữa)')) return;
   try {
-    const { error } = await supabaseClient.rpc('chamcong_delete_account', { p_id: parseInt(id, 10) });
-    if (error) throw error;
+    await adminAccount('delete', { id: parseInt(id, 10) });
     loadAccounts();
   } catch (e) {
     alert('❌ Lỗi xóa tài khoản: ' + e.message);

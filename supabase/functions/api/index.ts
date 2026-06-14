@@ -508,6 +508,40 @@ serve(async (req) => {
       });
     }
 
+    // 7b. ENDPOINT: /admin/account (Quản lý tài khoản TBP/Admin - CHỈ admin)
+    // Gọi RPC qua service_role; RPC đã bị thu hồi execute khỏi public/authenticated
+    // -> chỉ admin (qua đây) mới tạo/sửa/xóa/đổi mật khẩu tài khoản. Chống leo thang quyền.
+    if (path.endsWith("/admin/account")) {
+      if (meta.type !== "admin") {
+        return new Response(JSON.stringify({ error: "Không có quyền thực hiện hành động này" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      const { op, username, password, role, department, id } = await req.json();
+      let r;
+      if (op === "list") {
+        r = await supabase.rpc("chamcong_list_accounts");
+      } else if (op === "save") {
+        r = await supabase.rpc("chamcong_upsert_account", {
+          p_username: username, p_password: password || "", p_role: role, p_department: department || null
+        });
+      } else if (op === "delete") {
+        r = await supabase.rpc("chamcong_delete_account", { p_id: id });
+      } else if (op === "password") {
+        r = await supabase.rpc("chamcong_update_password", { p_username: username, p_password: password });
+      } else {
+        return new Response(JSON.stringify({ error: "Thao tác không hợp lệ" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      if (r.error) throw r.error;
+      return new Response(JSON.stringify({ success: true, data: r.data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     // 8. ENDPOINT: /admin/deploy (Trigger GitHub Action)
     if (path.endsWith("/admin/deploy")) {
       if (meta.type !== "admin") {

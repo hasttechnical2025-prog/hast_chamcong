@@ -183,6 +183,9 @@ async function loadData() {
       }
     });
 
+    // Đảm bảo phòng của TBP luôn có trong dropdown (kể cả khi phòng đó chưa có nhân viên nào)
+    if (_tbpDept) depts.add(_tbpDept);
+
     // Cập nhật dropdown phòng ban
     var deptSel = document.getElementById('sel-dept');
     if (deptSel) {
