@@ -38,9 +38,14 @@ async function initEmail() {
       }
     } catch (e) {
       setEmployeeName('');
-      document.getElementById('name-display').textContent = '⚠️ Token không hợp lệ';
+      const offline = !navigator.onLine;
+      document.getElementById('name-display').textContent = offline
+        ? '📶 Cần Internet để kích hoạt'
+        : '⚠️ Token không hợp lệ';
       const nameHint = document.getElementById('name-hint');
-      if (nameHint) nameHint.textContent = e.message || 'Mã QR đã hết hạn hoặc không tồn tại.';
+      if (nameHint) nameHint.textContent = offline
+        ? 'Chưa có Internet. Hãy bật Wi-Fi hoặc 4G/5G rồi mở lại app.'
+        : (e.message || 'Mã QR đã hết hạn hoặc không tồn tại.');
       document.getElementById('name-display').style.color = '#c5221f';
       const btnGps = document.getElementById('btn-gps');
       if (btnGps) btnGps.disabled = true;
@@ -155,6 +160,18 @@ async function loadGuideContent() {
   } catch (e) { /* lỗi mạng -> giữ placeholder */ }
 }
 
+// Cảnh báo mất Internet — hiện băng đỏ trên cùng để CBNV biết lý do không chấm được.
+function updateConnBanner() {
+  const b = document.getElementById('net-banner');
+  if (!b) return;
+  if (navigator.onLine) {
+    b.style.display = 'none';
+  } else {
+    b.innerHTML = '<span style="font-size:16px;">📶</span><span>Chưa có Internet — hãy bật <b>Wi-Fi</b> hoặc <b>4G/5G</b>. Cần kết nối mạng để chấm công.</span>';
+    b.style.display = 'flex';
+  }
+}
+
 // Gán các hàm cần cho HTML nếu có liên quan
 window.closePopup = function() {
   const overlay = document.getElementById('popup-overlay');
@@ -167,6 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1. Init PWA và Clock
   initPWA();
   initClock();
+
+  // Theo dõi kết nối mạng để cảnh báo CBNV (cập nhật ngay + khi đổi trạng thái)
+  updateConnBanner();
+  window.addEventListener('online', updateConnBanner);
+  window.addEventListener('offline', updateConnBanner);
 
   // Kiểm tra chặn Desktop (máy tính). Cho phép mở trên PC để gỡ lỗi khi có ?pc=1
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);

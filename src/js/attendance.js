@@ -110,6 +110,12 @@ export async function doSend(lat, lng, accuracy) {
   const btnSend = document.getElementById('btn-send');
   const btnGps = document.getElementById('btn-gps');
 
+  // Chặn sớm khi mất mạng — gửi chấm công bắt buộc phải có Internet
+  if (!navigator.onLine) {
+    showPopup('Chưa có Internet. Hãy bật Wi-Fi hoặc 4G/5G rồi bấm Chấm công lại.', 'Cần kết nối mạng');
+    return;
+  }
+
   if (btnSend) {
     btnSend.disabled = true;
     btnSend.innerHTML = '<span class="spin"></span> Đang xử lý...';
@@ -171,7 +177,11 @@ export async function doSend(lat, lng, accuracy) {
       btnSend.innerHTML = '✅ Chấm công';
     }
     if (btnGps) btnGps.disabled = false;
-    showPopup('Lỗi kết nối: ' + e.message, 'Có lỗi xảy ra');
+    if (!navigator.onLine) {
+      showPopup('Mất kết nối Internet khi gửi. Kiểm tra Wi-Fi/4G rồi thử lại.', 'Cần kết nối mạng');
+    } else {
+      showPopup('Lỗi kết nối: ' + e.message, 'Có lỗi xảy ra');
+    }
   }
 }
 

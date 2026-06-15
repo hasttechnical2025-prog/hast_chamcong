@@ -159,13 +159,13 @@ export function acceptGPSPrompt() {
         btn.innerHTML = '🔄 Thử lại GPS';
       }
       const m = {
-        1: 'Bạn đã từ chối quyền Chia sẻ vị trí. Vào Cài đặt → Vị trí → Cho phép rồi thử lại.',
-        2: 'Không bắt được tín hiệu GPS. Ra chỗ thoáng hoặc bật Wi-Fi rồi thử lại.',
-        3: 'Hết thời gian chờ GPS. Kiểm tra kết nối rồi thử lại.'
+        1: '🔒 Cần BẬT Định vị (Location) cho trình duyệt: vào Cài đặt → Quyền riêng tư → Dịch vụ định vị → bật cho Safari/Chrome, rồi bấm Thử lại.',
+        2: '📡 Không bắt được tín hiệu định vị. Hãy bật Định vị + ra chỗ thoáng, rồi Thử lại.',
+        3: '⏱️ Hết thời gian chờ định vị. Kiểm tra đã bật Định vị chưa rồi Thử lại.'
       };
-      setLoc('err', '❌', 'Không lấy được vị trí — Không thể chấm công', [
-        m[err.code] || 'Lỗi GPS không xác định.',
-        '⛔ Bắt buộc phải có GPS để chấm công.'
+      setLoc('err', '❌', 'Chưa lấy được vị trí — Không thể chấm công', [
+        m[err.code] || 'Lỗi định vị không xác định.',
+        '⛔ Bắt buộc phải có Định vị (GPS) để chấm công.'
       ]);
     },
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
