@@ -5,12 +5,12 @@ export const SUPABASE_KEY = 'sb_publishable_VPxkr4o9TCHiM-cVNalB5A_z4x_dG5y'; //
 export const SUPABASE_FUNC_URL = 'https://bkdupkjrafaprvdseued.supabase.co/functions/v1';
 
 export const OFFICES = [
-  { name: 'Siêu Thanh Hà Nội', lat: 21.008601, lng: 105.812979, radius: 200 },
+  { name: 'Siêu Thanh Hà Nội', lat: 21.00861322599807, lng: 105.81294998643875, radius: 200 },
 ];
 
 export const MAX_DISTANCE = 15000;
 
-export const ALLOW_HOLIDAY_CHECKIN = true;
+export const ALLOW_HOLIDAY_CHECKIN = false;
 export const ALLOW_MULTIPLE_CHECKIN = false;
 
 export const DAYS = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
