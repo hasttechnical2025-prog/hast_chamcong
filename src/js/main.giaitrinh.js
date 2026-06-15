@@ -837,12 +837,22 @@ function renderNsclTable() {
         if (!isNaN(nv)) { sumDiem += nv; if (nv === 5) sumPhep += 0.5; } // điểm 5 = 0.5 ngày phép
       }
 
+      // Tô màu ô chấm khác điểm 10 (chỉ ngày thường, không tô T7/CN/Lễ/chưa vào làm)
+      // để dễ phân biệt: P = phép (xanh), Ô = ốm (đỏ), N = nghỉ (xám), số ≠ 10 (vàng).
+      let valClass = '';
+      if (tdClass === '' && val !== '' && val !== '10') {
+        if (val === 'P') valClass = ' nv-p';
+        else if (val === 'Ô') valClass = ' nv-om';
+        else if (val === 'N') valClass = ' nv-n';
+        else valClass = ' nv-low';
+      }
+
       // view_all không được sửa điểm phòng khác -> khóa ô
       if (!canEditEmp) readonly = 'readonly';
       const inputDisabled = readonly ? 'disabled tabindex="-1"' : '';
       // onfocus select-all: bấm vào ô là bôi đen sẵn -> gõ đè hoặc Delete xóa ngay (dễ xóa hơn)
       const oninput = readonly ? '' : 'oninput="sanitizeDayInput(this)" onfocus="this.select()"';
-      html += `<td class="${tdClass}"><input type="text" class="nscl-input" ${readonly} ${inputDisabled} value="${val}" data-emp="${emp.name}" data-date="${curDateYMD}" ${oninput} onblur="saveNsclScore(this)"></td>`;
+      html += `<td class="${tdClass}${valClass}"><input type="text" class="nscl-input" ${readonly} ${inputDisabled} value="${val}" data-emp="${emp.name}" data-date="${curDateYMD}" ${oninput} onblur="saveNsclScore(this)"></td>`;
     }
 
     // Điểm +/- (lưu trên bản ghi ngày 01, cộng thẳng vào cột Điểm tổng)

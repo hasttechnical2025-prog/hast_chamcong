@@ -608,6 +608,15 @@ body.cbnv .btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:
 .tbl-nscl th.cn { background: #66bb6a; color: #fff; }
 .tbl-nscl td.le { background: #f2f2f2; }
 .tbl-nscl th.le { background: #bdbdbd; color: #fff; }
+/* Tô màu ô chấm khác điểm 10 (ngày thường) để dễ phân biệt */
+.tbl-nscl td.nv-p   { background: #d9e7ff; }   /* P = Phép */
+.tbl-nscl td.nv-om  { background: #ffd9de; }   /* Ô = Ốm */
+.tbl-nscl td.nv-n   { background: #e0e0e0; }   /* N = Nghỉ */
+.tbl-nscl td.nv-low { background: #fff0b3; }   /* Điểm số khác 10 */
+.tbl-nscl td.nv-p   .nscl-input { color: #1a56c4; }
+.tbl-nscl td.nv-om  .nscl-input { color: #c5221f; }
+.tbl-nscl td.nv-n   .nscl-input { color: #5f6368; }
+.tbl-nscl td.nv-low .nscl-input { color: #a36a00; }
 .col-sum { background: #f8f9fa; font-weight: 700; color: #1a73e8; }
 .col-pm { background:#fff7e6; padding:0; }
 .pm-input { font-weight:700; color:#e65100; }
