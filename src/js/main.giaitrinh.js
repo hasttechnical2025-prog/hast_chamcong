@@ -436,13 +436,13 @@ function renderTable() {
     }
 
     html += '<tr>'
-      + '<td class="name">' + escHtml(item.name) + '</td>'
-      + '<td class="date">' + item.date + '</td>'
-      + '<td class="grade">' + gradeHtml + '</td>'
-      + '<td class="reason">' + escHtml(item.reason) + '</td>'
-      + '<td>' + statusBadge + '</td>'
-      + '<td style="font-size:12px;color:#666;">' + escHtml(item.approveNote || '') + '</td>'
-      + '<td class="actions">' + actionHtml + '</td>'
+      + '<td class="name" data-label="Họ tên">' + escHtml(item.name) + '</td>'
+      + '<td class="date" data-label="Ngày">' + item.date + '</td>'
+      + '<td class="grade" data-label="Đánh giá">' + gradeHtml + '</td>'
+      + '<td class="reason" data-label="Lý do">' + escHtml(item.reason) + '</td>'
+      + '<td data-label="Trạng thái">' + statusBadge + '</td>'
+      + '<td style="font-size:12px;color:#666;" data-label="Ghi chú TBP">' + escHtml(item.approveNote || '') + '</td>'
+      + '<td class="actions" data-label="">' + actionHtml + '</td>'
       + '</tr>';
   });
 

@@ -586,6 +586,53 @@ body.cbnv .btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:
 @media (max-width:760px){
   .header-tabs{flex-wrap:wrap;}
   .nav-controls{margin-left:0; width:100%; justify-content:flex-start;}
+
+  /* Bộ chọn tháng/năm/phòng giãn đều, dễ bấm trên điện thoại */
+  .nav-controls .nav-select{ flex:1 1 30%; max-width:none; min-width:0;
+    padding:9px 8px; font-size:13px; }
+  .nav-controls .nav-btn{ flex:1 1 100%; padding:10px; }
+  .nav-period-icon{ display:none; }
+  .htab{ flex:1 1 auto; justify-content:center; padding:9px 10px; font-size:13px; }
+
+  /* Container & toolbar gọn lại */
+  .container{ padding:10px 10px; }
+  .stats{ gap:6px; }
+  .stat-card{ padding:9px 6px; }
+  .stat-card .val{ font-size:18px; }
+
+  /* ── Bảng Duyệt Giải Trình -> dạng THẺ (card) khi xem trên điện thoại ──
+     Mỗi dòng thành 1 thẻ xếp dọc, không phải cuộn ngang để tới nút duyệt. */
+  .table-wrap{ background:transparent; overflow-x:hidden; }
+  .tbl:not(.tbl-nscl){ display:block; width:100%; table-layout:auto; }
+  .tbl:not(.tbl-nscl) thead{ display:none; }
+  .tbl:not(.tbl-nscl) tbody{ display:block; }
+  .tbl:not(.tbl-nscl) tr{ display:block; background:#fff; border:1px solid #e8eaed;
+    border-radius:12px; padding:10px 14px; margin-bottom:12px;
+    box-shadow:0 1px 6px rgba(0,0,0,.07); }
+  .tbl:not(.tbl-nscl) tr:hover td{ background:transparent; }
+  /* Bỏ width cố định + sticky của bản desktop */
+  .tbl:not(.tbl-nscl) th, .tbl:not(.tbl-nscl) td{
+    width:auto !important; min-width:0 !important; max-width:none !important;
+    position:static !important; box-shadow:none !important; background:transparent !important; }
+  .tbl:not(.tbl-nscl) td{ display:flex; justify-content:space-between; align-items:flex-start;
+    gap:12px; padding:6px 0; border-bottom:1px solid #f1f3f4; white-space:normal !important;
+    text-align:right; font-size:13px; }
+  /* Nhãn cột (lấy từ data-label) hiện bên trái mỗi dòng trong thẻ */
+  .tbl:not(.tbl-nscl) td::before{ content:attr(data-label); flex:0 0 92px; text-align:left;
+    font-weight:700; color:#5f6368; font-size:12px; white-space:nowrap; }
+  .tbl:not(.tbl-nscl) td.name{ font-size:15px; color:#1a73e8; white-space:normal !important;
+    overflow:visible; padding-top:0; }
+  .tbl:not(.tbl-nscl) td.reason{ text-align:left; flex-direction:column; gap:3px; }
+  .tbl:not(.tbl-nscl) td.reason::before{ flex:none; }
+  /* Hàng nút thao tác: nhãn ẩn, nút chiếm full chiều ngang, dễ bấm */
+  .tbl:not(.tbl-nscl) td.actions{ border-bottom:none; padding-top:10px;
+    flex-wrap:wrap; gap:8px; justify-content:stretch; }
+  .tbl:not(.tbl-nscl) td.actions::before{ display:none; }
+  .tbl:not(.tbl-nscl) td.actions > *{ flex:1 1 auto; margin:0 !important;
+    padding:11px 10px; font-size:14px; text-align:center; }
+
+  /* Popup từ chối / xác nhận vừa khít màn hình nhỏ */
+  .reject-box, .batch-box{ max-width:none; }
 }
 
 #nscl-container { display: none; }
