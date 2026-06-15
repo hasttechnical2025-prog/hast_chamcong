@@ -1191,6 +1191,14 @@ function printNsclReport() {
     return;
   }
 
+  // Chỉ cho in khi bảng điểm đã được KÝ & KHÓA. Mỗi phòng trong danh sách in phải có lock.
+  const _printDepts = Array.from(new Set(emps.map(e => e.department).filter(Boolean)));
+  const _unlocked = _printDepts.filter(d => !_nsclLocks[d]);
+  if (_unlocked.length > 0) {
+    showToast('⚠️ Chưa thể in: hãy bấm "🔏 Ký & Khóa" bảng điểm trước. Phòng chưa khóa: ' + _unlocked.join(', '), 'error');
+    return;
+  }
+
   const deptName = (!_isAdmin && !_viewAll && _tbpDept)
     ? _tbpDept
     : ((document.getElementById('sel-dept') || {}).value || 'Toàn Công Ty');

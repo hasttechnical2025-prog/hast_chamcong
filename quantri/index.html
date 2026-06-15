@@ -96,9 +96,9 @@
   </div>
 
   <!-- ==================== PANEL 2: NHÂN VIÊN ==================== -->
-  <div id="panel-employees" class="tab-panel" style="flex-direction:column; gap:16px;">
-    <div class="flex-col-left" style="order:2; flex:1; min-height:0;">
-      <div class="card" style="flex: 1; overflow: hidden;">
+  <div id="panel-employees" class="tab-panel" style="flex-direction:column; gap:16px; overflow-y:auto;">
+    <div class="flex-col-left" style="order:2; flex:0 0 auto; overflow:visible;">
+      <div class="card" style="flex:0 0 auto; overflow:visible;">
         <h3 style="justify-content: space-between;">
           <div style="display:flex; align-items:center; gap:8px;">👥 Danh sách cán bộ nhân viên</div>
           <div style="display:flex; gap:10px; font-weight: normal; font-size: 13px; align-items: center;">
@@ -118,7 +118,7 @@
             </select>
           </div>
         </h3>
-        <div class="table-container">
+        <div class="table-container" style="flex:0 0 auto; max-height:60vh;">
           <table class="data-table">
             <thead>
               <tr>
@@ -238,11 +238,11 @@
   </div>
 
   <!-- ==================== PANEL 4: CÀI ĐẶT CA ==================== -->
-  <div id="panel-shifts" class="tab-panel" style="flex-direction:column; gap:16px;">
-    <div class="flex-col-left" style="order:2; flex:1; min-height:0;">
-      <div class="card" style="flex: 1; overflow: hidden;">
+  <div id="panel-shifts" class="tab-panel" style="flex-direction:column; gap:16px; overflow-y:auto;">
+    <div class="flex-col-left" style="order:2; flex:0 0 auto; overflow:visible;">
+      <div class="card" style="flex:0 0 auto; overflow:visible;">
         <h3>⚙️ Cài đặt mốc giờ ca làm việc</h3>
-        <div class="table-container">
+        <div class="table-container" style="flex:0 0 auto; max-height:60vh;">
           <table class="data-table">
             <thead>
               <tr>
@@ -668,6 +668,6 @@
   </div>
 </div>
 
-<script type="module" src="../src/js/main.quantri.js?v=17"></script>
+<script type="module" src="../src/js/main.quantri.js?v=18"></script>
 </body>
 </html>
