@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mã QR đã thay đổi — HSTC Chấm Công</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; min-height: 100dvh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px; background: #f0f4f8;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #202124;
+  }
+  .box {
+    background: #fff; border-radius: 18px; max-width: 380px; width: 100%;
+    padding: 32px 26px; text-align: center;
+    box-shadow: 0 6px 28px rgba(0,0,0,.12);
+  }
+  .icon { font-size: 54px; line-height: 1; margin-bottom: 10px; }
+  h1 { font-size: 20px; color: #1a73e8; margin: 0 0 6px; }
+  .sub { font-size: 13px; color: #888; margin-bottom: 20px; }
+  p { font-size: 14.5px; line-height: 1.55; color: #3c4043; margin: 0 0 16px; }
+  .steps {
+    text-align: left; background: #f8f9fb; border: 1px solid #e8eaed;
+    border-radius: 12px; padding: 14px 16px; margin: 0 0 20px;
+    font-size: 14px; line-height: 1.6; color: #3c4043;
+  }
+  .steps b { color: #1a73e8; }
+  .note {
+    background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px;
+    padding: 10px 12px; font-size: 12.5px; color: #7a5c00; line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .btn {
+    display: inline-block; background: #1a73e8; color: #fff; text-decoration: none;
+    font-size: 15px; font-weight: 700; padding: 13px 22px; border-radius: 11px;
+    transition: background .2s;
+  }
+  .btn:hover { background: #1557b0; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="icon">🔄</div>
+    <h1>Mã QR của bạn đã thay đổi</h1>
+    <div class="sub">Công ty CP Siêu Thanh Hà Nội</div>
+
+    <p>App chấm công này dùng <b>mã QR định danh riêng</b> cho mỗi nhân viên.
+       Liên kết cũ không còn hiệu lực — thường do mã QR của bạn vừa được
+       <b>cấp lại</b> hoặc cập nhật.</p>
+
+    <div class="steps">
+      Để chấm công lại, vui lòng:<br>
+      <b>1.</b> Liên hệ <b>Quản trị / phòng Hành chính</b> để nhận mã QR mới.<br>
+      <b>2.</b> Dùng camera điện thoại <b>quét lại mã QR</b> đó.<br>
+      <b>3.</b> Nếu đã cài app ra màn hình chính: <b>xoá biểu tượng cũ</b> rồi
+      mở từ QR mới và <b>thêm lại</b> ra màn hình chính.
+    </div>
+
+    <div class="note">
+      ⚠️ Mỗi nhân viên một mã QR riêng — không dùng chung và không cần gõ tên.
+      Mã cũ ngừng hoạt động là bình thường khi được cấp lại.
+    </div>
+
+    <a class="btn" id="home-link" href="/">↺ Thử mở lại trang chủ</a>
+  </div>
+  <script>
+    // Tính đúng gốc site: GitHub Project Pages chạy dưới /<repo>/ (vd /hast_chamcong/),
+    // còn tên miền riêng thì gốc là "/". Trang 404 có thể được phục vụ ở /nv/<token>/.
+    (function () {
+      var base = '/';
+      if (location.hostname.endsWith('.github.io')) {
+        var seg = location.pathname.split('/').filter(Boolean)[0];
+        if (seg) base = '/' + seg + '/';
+      }
+      var a = document.getElementById('home-link');
+      if (a) a.href = base;
+    })();
+  </script>
+</body>
+</html>
