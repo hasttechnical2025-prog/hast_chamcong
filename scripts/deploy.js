@@ -63,10 +63,14 @@ export const GPS_EXPIRE_MS = 1 * 60 * 1000; // GPS hết hạn sau 1 phút
   console.log('✓ Đã cập nhật src/js/config.js');
 
   console.log('3. Đang tải danh sách nhân viên...');
+  // Nhận diện nhân viên "đang làm việc" LINH HOẠT vì dữ liệu status không nhất quán
+  // ('Đang làm việc', 'đang làm', 'active', null...). Lọc cứng = 'Đang làm việc' sẽ bỏ
+  // sót người status lệch -> file cá nhân /nv không được sinh -> CBNV vào app bị 404.
+  // Dùng cùng quy tắc với bot nhắc nhở (attendance-reminder) để đồng nhất.
   const { data: emps, error: empErr } = await supabase
     .from('chamcong_employees')
     .select('name, token, status')
-    .eq('status', 'Đang làm việc');
+    .or('status.is.null,status.ilike.%đang%,status.ilike.%active%,status.ilike.%làm%');
 
   if (empErr) {
     console.error('Lỗi tải nhân viên:', empErr);
