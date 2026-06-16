@@ -144,7 +144,15 @@ async function loadData() {
   var isInitialized = sessionStorage.getItem('hstc_month_init') === '1';
 
   if (!isInitialized) {
-    // Khi đăng nhập -> mặc định tháng hiện tại
+    // Khi đăng nhập -> mặc định tháng hiện tại (nếu trước ngày 10 thì lùi 1 tháng)
+    if (now.getDate() < 10) {
+      if (month === 1) {
+        month = 12;
+        year = year - 1;
+      } else {
+        month = month - 1;
+      }
+    }
     selMonth.value = month.toString();
     selYear.value  = year.toString();
     sessionStorage.setItem('hstc_month_init', '1');
