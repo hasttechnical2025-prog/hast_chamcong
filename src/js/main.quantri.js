@@ -505,9 +505,13 @@ function renderEmployeeTable() {
       : '<span class="badge badge-danger">Nghỉ việc</span>';
 
     // Nhận diện loại ca & Tô màu Badge ca làm việc sinh động
-    const lc = e.loai_ca ? e.loai_ca.toString().trim().toLowerCase() : '';
+    let lc = e.loai_ca ? e.loai_ca.toString().trim().toLowerCase() : 'tieu_chuan';
+    if (lc === '' || lc.indexOf('tiêu chuẩn') !== -1 || lc.indexOf('tieu chuan') !== -1) lc = 'tieu_chuan';
+    else if (lc.indexOf('1') !== -1 && lc !== 'ngoai_le_1') lc = 'ngoai_le_1';
+    else if (lc.indexOf('2') !== -1 && lc !== 'ngoai_le_2') lc = 'ngoai_le_2';
+
     let shiftBadge = '';
-    const shiftName = globalShiftTypes[lc] || globalShiftTypes[e.loai_ca] || lc || 'Tiêu chuẩn';
+    const shiftName = globalShiftTypes[lc] || lc;
     let badgeClass = 'badge-primary';
     if (lc === 'ngoai_le_1') badgeClass = 'badge-orange';
     else if (lc === 'ngoai_le_2') badgeClass = 'badge-purple';
