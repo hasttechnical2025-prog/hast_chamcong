@@ -10,6 +10,48 @@ window.supabaseClient = supabaseClient;
 window.SUPABASE_KEY = SUPABASE_KEY;
 
 // ============================================================
+// GLOBAL STATE CẤU HÌNH CA LÀM VIỆC (ĐỌC TỪ DB)
+// ============================================================
+let globalShiftTypes = {
+  "tieu_chuan": "Ca Tiêu chuẩn",
+  "ngoai_le_1": "Ngoại lệ 1 (In 8:30)",
+  "ngoai_le_2": "Ngoại lệ 2 (In 9:00/Out 16:00)"
+};
+
+async function loadShiftTypesConfig() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('chamcong_system_config')
+      .select('value')
+      .eq('key', 'shift_types')
+      .single();
+    if (data && data.value) {
+      globalShiftTypes = JSON.parse(data.value);
+    }
+  } catch (e) {
+    console.log('Lấy cấu hình ca thất bại, dùng mặc định:', e);
+  }
+  populateShiftDropdowns();
+}
+
+function populateShiftDropdowns() {
+  const empShift = document.getElementById('emp-shift');
+  const filterShift = document.getElementById('filter-shift');
+  if (empShift) {
+    empShift.innerHTML = '';
+    for (let key in globalShiftTypes) {
+      empShift.innerHTML += `<option value="${key}">${globalShiftTypes[key]}</option>`;
+    }
+  }
+  if (filterShift) {
+    filterShift.innerHTML = '<option value="all">⏱️ Tất cả loại ca</option>';
+    for (let key in globalShiftTypes) {
+      filterShift.innerHTML += `<option value="${key}">${globalShiftTypes[key]}</option>`;
+    }
+  }
+}
+
+// ============================================================
 // HỆ THỐNG GLOBAL STATE & KẾT NỐI
 // ============================================================
 
@@ -59,6 +101,9 @@ async function adminLogin() {
     // Đính JWT vào Supabase client (cho các thao tác ĐỌC theo RLS) và vào header API ghi
     setSupabaseToken(res.access_token);
     _isClientReady = true;
+
+    // Tải cấu hình ca động từ database
+    await loadShiftTypesConfig();
 
     // Ẩn lớp đăng nhập, hiển thị portal
     const overlay = document.getElementById('login-overlay');
@@ -433,14 +478,13 @@ function renderEmployeeTable() {
 
     // 2. Lọc theo Loại ca
     if (filterShift !== 'all') {
-      const lc = e.loai_ca ? e.loai_ca.toString().trim().toLowerCase() : '';
-      const isShift1 = lc === 'ngoai_le_1' || lc.indexOf('1') !== -1;
-      const isShift2 = lc === 'ngoai_le_2' || lc.indexOf('2') !== -1;
-      const isTieuChuan = !isShift1 && !isShift2;
+      let lc = e.loai_ca ? e.loai_ca.toString().trim().toLowerCase() : 'tieu_chuan';
+      // Normalize legacy data
+      if (lc.indexOf('1') !== -1 && lc !== 'ngoai_le_1') lc = 'ngoai_le_1';
+      else if (lc.indexOf('2') !== -1 && lc !== 'ngoai_le_2') lc = 'ngoai_le_2';
+      else if (lc === '') lc = 'tieu_chuan';
 
-      if (filterShift === 'tieu_chuan' && !isTieuChuan) return false;
-      if (filterShift === 'ngoai_le_1' && !isShift1) return false;
-      if (filterShift === 'ngoai_le_2' && !isShift2) return false;
+      if (lc !== filterShift) return false;
     }
 
     return true;
@@ -463,13 +507,12 @@ function renderEmployeeTable() {
     // Nhận diện loại ca & Tô màu Badge ca làm việc sinh động
     const lc = e.loai_ca ? e.loai_ca.toString().trim().toLowerCase() : '';
     let shiftBadge = '';
-    if (lc === 'ngoai_le_1' || lc.indexOf('1') !== -1) {
-      shiftBadge = '<span class="badge badge-orange">Ngoại lệ 1</span>';
-    } else if (lc === 'ngoai_le_2' || lc.indexOf('2') !== -1) {
-      shiftBadge = '<span class="badge badge-purple">Ngoại lệ 2</span>';
-    } else {
-      shiftBadge = '<span class="badge badge-primary">Tiêu chuẩn</span>';
-    }
+    const shiftName = globalShiftTypes[lc] || globalShiftTypes[e.loai_ca] || lc || 'Tiêu chuẩn';
+    let badgeClass = 'badge-primary';
+    if (lc === 'ngoai_le_1') badgeClass = 'badge-orange';
+    else if (lc === 'ngoai_le_2') badgeClass = 'badge-purple';
+    else if (lc !== 'tieu_chuan') badgeClass = 'badge-warning';
+    shiftBadge = `<span class="badge ${badgeClass}">${shiftName}</span>`;
 
     const roleBadge = e.role === 'TBP'
       ? '<span class="badge badge-warning">TBP</span>'
@@ -755,11 +798,13 @@ async function exportPrintReportAll() {
     if (!isActive) return false;
     if (filterDept !== 'all' && e.department !== filterDept) return false;
     if (filterShift !== 'all') {
-      const lc = (e.loai_ca || '').toString().toLowerCase();
-      const s1 = lc.indexOf('1') !== -1, s2 = lc.indexOf('2') !== -1, tc = !s1 && !s2;
-      if (filterShift === 'tieu_chuan' && !tc) return false;
-      if (filterShift === 'ngoai_le_1' && !s1) return false;
-      if (filterShift === 'ngoai_le_2' && !s2) return false;
+      let lc = e.loai_ca ? e.loai_ca.toString().trim().toLowerCase() : 'tieu_chuan';
+      // Normalize legacy data
+      if (lc.indexOf('1') !== -1 && lc !== 'ngoai_le_1') lc = 'ngoai_le_1';
+      else if (lc.indexOf('2') !== -1 && lc !== 'ngoai_le_2') lc = 'ngoai_le_2';
+      else if (lc === '') lc = 'tieu_chuan';
+
+      if (lc !== filterShift) return false;
     }
     return true;
   });
@@ -861,13 +906,11 @@ function printAllQRCodes() {
   const filtered = allEmployees.filter(e => {
     if (filterDept !== 'all' && e.department !== filterDept) return false;
     if (filterShift !== 'all') {
-      const lc = e.loai_ca ? e.loai_ca.toString().trim().toLowerCase() : '';
-      const isShift1 = lc === 'ngoai_le_1' || lc.indexOf('1') !== -1;
-      const isShift2 = lc === 'ngoai_le_2' || lc.indexOf('2') !== -1;
-      const isTieuChuan = !isShift1 && !isShift2;
-      if (filterShift === 'tieu_chuan' && !isTieuChuan) return false;
-      if (filterShift === 'ngoai_le_1' && !isShift1) return false;
-      if (filterShift === 'ngoai_le_2' && !isShift2) return false;
+      let lc = e.loai_ca ? e.loai_ca.toString().trim().toLowerCase() : 'tieu_chuan';
+      if (lc.indexOf('1') !== -1 && lc !== 'ngoai_le_1') lc = 'ngoai_le_1';
+      else if (lc.indexOf('2') !== -1 && lc !== 'ngoai_le_2') lc = 'ngoai_le_2';
+      else if (lc === '') lc = 'tieu_chuan';
+      if (lc !== filterShift) return false;
     }
     const st = e.status ? e.status.toString().trim().toLowerCase() : '';
     const isActive = !st || st.indexOf('đang') !== -1 || st.indexOf('active') !== -1 || st.indexOf('làm việc') !== -1 || st.indexOf('lam viec') !== -1;
@@ -1017,23 +1060,32 @@ async function loadShifts() {
 
     let html = '';
     allShifts.forEach(s => {
-      const typeLabel = s.shift_type === 'tieu_chuan' ? 'Tiêu chuẩn'
-        : s.shift_type === 'ngoai_le_1' ? 'Ngoại lệ 1 (In 8:30)' : 'Ngoại lệ 2 (9:00 / 16:00)';
+      const typeLabel = globalShiftTypes[s.shift_type] || s.shift_type;
 
       const sessionLabel = s.session === 'morning_in' ? '☀️ Sáng IN'
         : s.session === 'morning_out' ? '☀️ Sáng OUT'
         : s.session === 'afternoon_in' ? '🌤️ Chiều IN' : '🌤️ Chiều OUT';
 
-      const fmtTime = t => t ? t.substring(0, 5) : '<span style="color:#ccc;">null</span>';
+      const fmtTime = t => t ? t.substring(0, 5) : '';
+      let ruleLabel = '';
+      if (s.session === 'morning_in' || s.session === 'afternoon_in') {
+        const aVal = fmtTime(s.a_end);
+        const bVal = fmtTime(s.b_end);
+        ruleLabel = `Hợp lệ: ≤ <b>${aVal || 'N/A'}</b> [A] ${bVal ? `| Trễ: ≤ <b>${bVal}</b> [B]` : ''} | Đi muộn/Vắng: [D]`;
+      } else if (s.session === 'morning_out') {
+        const aStart = fmtTime(s.a_start);
+        const aEnd2 = fmtTime(s.a_end2);
+        ruleLabel = `Về sớm: < <b>${aStart || 'N/A'}</b> [B] | Về đúng: <b>${aStart || 'N/A'} ~ ${aEnd2 || 'N/A'}</b> [A] | Khác: [D]`;
+      } else if (s.session === 'afternoon_out') {
+        const aVal = fmtTime(s.a_end);
+        ruleLabel = `Về sớm: < <b>${aVal || 'N/A'}</b> [B] | Về đúng: ≥ <b>${aVal || 'N/A'}</b> [A]`;
+      }
 
       html += `
         <tr>
           <td style="font-weight:600;">${typeLabel}</td>
           <td style="font-weight:600;color:var(--primary);">${sessionLabel}</td>
-          <td>${fmtTime(s.a_start)}</td>
-          <td><b>${fmtTime(s.a_end)}</b></td>
-          <td>${fmtTime(s.a_end2)}</td>
-          <td>${fmtTime(s.b_end)}</td>
+          <td>${ruleLabel}</td>
           <td style="text-align: center;">
             <button class="btn btn-gray" style="padding: 4px 8px; font-size:11px;" data-action="editShiftConfig" data-args="'${s.id}'">✏️ Sửa mốc</button>
           </td>
@@ -1042,7 +1094,7 @@ async function loadShifts() {
     });
     tbody.innerHTML = html;
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#c5221f;">❌ Lỗi: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#c5221f;">❌ Lỗi: ${e.message}</td></tr>`;
   }
 }
 
@@ -1059,16 +1111,63 @@ function editShiftConfig(id) {
   document.getElementById('shift-a-end2').value = shift.a_end2 ? shift.a_end2.substring(0, 5) : '';
   document.getElementById('shift-b-end').value = shift.b_end ? shift.b_end.substring(0, 5) : '';
 
+  // Cấu hình nhãn động và ẩn/hiện các trường phù hợp với từng ca nhỏ
+  const grpStart = document.getElementById('grp-shift-a-start');
+  const grpEnd = document.getElementById('grp-shift-a-end');
+  const grpEnd2 = document.getElementById('grp-shift-a-end2');
+  const grpBEnd = document.getElementById('grp-shift-b-end');
+
+  const lblStart = document.getElementById('lbl-shift-a-start');
+  const lblEnd = document.getElementById('lbl-shift-a-end');
+  const lblEnd2 = document.getElementById('lbl-shift-a-end2');
+  const lblBEnd = document.getElementById('lbl-shift-b-end');
+
+  if (grpStart) grpStart.style.display = 'none';
+  if (grpEnd) grpEnd.style.display = 'none';
+  if (grpEnd2) grpEnd2.style.display = 'none';
+  if (grpBEnd) grpBEnd.style.display = 'none';
+
+  if (shift.session === 'morning_in' || shift.session === 'afternoon_in') {
+    if (grpEnd) { grpEnd.style.display = 'block'; lblEnd.textContent = 'Mốc đi đúng giờ (A)'; }
+    if (grpBEnd) { grpBEnd.style.display = 'block'; lblBEnd.textContent = 'Mốc đi trễ tối đa (B)'; }
+  } else if (shift.session === 'morning_out') {
+    if (grpStart) { grpStart.style.display = 'block'; lblStart.textContent = 'Bắt đầu mốc về đúng (a_start)'; }
+    if (grpEnd2) { grpEnd2.style.display = 'block'; lblEnd2.textContent = 'Kết thúc mốc về đúng (a_end2)'; }
+  } else if (shift.session === 'afternoon_out') {
+    if (grpEnd) { grpEnd.style.display = 'block'; lblEnd.textContent = 'Mốc bắt đầu về đúng (A)'; }
+  }
+
   document.getElementById('btn-shift-save').disabled = false;
   document.getElementById('btn-shift-cancel').style.display = 'inline-flex';
+  const delContainer = document.getElementById('delete-shift-container');
+  if (delContainer) delContainer.style.display = 'block';
 }
 
 async function saveShiftConfig() {
   const id = document.getElementById('shift-id').value;
+  const session = document.getElementById('shift-session').value;
   const a_start = document.getElementById('shift-a-start').value || null;
   const a_end = document.getElementById('shift-a-end').value || null;
   const a_end2 = document.getElementById('shift-a-end2').value || null;
   const b_end = document.getElementById('shift-b-end').value || null;
+
+  // Validation
+  if (session === 'morning_in' || session === 'afternoon_in') {
+    if (a_end && b_end && a_end >= b_end) {
+      alert('❌ Mốc Kết thúc B (đi trễ) phải lớn hơn mốc Kết thúc A (đi đúng giờ)!');
+      return;
+    }
+  } else if (session === 'morning_out') {
+    if (a_start && a_end2 && a_start >= a_end2) {
+      alert('❌ Mốc Kết thúc 2 A phải lớn hơn mốc Bắt đầu A!');
+      return;
+    }
+  } else if (session === 'afternoon_out') {
+    if (a_end && a_end < '15:00') {
+      alert('❌ Mốc Kết thúc A (về đúng giờ) của ca chiều thường phải >= 15:00!');
+      return;
+    }
+  }
 
   try {
     const { error } = await adminWrite('chamcong_shift_config', 'update', {
@@ -1097,8 +1196,114 @@ function cancelShiftEdit() {
   document.getElementById('shift-a-end2').value = '';
   document.getElementById('shift-b-end').value = '';
 
+  const grps = ['grp-shift-a-start', 'grp-shift-a-end', 'grp-shift-a-end2', 'grp-shift-b-end'];
+  grps.forEach(g => {
+    const el = document.getElementById(g);
+    if (el) el.style.display = 'none';
+  });
+
   document.getElementById('btn-shift-save').disabled = true;
   document.getElementById('btn-shift-cancel').style.display = 'none';
+  const delContainer = document.getElementById('delete-shift-container');
+  if (delContainer) delContainer.style.display = 'none';
+}
+
+async function addNewShift() {
+  const typeId = document.getElementById('new-shift-type').value.trim();
+  const typeName = document.getElementById('new-shift-name').value.trim();
+
+  if (!typeId || !typeName) {
+    alert('❌ Vui lòng nhập đầy đủ Mã ca và Tên ca!');
+    return;
+  }
+  if (!/^[a-z0-9_]+$/.test(typeId)) {
+    alert('❌ Mã ca chỉ được chứa chữ cái thường, số và dấu gạch dưới (VD: ca_trua)!');
+    return;
+  }
+  if (globalShiftTypes[typeId]) {
+    alert('❌ Mã ca này đã tồn tại!');
+    return;
+  }
+
+  try {
+    // 1. Cập nhật JSON cấu hình
+    globalShiftTypes[typeId] = typeName;
+    const { error: cfgErr } = await adminWrite('chamcong_system_config', 'upsert', {
+      key: 'shift_types',
+      value: JSON.stringify(globalShiftTypes),
+      updated_at: new Date().toISOString()
+    });
+    if (cfgErr) throw cfgErr;
+
+    // 2. Insert 4 dòng vào chamcong_shift_config
+    const rows = ['morning_in', 'morning_out', 'afternoon_in', 'afternoon_out'].map(sess => ({
+      shift_type: typeId,
+      session: sess,
+      a_start: null, a_end: null, a_end2: null, b_end: null
+    }));
+
+    // adminWrite 'insert' API expects array of objects
+    const { error: insErr } = await adminWrite('chamcong_shift_config', 'insert', rows);
+    if (insErr) throw insErr;
+
+    alert('✅ Đã thêm ca làm việc mới thành công! Hãy điền các mốc giờ cho ca này.');
+    document.getElementById('new-shift-type').value = '';
+    document.getElementById('new-shift-name').value = '';
+
+    populateShiftDropdowns(); // Update dropdowns
+    loadShifts(); // Reload table
+  } catch(e) {
+    alert('❌ Lỗi thêm ca mới: ' + e.message);
+  }
+}
+
+async function deleteShift() {
+  const shiftType = document.getElementById('shift-type').value;
+  if (!shiftType) return;
+  if (shiftType === 'tieu_chuan') {
+    alert('❌ Không thể xóa Ca Tiêu chuẩn (ca mặc định của hệ thống)!');
+    return;
+  }
+
+  // Kiểm tra xem có nhân viên nào đang dùng ca này không
+  const { data: emps, error: empErr } = await supabaseClient
+    .from('chamcong_employees')
+    .select('name')
+    .eq('loai_ca', shiftType)
+    .limit(1);
+
+  if (empErr) {
+    alert('❌ Lỗi kiểm tra nhân viên: ' + empErr.message);
+    return;
+  }
+  if (emps && emps.length > 0) {
+    alert('❌ Không thể xóa! Đang có nhân viên được gán ca này. Hãy đổi ca cho nhân viên trước.');
+    return;
+  }
+
+  if (!confirm(`Bạn có chắc chắn muốn xóa TOÀN BỘ cấu hình của ca "${globalShiftTypes[shiftType] || shiftType}" không?`)) return;
+
+  try {
+    // 1. Xóa 4 dòng trong chamcong_shift_config
+    const { error: delErr } = await adminWrite('chamcong_shift_config', 'delete', null, 'shift_type', shiftType);
+    if (delErr) throw delErr;
+
+    // 2. Cập nhật JSON cấu hình
+    delete globalShiftTypes[shiftType];
+    const { error: cfgErr } = await adminWrite('chamcong_system_config', 'upsert', {
+      key: 'shift_types',
+      value: JSON.stringify(globalShiftTypes),
+      updated_at: new Date().toISOString()
+    });
+    if (cfgErr) throw cfgErr;
+
+    alert('✅ Đã xóa ca làm việc thành công!');
+    cancelShiftEdit();
+    populateShiftDropdowns();
+    loadShifts();
+  } catch(e) {
+    alert('❌ Lỗi xóa ca: ' + e.message);
+  }
 }
 
 // ============================================================
@@ -1670,6 +1875,8 @@ document.addEventListener('click', function(e) {
     addHoliday: () => addHoliday(),
     saveShiftConfig: () => saveShiftConfig(),
     cancelShiftEdit: () => cancelShiftEdit(),
+    addNewShift: () => addNewShift(),
+    deleteShift: () => deleteShift(),
     saveGuideContent: () => saveGuideContent(),
     cancelGuideEdit: () => cancelGuideEdit(),
     uploadImageToGithub: () => uploadImageToGithub(),

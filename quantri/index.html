@@ -112,9 +112,6 @@
             </select>
             <select id="filter-shift" onchange="renderEmployeeTable()" style="padding:4px 8px; border:1px solid #ccc; border-radius:4px; outline:none;">
               <option value="all">⏱️ Tất cả loại ca</option>
-              <option value="tieu_chuan">Tiêu chuẩn</option>
-              <option value="ngoai_le_1">Ngoại lệ 1</option>
-              <option value="ngoai_le_2">Ngoại lệ 2</option>
             </select>
           </div>
         </h3>
@@ -168,9 +165,7 @@
           <div class="form-group">
             <label>Loại Ca</label>
             <select id="emp-shift">
-              <option value="tieu_chuan">Ca Tiêu Chuẩn</option>
-              <option value="ngoai_le_1">Ngoại lệ 1 (In 8:30)</option>
-              <option value="ngoai_le_2">Ngoại lệ 2 (In 9:00/Out 16:00)</option>
+              <!-- Được load động từ DB -->
             </select>
           </div>
           <div class="form-group">
@@ -248,15 +243,12 @@
               <tr>
                 <th>Loại Ca</th>
                 <th>Ca nhỏ</th>
-                <th>Bắt đầu A (chỉ Out)</th>
-                <th>Kết thúc A (chốt IN/OUT)</th>
-                <th>Mốc 2 A (chỉ Out Sáng)</th>
-                <th>Kết thúc B (Trễ/vắng)</th>
+                <th>Quy tắc tính điểm</th>
                 <th style="text-align: center;">Thao tác</th>
               </tr>
             </thead>
             <tbody id="shift-table-body">
-              <tr><td colspan="7" class="empty" style="text-align:center;">Đang tải cấu hình ca làm việc...</td></tr>
+              <tr><td colspan="4" class="empty" style="text-align:center;">Đang tải cấu hình ca làm việc...</td></tr>
             </tbody>
           </table>
         </div>
@@ -277,23 +269,23 @@
             <input type="text" id="shift-session" disabled style="background:#f1f3f4; color:#666;">
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Mốc bắt đầu A (time)</label>
+        <div class="form-row" id="row-shift-1">
+          <div class="form-group" id="grp-shift-a-start" style="display:none;">
+            <label id="lbl-shift-a-start">Mốc bắt đầu A</label>
             <input type="time" id="shift-a-start">
           </div>
-          <div class="form-group">
-            <label>Mốc kết thúc A (time)</label>
+          <div class="form-group" id="grp-shift-a-end" style="display:none;">
+            <label id="lbl-shift-a-end">Mốc kết thúc A</label>
             <input type="time" id="shift-a-end">
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Mốc kết thúc 2 A (time)</label>
+        <div class="form-row" id="row-shift-2">
+          <div class="form-group" id="grp-shift-a-end2" style="display:none;">
+            <label id="lbl-shift-a-end2">Mốc kết thúc 2 A</label>
             <input type="time" id="shift-a-end2">
           </div>
-          <div class="form-group">
-            <label>Mốc kết thúc B (time)</label>
+          <div class="form-group" id="grp-shift-b-end" style="display:none;">
+            <label id="lbl-shift-b-end">Mốc kết thúc B</label>
             <input type="time" id="shift-b-end">
           </div>
         </div>
@@ -301,6 +293,22 @@
           <button id="btn-shift-save" class="btn btn-blue" style="flex: 1;" disabled data-action="saveShiftConfig" data-args="">💾 Cập nhật mốc giờ</button>
           <button id="btn-shift-cancel" class="btn btn-gray" style="display:none;" data-action="cancelShiftEdit" data-args="">Hủy</button>
         </div>
+        <div id="delete-shift-container" style="border-top:1px solid var(--border-color); margin-top:14px; padding-top:12px; display:none;">
+          <button id="btn-shift-delete" class="btn btn-red" style="width:100%;" data-action="deleteShift" data-args="">🗑️ Xóa toàn bộ ca này</button>
+        </div>
+      </div>
+
+      <div class="card" id="add-shift-card" style="margin-top: 16px;">
+        <h3>➕ Thêm ca làm việc mới</h3>
+        <div class="form-group">
+          <label>Mã ca (viết liền không dấu, ví dụ: ca_trua)</label>
+          <input type="text" id="new-shift-type" placeholder="Mã ca...">
+        </div>
+        <div class="form-group">
+          <label>Tên ca hiển thị (ví dụ: Ca Trưa)</label>
+          <input type="text" id="new-shift-name" placeholder="Tên ca...">
+        </div>
+        <button id="btn-shift-add" class="btn btn-blue" style="width: 100%; margin-top: 10px;" data-action="addNewShift" data-args="">➕ Thêm ca mới</button>
       </div>
     </div>
   </div>
