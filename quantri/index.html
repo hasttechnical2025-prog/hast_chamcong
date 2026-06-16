@@ -256,59 +256,67 @@
     </div>
 
     <div class="flex-col-right" style="order:1; flex:0 0 auto;">
-      <div class="card">
-        <h3 id="shift-form-title">📝 Cập nhật ca làm việc</h3>
-        <input type="hidden" id="shift-id">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Loại ca</label>
-            <input type="text" id="shift-type" disabled style="background:#f1f3f4; color:#666;">
+      <div class="form-row-side" style="display:flex; gap:16px; width:100%; align-items: stretch;">
+        <div class="card" style="flex:1; margin:0; display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <h3 id="shift-form-title">📝 Cập nhật ca làm việc</h3>
+            <input type="hidden" id="shift-id">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Loại ca</label>
+                <input type="text" id="shift-type" disabled style="background:#f1f3f4; color:#666;">
+              </div>
+              <div class="form-group">
+                <label>Ca nhỏ</label>
+                <input type="text" id="shift-session" disabled style="background:#f1f3f4; color:#666;">
+              </div>
+            </div>
+            <div class="form-row" id="row-shift-1">
+              <div class="form-group" id="grp-shift-a-start" style="display:none;">
+                <label id="lbl-shift-a-start">Mốc bắt đầu A</label>
+                <input type="time" id="shift-a-start">
+              </div>
+              <div class="form-group" id="grp-shift-a-end" style="display:none;">
+                <label id="lbl-shift-a-end">Mốc kết thúc A</label>
+                <input type="time" id="shift-a-end">
+              </div>
+            </div>
+            <div class="form-row" id="row-shift-2">
+              <div class="form-group" id="grp-shift-a-end2" style="display:none;">
+                <label id="lbl-shift-a-end2">Mốc kết thúc 2 A</label>
+                <input type="time" id="shift-a-end2">
+              </div>
+              <div class="form-group" id="grp-shift-b-end" style="display:none;">
+                <label id="lbl-shift-b-end">Mốc kết thúc B</label>
+                <input type="time" id="shift-b-end">
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Ca nhỏ</label>
-            <input type="text" id="shift-session" disabled style="background:#f1f3f4; color:#666;">
+          <div>
+            <div style="display:flex; gap:10px; margin-top: 15px;">
+              <button id="btn-shift-save" class="btn btn-blue" style="flex: 1;" disabled data-action="saveShiftConfig" data-args="">💾 Cập nhật mốc giờ</button>
+              <button id="btn-shift-cancel" class="btn btn-gray" style="display:none;" data-action="cancelShiftEdit" data-args="">Hủy</button>
+            </div>
+            <div id="delete-shift-container" style="border-top:1px solid var(--border-color); margin-top:14px; padding-top:12px; display:none;">
+              <button id="btn-shift-delete" class="btn btn-red" style="width:100%;" data-action="deleteShift" data-args="">🗑️ Xóa toàn bộ ca này</button>
+            </div>
           </div>
         </div>
-        <div class="form-row" id="row-shift-1">
-          <div class="form-group" id="grp-shift-a-start" style="display:none;">
-            <label id="lbl-shift-a-start">Mốc bắt đầu A</label>
-            <input type="time" id="shift-a-start">
-          </div>
-          <div class="form-group" id="grp-shift-a-end" style="display:none;">
-            <label id="lbl-shift-a-end">Mốc kết thúc A</label>
-            <input type="time" id="shift-a-end">
-          </div>
-        </div>
-        <div class="form-row" id="row-shift-2">
-          <div class="form-group" id="grp-shift-a-end2" style="display:none;">
-            <label id="lbl-shift-a-end2">Mốc kết thúc 2 A</label>
-            <input type="time" id="shift-a-end2">
-          </div>
-          <div class="form-group" id="grp-shift-b-end" style="display:none;">
-            <label id="lbl-shift-b-end">Mốc kết thúc B</label>
-            <input type="time" id="shift-b-end">
-          </div>
-        </div>
-        <div style="display:flex; gap:10px; margin-top: 10px;">
-          <button id="btn-shift-save" class="btn btn-blue" style="flex: 1;" disabled data-action="saveShiftConfig" data-args="">💾 Cập nhật mốc giờ</button>
-          <button id="btn-shift-cancel" class="btn btn-gray" style="display:none;" data-action="cancelShiftEdit" data-args="">Hủy</button>
-        </div>
-        <div id="delete-shift-container" style="border-top:1px solid var(--border-color); margin-top:14px; padding-top:12px; display:none;">
-          <button id="btn-shift-delete" class="btn btn-red" style="width:100%;" data-action="deleteShift" data-args="">🗑️ Xóa toàn bộ ca này</button>
-        </div>
-      </div>
 
-      <div class="card" id="add-shift-card" style="margin-top: 16px;">
-        <h3>➕ Thêm ca làm việc mới</h3>
-        <div class="form-group">
-          <label>Mã ca (viết liền không dấu, ví dụ: ca_trua)</label>
-          <input type="text" id="new-shift-type" placeholder="Mã ca...">
+        <div class="card" id="add-shift-card" style="flex:1; margin:0; display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <h3>➕ Thêm ca làm việc mới</h3>
+            <div class="form-group">
+              <label>Mã ca (viết liền không dấu, ví dụ: ca_trua)</label>
+              <input type="text" id="new-shift-type" placeholder="Mã ca...">
+            </div>
+            <div class="form-group">
+              <label>Tên ca hiển thị (ví dụ: Ca Trưa)</label>
+              <input type="text" id="new-shift-name" placeholder="Tên ca...">
+            </div>
+          </div>
+          <button id="btn-shift-add" class="btn btn-blue" style="width: 100%; margin-top: 15px;" data-action="addNewShift" data-args="">➕ Thêm ca mới</button>
         </div>
-        <div class="form-group">
-          <label>Tên ca hiển thị (ví dụ: Ca Trưa)</label>
-          <input type="text" id="new-shift-name" placeholder="Tên ca...">
-        </div>
-        <button id="btn-shift-add" class="btn btn-blue" style="width: 100%; margin-top: 10px;" data-action="addNewShift" data-args="">➕ Thêm ca mới</button>
       </div>
     </div>
   </div>
