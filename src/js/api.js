@@ -107,3 +107,12 @@ export async function triggerDeploy(owner, repo) {
 export async function sendTelegram(chatId, message) {
   return await callApi('/send-telegram', { chat_id: chatId, message });
 }
+
+/**
+ * Đổi mật khẩu của chính tài khoản đang đăng nhập (Admin hoặc TBP)
+ * @param {string} currentPassword
+ * @param {string} newPassword
+ */
+export async function changeSelfPassword(currentPassword, newPassword) {
+  return await callApi('/auth/change-password', { currentPassword, newPassword });
+}

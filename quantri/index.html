@@ -35,23 +35,26 @@
 
 
 <!-- NAVIGATION BAR -->
-<div class="navbar">
-  <div class="nav-logo">
-    <span style="font-size: 26px;">🏢</span>
-    <div>
-      <h1>HSTC Chấm Công</h1>
-      <span style="font-size: 11px; color: #888;">Cơ sở dữ liệu Supabase Portal</span>
+<div class="navbar" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+  <div style="display:flex; align-items:center; gap:20px;">
+    <div class="nav-logo">
+      <span style="font-size: 26px;">🏢</span>
+      <div>
+        <h1>HSTC Chấm Công</h1>
+        <span style="font-size: 11px; color: #888;">Cơ sở dữ liệu Supabase Portal</span>
+      </div>
+    </div>
+    <div class="nav-tabs" style="margin-left: 10px;">
+      <div class="nav-tab active" data-action="switchTab" data-args="'deploy'">🚀 Deploy PWA</div>
+      <div class="nav-tab" data-action="switchTab" data-args="'employees'">👥 Nhân Viên</div>
+      <div class="nav-tab" data-action="switchTab" data-args="'attendance'">📍 Dữ Liệu Chấm Công</div>
+      <div class="nav-tab" data-action="switchTab" data-args="'holidays'">🌴 Ngày Nghỉ Lễ</div>
+      <div class="nav-tab" data-action="switchTab" data-args="'shifts'">⚙️ Cài Đặt Ca</div>
+      <div class="nav-tab" data-action="switchTab" data-args="'guide'">📖 Hướng Dẫn App</div>
+      <div class="nav-tab" data-action="switchTab" data-args="'config'">🔑 Cấu Hình Hệ Thống</div>
     </div>
   </div>
-  <div class="nav-tabs">
-    <div class="nav-tab active" data-action="switchTab" data-args="'deploy'">🚀 Deploy PWA</div>
-    <div class="nav-tab" data-action="switchTab" data-args="'employees'">👥 Nhân Viên</div>
-    <div class="nav-tab" data-action="switchTab" data-args="'attendance'">📍 Dữ Liệu Chấm Công</div>
-    <div class="nav-tab" data-action="switchTab" data-args="'holidays'">🌴 Ngày Nghỉ Lễ</div>
-    <div class="nav-tab" data-action="switchTab" data-args="'shifts'">⚙️ Cài Đặt Ca</div>
-    <div class="nav-tab" data-action="switchTab" data-args="'guide'">📖 Hướng Dẫn App</div>
-    <div class="nav-tab" data-action="switchTab" data-args="'config'">🔑 Cấu Hình Hệ Thống</div>
-  </div>
+  <button class="btn btn-red" data-action="adminLogout" style="margin-right:20px; padding:6px 12px; font-size:13px; background:#d32f2f; color:white; border:none; border-radius:4px; font-weight:600; cursor:pointer;">🚪 Đăng xuất</button>
 </div>
 
 <!-- MAIN LAYOUT -->

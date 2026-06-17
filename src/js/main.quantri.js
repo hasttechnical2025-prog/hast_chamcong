@@ -122,6 +122,20 @@ async function adminLogin() {
   }
 }
 
+function adminLogout() {
+  setSupabaseToken(null);
+  _isClientReady = false;
+
+  const overlay = document.getElementById('login-overlay');
+  if (overlay) overlay.style.display = 'flex';
+
+  const pwInput = document.getElementById('admin-pw-input');
+  if (pwInput) {
+    pwInput.value = '';
+    pwInput.focus();
+  }
+}
+
 // Chuyển đổi các tab giao diện
 function switchTab(tabId, tabElement) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -1875,6 +1889,7 @@ document.addEventListener('click', function(e) {
   const fnMap = {
     switchTab: () => switchTab(args[0], target),
     adminLogin: () => adminLogin(),
+    adminLogout: () => adminLogout(),
     startDeployTestProcess: () => startDeployTestProcess(),
     startDeployProcess: () => startDeployProcess(),
     clearConsole: () => clearConsole(),

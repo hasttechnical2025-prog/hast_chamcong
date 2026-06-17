@@ -238,6 +238,51 @@ serve(async (req) => {
 
     const meta = decoded.user_metadata;
 
+    // 2b. ENDPOINT: /auth/change-password (Cho Admin / TBP tự đổi mật khẩu)
+    if (path.endsWith("/auth/change-password")) {
+      if (meta.type !== "admin") {
+        return new Response(JSON.stringify({ error: "Không có quyền thực hiện hành động này" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      const { currentPassword, newPassword } = await req.json();
+      if (!currentPassword || !newPassword) {
+        return new Response(JSON.stringify({ error: "Vui lòng nhập mật khẩu hiện tại và mật khẩu mới" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      const username = meta.username;
+
+      // Xác thực mật khẩu cũ
+      const result = await supabase.rpc("chamcong_verify_auth", {
+        p_username: username,
+        p_password: currentPassword
+      });
+
+      if (result.error || !result.data || result.data.length === 0) {
+        return new Response(JSON.stringify({ error: "Mật khẩu hiện tại không chính xác" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      // Cập nhật mật khẩu mới
+      const upRes = await supabase.rpc("chamcong_update_password", {
+        p_username: username,
+        p_password: newPassword
+      });
+
+      if (upRes.error) throw upRes.error;
+
+      return new Response(JSON.stringify({ success: true, message: "Đổi mật khẩu thành công" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     // 3. ENDPOINT: /checkin (CBNV ghi log chấm công)
     if (path.endsWith("/checkin")) {
       if (meta.type !== "cbnv") {
@@ -482,6 +527,61 @@ serve(async (req) => {
 
       const { table, action, data, eqColumn, eqValue } = await req.json();
 
+      // Phân quyền chi tiết cho TBP để chống leo thang quyền hạn ghi dữ liệu
+      if (meta.role === "TBP") {
+        if (table !== "chamcong_attendance_records" && table !== "chamcong_nscl_lock") {
+          return new Response(JSON.stringify({ error: "Bạn không có quyền chỉnh sửa bảng này" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
+        if (table === "chamcong_nscl_lock") {
+          const rows = Array.isArray(data) ? data : (data ? [data] : []);
+          for (const r of rows) {
+            if (r.department && r.department !== meta.department) {
+              return new Response(JSON.stringify({ error: "Chỉ được khóa bảng điểm của phòng ban bạn quản lý" }), {
+                status: 403,
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+              });
+            }
+          }
+          if (action === "delete") {
+            const { data: lock } = await supabase.from("chamcong_nscl_lock").select("department").eq(eqColumn, eqValue).maybeSingle();
+            if (lock && lock.department !== meta.department) {
+              return new Response(JSON.stringify({ error: "Chỉ được mở khóa bảng điểm của phòng ban bạn quản lý" }), {
+                status: 403,
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+              });
+            }
+          }
+        } else if (table === "chamcong_attendance_records") {
+          let targetNames: string[] = [];
+          if (action === "insert") {
+            const rows = Array.isArray(data) ? data : [data];
+            targetNames = rows.map((r: any) => r.employee_name);
+          } else if (action === "update") {
+            if (eqColumn === "id" && eqValue) {
+              const { data: rec } = await supabase.from("chamcong_attendance_records").select("employee_name").eq("id", eqValue).maybeSingle();
+              if (rec) targetNames.push(rec.employee_name);
+            } else if (eqColumn === "employee_name" && eqValue) {
+              targetNames.push(eqValue);
+            }
+          }
+
+          for (const name of targetNames) {
+            if (!name) continue;
+            const { data: emp } = await supabase.from("chamcong_employees").select("department").eq("name", name).maybeSingle();
+            if (emp && emp.department !== meta.department) {
+              return new Response(JSON.stringify({ error: "Bạn chỉ được chỉnh sửa điểm của nhân viên phòng mình" }), {
+                status: 403,
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+              });
+            }
+          }
+        }
+      }
+
       let query = supabase.from(table);
       let result;
 
@@ -508,12 +608,12 @@ serve(async (req) => {
       });
     }
 
-    // 7b. ENDPOINT: /admin/account (Quản lý tài khoản TBP/Admin - CHỈ admin)
+    // 7b. ENDPOINT: /admin/account (Quản lý tài khoản TBP/Admin - CHỈ admin tối cao)
     // Gọi RPC qua service_role; RPC đã bị thu hồi execute khỏi public/authenticated
     // -> chỉ admin (qua đây) mới tạo/sửa/xóa/đổi mật khẩu tài khoản. Chống leo thang quyền.
     if (path.endsWith("/admin/account")) {
-      if (meta.type !== "admin") {
-        return new Response(JSON.stringify({ error: "Không có quyền thực hiện hành động này" }), {
+      if (meta.type !== "admin" || meta.role !== "admin") {
+        return new Response(JSON.stringify({ error: "Chỉ Admin hệ thống mới có quyền quản lý tài khoản" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
@@ -542,11 +642,14 @@ serve(async (req) => {
       });
     }
 
-    // 8. ENDPOINT: /admin/deploy (Trigger GitHub Action)
+    // 8. ENDPOINT: /admin/deploy (Trigger GitHub Action - CHỈ admin tối cao)
     if (path.endsWith("/admin/deploy")) {
-      if (meta.type !== "admin") {
-        return new Response(JSON.stringify({ error: "Không có quyền thực hiện hành động này" }), {
+      if (meta.type !== "admin" || meta.role !== "admin") {
+        return new Response(JSON.stringify({ error: "Chỉ Admin hệ thống mới có quyền thực hiện deploy" }), {
           status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }

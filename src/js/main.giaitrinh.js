@@ -1,6 +1,6 @@
 import { supabaseClient } from './supabaseClient.js';
 import { SUPABASE_KEY } from './config.js';
-import { loginAdmin, approveJustification, adminWrite } from './api.js';
+import { loginAdmin, approveJustification, adminWrite, changeSelfPassword } from './api.js';
 import { setSupabaseToken } from './supabaseClient.js';
 
 
@@ -94,6 +94,61 @@ function logout() {
 function showMainScreen() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-screen').style.display  = 'flex';
+}
+
+function openChangePassword() {
+  document.getElementById('pw-old').value = '';
+  document.getElementById('pw-new').value = '';
+  document.getElementById('pw-new-confirm').value = '';
+  const overlay = document.getElementById('password-overlay');
+  overlay.style.display = 'flex';
+  setTimeout(() => { document.getElementById('pw-old').focus(); }, 150);
+}
+
+function closeChangePassword() {
+  document.getElementById('password-overlay').style.display = 'none';
+}
+
+async function confirmChangePassword() {
+  const oldPw = document.getElementById('pw-old').value.trim();
+  const newPw = document.getElementById('pw-new').value.trim();
+  const confirmPw = document.getElementById('pw-new-confirm').value.trim();
+
+  if (!oldPw || !newPw || !confirmPw) {
+    showToast('⚠️ Vui lòng điền đầy đủ các thông tin mật khẩu.', 'error');
+    return;
+  }
+  if (newPw === oldPw) {
+    showToast('⚠️ Mật khẩu mới không được trùng mật khẩu cũ.', 'error');
+    return;
+  }
+  if (newPw.length < 4) {
+    showToast('⚠️ Mật khẩu mới phải từ 4 ký tự trở lên.', 'error');
+    return;
+  }
+  if (newPw !== confirmPw) {
+    showToast('⚠️ Mật khẩu xác nhận không trùng khớp.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-confirm-pw');
+  btn.disabled = true;
+  btn.textContent = '⏳ Đang đổi...';
+
+  try {
+    const res = await changeSelfPassword(oldPw, newPw);
+    if (res.error) throw new Error(res.error);
+    showToast('✅ Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
+    setTimeout(() => {
+      closeChangePassword();
+      logout();
+    }, 1500);
+  } catch (e) {
+    showToast('❌ Lỗi: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Đồng ý';
+  }
 }
 
 function switchMainTab(tabId) {
@@ -1563,7 +1618,10 @@ document.addEventListener('click', function(e) {
     doApprove: () => doApprove(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]),
     warnNoReason: () => warnNoReason(),
     openReject: () => openReject(args[0], args[1]),
-    undoApprove: () => undoApprove(args[0], args[1])
+    undoApprove: () => undoApprove(args[0], args[1]),
+    openChangePassword: () => openChangePassword(),
+    closeChangePassword: () => closeChangePassword(),
+    confirmChangePassword: () => confirmChangePassword()
   };
 
   if (fnMap[action]) {
