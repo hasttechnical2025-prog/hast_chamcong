@@ -22,15 +22,42 @@ serve(async (req) => {
     const m = vnDate.getUTCMinutes();
     const currentMins = h * 60 + m; // Số phút từ đầu ngày
 
-    // Định nghĩa 4 khung giờ quét
-    let activeSession = "";
-    if (currentMins >= 450 && currentMins <= 485) activeSession = "morning_in";
-    else if (currentMins >= 720 && currentMins <= 765) activeSession = "morning_out";
-    else if (currentMins >= 766 && currentMins <= 785) activeSession = "afternoon_in";
-    else if (currentMins >= 1020 && currentMins <= 1080) activeSession = "afternoon_out";
+    // ── Lấy cấu hình các ca làm việc (Bảng public.chamcong_shift_config) ──
+    const { data: shifts, error: shiftErr } = await supabase
+      .from("chamcong_shift_config")
+      .select("*");
 
-    if (!activeSession) {
-      return new Response(JSON.stringify({ ok: true, msg: "Not in active reminder time window." }));
+    if (shiftErr) throw shiftErr;
+
+    const timeToMin = (t: string) => {
+      if (!t) return null;
+      const [h, m] = t.split(":");
+      return parseInt(h, 10) * 60 + parseInt(m, 10);
+    };
+
+    const shiftMap = new Map();
+    const morningInMins = new Set<number>();
+
+    (shifts || []).forEach((s: any) => {
+      const type = s.shift_type;
+      if (!shiftMap.has(type)) {
+        shiftMap.set(type, new Map());
+      }
+      shiftMap.get(type).set(s.session, s);
+
+      if (s.session === "morning_in" && s.a_end) {
+        const m = timeToMin(s.a_end);
+        if (m !== null) morningInMins.add(m - 5);
+      }
+    });
+
+    const isMorningInTime = morningInMins.has(currentMins);
+    const isMorningOutTime = (currentMins === 735);   // 12:15
+    const isAfternoonInTime = (currentMins === 780);  // 13:00
+    const isAfternoonOutTime = (currentMins === 1035); // 17:15
+
+    if (!isMorningInTime && !isMorningOutTime && !isAfternoonInTime && !isAfternoonOutTime) {
+      return new Response(JSON.stringify({ ok: true, msg: "Not in active reminder time window.", currentMins }));
     }
 
     // ── Bỏ qua T7/CN ──────────────────────────────────────
@@ -52,7 +79,7 @@ serve(async (req) => {
     // ── Lấy danh sách nhân viên Active (Bảng public.chamcong_employees) ──
     const { data: emps, error: empErr } = await supabase
       .from("chamcong_employees")
-      .select("name, telegram_chat_id, status")
+      .select("name, telegram_chat_id, status, loai_ca")
       .or('status.is.null,status.ilike.%đang%,status.ilike.%active%,status.ilike.%làm%');
 
     if (empErr || !emps) throw empErr || new Error("No employees found");
@@ -68,55 +95,68 @@ serve(async (req) => {
     const recordMap = new Map();
     (records || []).forEach((r: any) => recordMap.set(r.employee_name, r));
 
-    const absentList: string[] = [];
+    const absentBySession: Record<string, string[]> = {};
     const personalMsgs: Promise<Response>[] = [];
 
-    let sessionName = "";
-    let timeRangeMsg = "";
-
-    // Phân tích theo từng khung giờ
+    // Phân tích theo từng khung giờ và loại ca của mỗi nhân viên
     emps.forEach((e: any) => {
+      const lc = e.loai_ca || 'tieu_chuan';
+      const shiftCfg = shiftMap.get(lc) || shiftMap.get('tieu_chuan');
+      if (!shiftCfg) return;
+
       const r = recordMap.get(e.name);
       let isMissing = false;
       let personalText = "";
+      let sessionName = "";
 
-      if (activeSession === "morning_in") {
-        sessionName = "Check In Sáng";
-        timeRangeMsg = "từ 00:01 đến thời điểm hiện tại";
-        if (!r || !r.morning_in) {
-          isMissing = true;
-          personalText = "Bạn chưa chấm công Check In sáng hôm nay. Hãy chấm công nhé!";
+      // 1. Check In Sáng (Trước mốc A_END 5 phút)
+      const mInCfg = shiftCfg.get("morning_in");
+      if (mInCfg && mInCfg.a_end) {
+        const aEndMin = timeToMin(mInCfg.a_end);
+        if (aEndMin !== null && currentMins === aEndMin - 5) {
+          sessionName = "Sáng IN";
+          if (!r || !r.morning_in) {
+            isMissing = true;
+            personalText = `Bạn chưa chấm công Sáng IN. Mốc vào ca của bạn là ${mInCfg.a_end.substring(0,5)}, hãy chấm công ngay nhé!`;
+          }
         }
       }
-      else if (activeSession === "morning_out") {
-        sessionName = "Check Out Sáng";
-        timeRangeMsg = "từ 09:30 đến thời điểm hiện tại";
+
+      // 2. Check Out Sáng (12:15 = 735 mins)
+      if (currentMins === 735) {
+        sessionName = "Sáng OUT";
         // Chỉ tính người có đi làm sáng (có morning_in hợp lệ)
         if (r && r.morning_in && !r.morning_out) {
           isMissing = true;
-          personalText = "Bạn chưa chấm công Check Out sáng hôm nay. Hãy chấm công nhé!";
-        }
-      }
-      else if (activeSession === "afternoon_in") {
-        sessionName = "Check In Chiều";
-        timeRangeMsg = "từ 12:46 đến thời điểm hiện tại";
-        if (!r || !r.afternoon_in) {
-          isMissing = true;
-          personalText = "Bạn chưa chấm công Check In chiều hôm nay. Hãy chấm công nhé!";
-        }
-      }
-      else if (activeSession === "afternoon_out") {
-        sessionName = "Check Out Chiều";
-        timeRangeMsg = "từ 15:30 đến thời điểm hiện tại";
-        // Chỉ tính người có đi làm chiều (có afternoon_in hợp lệ)
-        if (r && r.afternoon_in && !r.afternoon_out) {
-          isMissing = true;
-          personalText = "Bạn chưa chấm công Check Out chiều hôm nay. Hãy chấm công nhé!";
+          personalText = "Bạn chưa chấm công Sáng OUT nghỉ trưa. Hãy chấm công nhé!";
         }
       }
 
-      if (isMissing) {
-        absentList.push(e.name);
+      // 3. Check In Chiều (13:00 = 780 mins)
+      if (currentMins === 780) {
+        sessionName = "Chiều IN";
+        // CHỐNG SPAM: Chỉ nhắc chiều IN nếu người đó ĐÃ ĐI LÀM SÁNG NAY (có morning_in hoặc morning_out)
+        // Nếu nghỉ cả ngày, họ đã bị nhắc ở Sáng IN và sẽ không bị spam tiếp ở Chiều IN.
+        if (r && (r.morning_in || r.morning_out) && !r.afternoon_in) {
+          isMissing = true;
+          personalText = "Bạn chưa chấm công Chiều IN. Hãy chấm công ngay nhé!";
+        }
+      }
+
+      // 4. Check Out Chiều (17:15 = 1035 mins)
+      if (currentMins === 1035) {
+        sessionName = "Chiều OUT";
+        // Chỉ tính người có đi làm chiều (có afternoon_in hợp lệ)
+        if (r && r.afternoon_in && !r.afternoon_out) {
+          isMissing = true;
+          personalText = "Bạn chưa chấm công Chiều OUT lúc ra về. Hãy chấm công nhé!";
+        }
+      }
+
+      if (isMissing && sessionName) {
+        if (!absentBySession[sessionName]) absentBySession[sessionName] = [];
+        absentBySession[sessionName].push(e.name);
+
         // Gửi tin nhắn cá nhân nếu có ID Telegram
         if (e.telegram_chat_id) {
           personalMsgs.push(
@@ -138,15 +178,25 @@ serve(async (req) => {
     await Promise.allSettled(personalMsgs);
 
     // Gửi thông báo tổng hợp lên Group công ty
-    if (absentList.length > 0) {
-      const [y, m, d] = today.split("-");
+    let totalNotified = 0;
+    const [y, m, d] = today.split("-");
+    const groupMsgs = Object.keys(absentBySession).map(sessionName => {
+      const list = absentBySession[sessionName];
+      totalNotified += list.length;
+
+      let timeRangeMsg = "";
+      if (sessionName === "Sáng IN") timeRangeMsg = "trước mốc vào ca 5 phút";
+      else if (sessionName === "Sáng OUT") timeRangeMsg = "vào lúc 12:15";
+      else if (sessionName === "Chiều IN") timeRangeMsg = "vào lúc 13:00";
+      else if (sessionName === "Chiều OUT") timeRangeMsg = "vào lúc 17:15";
+
       const groupMsg = `📢 <b>Nhắc nhở chấm công [${sessionName}]</b>\n`
         + `📅 Ngày: ${d}/${m}/${y}\n`
         + `🕒 Thời gian quét: ${timeRangeMsg}\n\n`
         + `<b>Danh sách CBNV chưa chấm công:</b>\n`
-        + absentList.map((name, i) => `${i + 1}. ${name}`).join("\n");
+        + list.map((name, i) => `${i + 1}. ${name}`).join("\n");
 
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      return fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -155,9 +205,11 @@ serve(async (req) => {
           parse_mode: "HTML"
         }),
       });
-    }
+    });
 
-    return new Response(JSON.stringify({ ok: true, notified: absentList.length }));
+    await Promise.allSettled(groupMsgs);
+
+    return new Response(JSON.stringify({ ok: true, notified: totalNotified }));
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: (e as Error).message }), { status: 500 });
   }
