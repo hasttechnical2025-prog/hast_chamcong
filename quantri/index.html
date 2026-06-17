@@ -96,8 +96,8 @@
   </div>
 
   <!-- ==================== PANEL 2: NHÂN VIÊN ==================== -->
-  <div id="panel-employees" class="tab-panel" style="flex-direction:column; gap:16px; overflow-y:auto;">
-    <div class="flex-col-left" style="order:2; flex:0 0 auto; overflow:visible;">
+  <div id="panel-employees" class="tab-panel" style="flex-direction:row; gap:16px; overflow-y:auto; align-items:flex-start;">
+    <div class="flex-col-left" style="order:1; flex:1.8; overflow:visible;">
       <div class="card" style="flex:0 0 auto; overflow:visible;">
         <h3 style="justify-content: space-between;">
           <div style="display:flex; align-items:center; gap:8px;">👥 Danh sách cán bộ nhân viên</div>
@@ -119,23 +119,21 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Họ tên</th>
+                <th>Họ tên & Thao tác</th>
                 <th>Phòng ban</th>
                 <th>Telegram ID</th>
                 <th>Loại ca</th>
-                <th>Trạng thái</th>
-                <th style="text-align: center;">Thao tác</th>
               </tr>
             </thead>
             <tbody id="emp-table-body">
-              <tr><td colspan="6" class="empty" style="text-align:center;">Đang tải danh sách nhân viên...</td></tr>
+              <tr><td colspan="4" class="empty" style="text-align:center;">Đang tải danh sách nhân viên...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <div class="flex-col-right" style="order:1; flex:0 0 auto;">
+    <div class="flex-col-right" style="order:2; flex:1; min-width:320px;">
       <div class="card">
         <h3 id="emp-form-title">👤 Thêm nhân viên mới</h3>
         <input type="hidden" id="emp-id">

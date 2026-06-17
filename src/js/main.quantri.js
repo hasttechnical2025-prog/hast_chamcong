@@ -491,7 +491,7 @@ function renderEmployeeTable() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;">📭 Không tìm thấy cán bộ nhân viên phù hợp bộ lọc.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;">📭 Không tìm thấy cán bộ nhân viên phù hợp bộ lọc.</td></tr>';
     return;
   }
 
@@ -524,16 +524,21 @@ function renderEmployeeTable() {
 
     html += `
       <tr>
-        <td style="font-weight:600;color:#202124;">${e.name} ${roleBadge}</td>
-        <td>🏢 ${e.department}</td>
-        <td style="font-family:monospace;">${e.telegram_chat_id || 'NULL'}</td>
-        <td>${shiftBadge}</td>
-        <td>${statusBadge}</td>
-        <td style="text-align: center; display: flex; gap: 4px; justify-content: center;">
-          <button class="btn btn-gray" style="padding: 4px 8px; font-size:11px;" data-action="editEmployee" data-args="'${e.id}'">✏️ Sửa</button>
-          <button class="btn btn-blue" style="padding: 4px 8px; font-size:11px; background:#34a853;" data-action="openQRModal" data-args="'${e.name}'">📱 Mã QR</button>
-          <button class="btn btn-blue" style="padding: 4px 8px; font-size:11px; background:#e65100;" data-action="exportPrintReport" data-args="'${e.name}', '${e.id}'">🖨️ In Báo Cáo</button>
+        <td style="padding: 10px 8px;">
+          <div style="font-weight: 600; color: #202124; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span>${e.name}</span>
+            ${roleBadge}
+            ${statusBadge}
+          </div>
+          <div style="display: flex; gap: 4px; margin-top: 6px; flex-wrap: nowrap; white-space: nowrap;">
+            <button class="btn btn-gray" style="padding: 3px 6px; font-size:11px;" data-action="editEmployee" data-args="'${e.id}'">✏️ Sửa</button>
+            <button class="btn btn-blue" style="padding: 3px 6px; font-size:11px; background:#34a853;" data-action="openQRModal" data-args="'${e.name}'">📱 Mã QR</button>
+            <button class="btn btn-blue" style="padding: 3px 6px; font-size:11px; background:#e65100;" data-action="exportPrintReport" data-args="'${e.name}', '${e.id}'">🖨️ In BC</button>
+          </div>
         </td>
+        <td style="vertical-align: middle;">🏢 ${e.department}</td>
+        <td style="font-family:monospace; vertical-align: middle;">${e.telegram_chat_id || 'NULL'}</td>
+        <td style="vertical-align: middle;">${shiftBadge}</td>
       </tr>
     `;
   });
