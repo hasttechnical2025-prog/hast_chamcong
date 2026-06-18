@@ -650,9 +650,6 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
 
       const { owner, repo } = await req.json();
       if (!owner || !repo) {
