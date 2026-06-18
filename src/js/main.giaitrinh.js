@@ -1218,8 +1218,9 @@ async function loadPrintConfig(){
 // ══════════════════════════════════════════════
 // KÝ SỐ & KHÓA BẢNG ĐIỂM NSCL (#3)
 // ══════════════════════════════════════════════
-// Người ký = TBP của phòng (role TBP); nếu không có thì lấy tên phòng.
+// Người ký = Admin nếu là Admin đăng nhập; ngược lại là TBP của phòng.
 function _nsclSignerName(dept) {
+  if (_isAdmin) return 'Admin';
   const tbp = (_allActiveEmployees || []).find(e => e.department === dept && (e.role || '').toUpperCase() === 'TBP');
   return tbp ? tbp.name : dept;
 }
