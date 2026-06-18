@@ -1051,6 +1051,19 @@ async function saveNsclScore(inputEl) {
       r.nscl_score = val; // Ghi nhận vào RAM
     }
 
+    // Nếu bảng điểm đã bị khóa và người đang sửa là Admin, tự động ký đè và ghi nhận thời gian mới
+    const _emp = (_allActiveEmployees || []).find(e => e.name === empName);
+    const deptName = _emp ? _emp.department : '';
+    const lk = deptName ? _nsclLocks[deptName] : null;
+    if (lk && _isAdmin) {
+      await adminWrite('chamcong_nscl_lock', 'update', {
+        nguoi_ky: 'Admin',
+        thoi_gian_ky: new Date().toISOString()
+      }, 'id', lk.id);
+      lk.nguoi_ky = 'Admin';
+      lk.thoi_gian_ky = new Date().toISOString();
+    }
+
     inputEl.style.backgroundColor = '#e6f4ea';
     setTimeout(() => { inputEl.style.backgroundColor = ''; }, 500);
 
@@ -1100,6 +1113,20 @@ async function saveNsclAdjust(inputEl) {
       await adminWrite('chamcong_attendance_records', 'update', { nscl_adjust: dbVal }, 'id', r.id);
       r.nscl_adjust = dbVal;
     }
+
+    // Tự động ký đè nếu Admin sửa điểm của phòng đã khóa
+    const _emp = (_allActiveEmployees || []).find(e => e.name === empName);
+    const deptName = _emp ? _emp.department : '';
+    const lk = deptName ? _nsclLocks[deptName] : null;
+    if (lk && _isAdmin) {
+      await adminWrite('chamcong_nscl_lock', 'update', {
+        nguoi_ky: 'Admin',
+        thoi_gian_ky: new Date().toISOString()
+      }, 'id', lk.id);
+      lk.nguoi_ky = 'Admin';
+      lk.thoi_gian_ky = new Date().toISOString();
+    }
+
     inputEl.style.backgroundColor = '#e6f4ea';
     setTimeout(() => { inputEl.style.backgroundColor = ''; }, 500);
     recalcNsclRow(empName);
@@ -1117,6 +1144,12 @@ async function saveNsclAdjust(inputEl) {
 
 // Điền nhanh 10
 async function autofillPoints10() {
+  const dept = _nsclCurrentDept();
+  if (dept && _nsclLocks[dept]) {
+    showToast('⚠️ Bảng điểm đã Ký và Khóa, không thể điền điểm hàng loạt.', 'error');
+    return;
+  }
+
   if (!confirm('Bạn có chắc muốn tự động điền 10 điểm vào TẤT CẢ các ngày làm việc trống của nhân sự đang hiển thị?\n(Sẽ KHÔNG điền vào những ngày trong tương lai.)')) return;
 
   // Mốc "hôm nay" theo lịch địa phương (YYYY-MM-DD) để so sánh chuỗi
@@ -1376,8 +1409,23 @@ function printNsclReport() {
     : pad(today.getDate()) + '/' + pad(today.getMonth() + 1) + '/' + today.getFullYear()
       + ' ' + pad(today.getHours()) + ':' + pad(today.getMinutes());
 
-  const w = window.open('', '_blank');
-  w.document.write(`
+  // Tạo hoặc tái sử dụng Iframe ẩn để in siêu tốc (Tránh window.open popup block và lag cache)
+  let iframe = document.getElementById('print-iframe');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.id = 'print-iframe';
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+  }
+
+  const w = iframe.contentWindow || iframe.contentDocument;
+  const doc = w.document || iframe.contentDocument;
+
+  doc.open();
+  doc.write(`
     <html>
     <head>
     <meta charset="UTF-8">
@@ -1450,7 +1498,7 @@ function printNsclReport() {
       @media print { body { padding:0; } }
     </style>
     </head>
-    <body onload="setTimeout(function(){window.print();window.close();},500);">
+    <body>
 
       <div class="lh">
         <img src="${lhUrl}" class="lh-img"
@@ -1513,7 +1561,13 @@ function printNsclReport() {
     </body>
     </html>
   `);
-  w.document.close();
+  doc.close();
+
+  // Gọi lệnh in trực tiếp từ Iframe khi nội dung được ghi nhận
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+  }, 100);
 }
 
 // ══════════════════════════════════════════════
