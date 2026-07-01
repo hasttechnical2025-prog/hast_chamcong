@@ -608,6 +608,12 @@ async function sendApproval(id, approveStatus, note) {
     item.approveNote = note;
     item.approveTime = approveStatus === 'Chờ' ? '' : new Date().toLocaleString('vi-VN');
 
+    // Đồng bộ vào _recordMap để tab NSCL "thấy" ngay trạng thái vừa duyệt (mở/khóa ô chấm).
+    const _rk = item.name.toLowerCase() + '_' + dbDate;
+    if (!_recordMap[_rk]) _recordMap[_rk] = { employee_name: item.name, date: dbDate, grades: item.grade || 'D,D,D,D' };
+    _recordMap[_rk].approve_status = approveStatus;
+    if (item.reason != null) _recordMap[_rk].justification = item.reason;
+
     renderTable();
     updateStats();
 
@@ -912,10 +918,23 @@ function renderNsclTable() {
 
       // view_all không được sửa điểm phòng khác -> khóa ô
       if (!canEditEmp) readonly = 'readonly';
+
+      // Chặn chấm theo trạng thái duyệt giải trình (chỉ TBP; Admin bỏ qua).
+      // Ngày có công B/D mà giải trình đang Chờ/Từ chối -> khóa ô + tô sọc đỏ + tooltip.
+      let blockCls = '', blockAttr = '';
+      if (canEditEmp && tdClass === '') {
+        const _blk = _nsclJustBlock(emp.name, curDateYMD);
+        if (_blk.blocked) {
+          readonly = 'readonly';
+          blockCls = ' nv-block';
+          blockAttr = ` title="Chưa chấm được: có công B/D và ${_blk.reason}. Hãy duyệt Đồng ý giải trình trước khi chấm điểm." data-block-reason="${_blk.reason}"`;
+        }
+      }
+
       const inputDisabled = readonly ? 'disabled tabindex="-1"' : '';
       // onfocus select-all: bấm vào ô là bôi đen sẵn -> gõ đè hoặc Delete xóa ngay (dễ xóa hơn)
       const oninput = readonly ? '' : 'oninput="sanitizeDayInput(this)" onfocus="this.select()"';
-      html += `<td class="${tdClass}${valClass}"><input type="text" class="nscl-input" ${readonly} ${inputDisabled} value="${val}" data-emp="${emp.name}" data-date="${curDateYMD}" ${oninput} onblur="saveNsclScore(this)"></td>`;
+      html += `<td class="${tdClass}${valClass}${blockCls}"${blockAttr}><input type="text" class="nscl-input" ${readonly} ${inputDisabled} value="${val}" data-emp="${emp.name}" data-date="${curDateYMD}" ${oninput} onblur="saveNsclScore(this)"></td>`;
     }
 
     // Điểm +/- (lưu trên bản ghi ngày 01, cộng thẳng vào cột Điểm tổng)
@@ -1009,6 +1028,16 @@ async function saveNsclScore(inputEl) {
       showToast('⚠️ Bạn chỉ được chấm điểm cho phòng của mình.', 'error');
       return;
     }
+  }
+
+  // Chặn chấm khi ngày có công B/D mà giải trình chưa được Đồng ý (chỉ TBP; Admin bỏ qua).
+  // Hoàn tác giá trị vừa gõ và báo lý do.
+  const _blk = _nsclJustBlock(empName, dateYMD);
+  if (_blk.blocked) {
+    const _r0 = _recordMap[empName.toLowerCase() + '_' + dateYMD];
+    inputEl.value = (_r0 && _r0.nscl_score) ? _r0.nscl_score : '';
+    showToast('🔒 Chưa chấm được: ' + empName + ' có công B/D và ' + _blk.reason + '. Hãy duyệt Đồng ý giải trình trước.', 'error');
+    return;
   }
 
   let val = inputEl.value.trim();
@@ -1160,18 +1189,30 @@ async function autofillPoints10() {
   // Chỉ lấy ô chấm điểm ngày (có data-date), KHÔNG đụng tới ô Điểm +/- (pm-input)
   const inputs = document.querySelectorAll('.nscl-input[data-date]');
   let count = 0, skippedFuture = 0;
+  const blockedList = []; // các ô bị chặn do giải trình chưa duyệt
   showToast('⏳ Đang tự động rải điểm 10...');
 
   for (let i = 0; i < inputs.length; i++) {
     const inp = inputs[i];
     if (inp.classList.contains('pm-input')) continue; // bỏ qua cột Điểm +/-
-    if (inp.readOnly) continue; // Ngày lễ
+    const td = inp.parentElement;
+    const parentCls = td.className;
+    const dateStr = inp.getAttribute('data-date') || '';
+
+    // Ô bị chặn do có công B/D mà giải trình chưa Đồng ý -> gom báo cáo, KHÔNG chấm.
+    // (Chỉ liệt kê ô lẽ ra sẽ điền: ngày quá khứ/hôm nay và đang trống.)
+    if (parentCls.includes('nv-block')) {
+      if (dateStr <= todayStr && (inp.value || '') === '') {
+        blockedList.push({ emp: inp.getAttribute('data-emp'), date: dateStr, reason: td.getAttribute('data-block-reason') || '' });
+      }
+      continue;
+    }
+
+    if (inp.readOnly) continue; // Ngày lễ / chưa vào làm / phòng khác
     // Bỏ qua nếu là T7/CN
-    const parentCls = inp.parentElement.className;
     if (parentCls.includes('t7') || parentCls.includes('cn')) continue;
 
     // Bỏ qua ngày trong tương lai (chỉ điền đến hết ngày hôm nay)
-    const dateStr = inp.getAttribute('data-date') || '';
     if (dateStr > todayStr) { skippedFuture++; continue; }
 
     if (inp.value === '') {
@@ -1182,7 +1223,11 @@ async function autofillPoints10() {
   }
   let msg = `✅ Đã rải tự động thành công ${count} điểm 10!`;
   if (skippedFuture > 0) msg += ` (Bỏ qua ${skippedFuture} ô của những ngày chưa tới.)`;
-  showToast(msg, 'success');
+  if (blockedList.length > 0) msg += ` — ⚠️ ${blockedList.length} ô chưa chấm do giải trình chưa duyệt.`;
+  showToast(msg, blockedList.length > 0 ? '' : 'success');
+
+  // Hiện bảng tổng hợp các trường hợp không chấm được
+  if (blockedList.length > 0) _showNsclBlockReport(blockedList);
 }
 
 // Cấu hình bản in NSCL (có thể chỉnh từ admin_new.html, lưu ở admin_settings)
@@ -1228,6 +1273,75 @@ function _nsclSignerName(dept) {
 function _nsclCurrentDept() {
   if (!_isAdmin) return _tbpDept;
   return (document.getElementById('sel-dept') || {}).value || '';
+}
+
+// ── Ghép nối NSCL ↔ Duyệt giải trình ─────────────────────────────────────────
+// Một ô ngày bị CHẶN chấm khi: ngày có công B/D (cần giải trình) VÀ giải trình đang
+// 'Chờ' (chưa GT hoặc chờ duyệt) hoặc 'Từ chối'. Đã 'Đồng ý' hoặc ngày toàn A -> cho chấm.
+// Admin được bỏ qua hoàn toàn. Trả về { blocked, reason }.
+function _nsclJustBlock(empName, dateYMD) {
+  if (_isAdmin) return { blocked: false, reason: '' };
+  const r = _recordMap[empName.toLowerCase() + '_' + dateYMD];
+  const grades = (r && r.grades) ? r.grades : 'D,D,D,D'; // không có bản ghi = vắng cả ngày
+  const ga = grades.split(',').map(s => s.trim());
+  const hasBD = ga.includes('B') || ga.includes('D');
+  if (!hasBD) return { blocked: false, reason: '' };
+  const st = (r && r.approve_status) ? r.approve_status : 'Chờ';
+  if (st === 'Đồng ý') return { blocked: false, reason: '' };
+  let reason;
+  if (st === 'Từ chối') reason = 'giải trình bị TỪ CHỐI';
+  else {
+    const hasReason = !!(r && r.justification && String(r.justification).trim());
+    reason = hasReason ? 'giải trình đang CHỜ DUYỆT' : 'CHƯA thực hiện giải trình';
+  }
+  return { blocked: true, reason: reason };
+}
+
+// Bảng tổng hợp các trường hợp KHÔNG chấm được sau khi bấm "Điền nhanh điểm 10".
+function _showNsclBlockReport(list) {
+  if (!list || !list.length) return;
+  const fmt = ymd => { const p = ymd.split('-'); return p[2] + '/' + p[1]; };
+  list.sort((a, b) => a.emp.localeCompare(b.emp, 'vi') || a.date.localeCompare(b.date));
+  let rows = '';
+  list.forEach((x, i) => {
+    rows += `<tr>
+      <td style="text-align:center;color:#888;">${i + 1}</td>
+      <td style="font-weight:600;">${escHtml(x.emp)}</td>
+      <td style="text-align:center;white-space:nowrap;">${fmt(x.date)}</td>
+      <td style="color:#c5221f;">${escHtml(x.reason)}</td></tr>`;
+  });
+  const old = document.getElementById('nscl-block-overlay');
+  if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'nscl-block-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1002;display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.25);">
+      <div style="padding:18px 20px 10px;">
+        <h3 style="margin:0 0 4px;font-size:16px;color:#c5221f;">🔒 ${list.length} trường hợp CHƯA chấm được điểm</h3>
+        <p style="margin:0;font-size:12.5px;color:#666;line-height:1.5;">Các ngày dưới đây <b>có công B/D</b> nhưng giải trình <b>chưa được Đồng ý</b> nên hệ thống bỏ qua khi điền nhanh. Hãy duyệt giải trình rồi chấm lại.</p>
+      </div>
+      <div style="overflow:auto;padding:0 20px;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="position:sticky;top:0;background:#f8f9fa;">
+            <th style="padding:7px 6px;text-align:center;border-bottom:2px solid #e8eaed;">#</th>
+            <th style="padding:7px 6px;text-align:left;border-bottom:2px solid #e8eaed;">Họ tên</th>
+            <th style="padding:7px 6px;text-align:center;border-bottom:2px solid #e8eaed;">Ngày</th>
+            <th style="padding:7px 6px;text-align:left;border-bottom:2px solid #e8eaed;">Lý do</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="padding:14px 20px 18px;text-align:right;">
+        <button id="nscl-block-close" style="background:#1a73e8;color:#fff;border:none;border-radius:9px;padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer;">Đã hiểu</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('#nscl-block-close').addEventListener('click', close);
+  // Tô nhẹ hàng tbody
+  ov.querySelectorAll('tbody tr td').forEach(td => { td.style.padding = '7px 6px'; td.style.borderBottom = '1px solid #f1f3f4'; });
 }
 
 async function signAndLockNscl() {
