@@ -608,6 +608,30 @@ serve(async (req) => {
       });
     }
 
+    // 7a2. ENDPOINT: /admin/employees (ĐỌC danh sách nhân viên ĐẦY ĐỦ - CHỈ Admin tối cao)
+    // Trả về cả cột nhạy cảm (token, telegram_chat_id) mà anon KHÔNG được đọc trực tiếp.
+    // Nhờ vậy trang quản trị lấy được token để in QR + telegram_chat_id để hiển thị, mà
+    // token vẫn KHÔNG lộ ra role anon/authenticated (chống chấm hộ - xem §7).
+    if (path.endsWith("/admin/employees")) {
+      if (meta.type !== "admin" || meta.role !== "admin") {
+        return new Response(JSON.stringify({ error: "Chỉ Admin hệ thống mới được xem đầy đủ thông tin nhân viên" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      const { data, error } = await supabase
+        .from("chamcong_employees")
+        .select("*")
+        .order("id", { ascending: true });
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ success: true, data: data || [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     // 7b. ENDPOINT: /admin/account (Quản lý tài khoản TBP/Admin - CHỈ admin tối cao)
     // Gọi RPC qua service_role; RPC đã bị thu hồi execute khỏi public/authenticated
     // -> chỉ admin (qua đây) mới tạo/sửa/xóa/đổi mật khẩu tài khoản. Chống leo thang quyền.

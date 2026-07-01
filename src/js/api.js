@@ -84,6 +84,15 @@ export async function adminWrite(table, action, data, eqColumn, eqValue) {
 }
 
 /**
+ * Đọc danh sách nhân viên ĐẦY ĐỦ (gồm token, telegram_chat_id) — chỉ Admin.
+ * Đi qua Edge Function service_role để không lộ cột nhạy cảm ra role anon.
+ * @returns {Promise<{success?:boolean, data?:Array, error?:string}>}
+ */
+export async function adminReadEmployees() {
+  return await callApi('/admin/employees', {});
+}
+
+/**
  * Quản lý tài khoản TBP/Admin (chỉ admin) qua Edge Function — chống leo thang quyền.
  * @param {'list'|'save'|'delete'|'password'} op
  * @param {Object} [payload] - { username, password, role, department, id }

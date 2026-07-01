@@ -1,6 +1,6 @@
 import { supabaseClient } from './supabaseClient.js';
 import { SUPABASE_KEY } from './config.js';
-import { adminWrite, loginAdmin, adminAccount } from './api.js';
+import { adminWrite, loginAdmin, adminAccount, adminReadEmployees } from './api.js';
 import { setSupabaseToken } from './supabaseClient.js';
 
 
@@ -443,13 +443,11 @@ let allEmployees = [];
 
 async function loadEmployees() {
   try {
-    const { data, error } = await supabaseClient
-      .from('chamcong_employees')
-      .select('*')
-      .order('name');
-
-    if (error) throw error;
-    allEmployees = data || [];
+    // Đọc qua Edge Function (service_role, chỉ Admin) để lấy ĐỦ cột token +
+    // telegram_chat_id — anon bị chặn 2 cột này để chống lộ token (chấm hộ).
+    const res = await adminReadEmployees();
+    if (res.error) throw new Error(res.error);
+    allEmployees = (res.data || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
     renderEmployeeTable();
   } catch(e) {
     document.getElementById('emp-table-body').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#c5221f;">❌ Lỗi: ${e.message}</td></tr>`;
