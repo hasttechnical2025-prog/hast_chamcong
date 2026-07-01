@@ -762,8 +762,11 @@ function renderNsclTable() {
   if (_titleEl) {
     _titleEl.innerHTML =
       `BẢNG CHẤM CÔNG & CHẤM ĐIỂM NSCL THÁNG ${padStr(selMonth)} NĂM ${selYear}`;
-    // Báo trạng thái đã ký & khóa cho phòng đang xem (TBP/view_all)
-    const _vd = _isAdmin ? ((document.getElementById('sel-dept') || {}).value || '') : _tbpDept;
+    // Báo trạng thái đã ký & khóa cho phòng ĐANG XEM.
+    // - Admin & TBP KTHC (view_all): theo phòng đang lọc ở dropdown (chọn "Toàn Công ty"
+    //   -> để trống -> KHÔNG hiện banner; chọn 1 phòng cụ thể -> hiện khóa của phòng đó).
+    // - TBP thường: theo phòng của chính họ.
+    const _vd = (_isAdmin || _viewAll) ? ((document.getElementById('sel-dept') || {}).value || '') : _tbpDept;
     const _lk = _vd && _nsclLocks[_vd];
     if (_lk) {
       _titleEl.innerHTML += `<div style="font-size:11px;color:#137333;font-weight:600;margin-top:2px;">🔏 Đã ký & khóa bởi ${escHtml(_lk.nguoi_ky || '')}${_lk.thoi_gian_ky ? ' lúc ' + new Date(_lk.thoi_gian_ky).toLocaleString('vi-VN') : ''}${_isAdmin ? ' — Admin có thể "Mở khóa" để chấm lại' : ''}</div>`;
