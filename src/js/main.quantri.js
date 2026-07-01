@@ -1,4 +1,4 @@
-import { supabaseClient, recreateSupabaseClient } from './supabaseClient.js';
+import { supabaseClient } from './supabaseClient.js';
 import { SUPABASE_KEY } from './config.js';
 import { adminWrite, loginAdmin, adminAccount } from './api.js';
 import { setSupabaseToken } from './supabaseClient.js';
@@ -57,20 +57,10 @@ function populateShiftDropdowns() {
 
 
 function initSupabase() {
-  const url = document.getElementById('supaUrl').value.trim();
-  const key = document.getElementById('supaKey').value.trim();
-  if (url && key) {
-    try {
-      recreateSupabaseClient(url, key);
-      _isClientReady = true;
-      updateDeployStatusCard();
-    } catch(e) {
-      console.log('Lỗi Init Supabase Client:', e);
-      _isClientReady = false;
-    }
-  } else {
-    _isClientReady = false;
-  }
+  // Client đọc dùng anon key nhúng sẵn (config.js) — luôn sẵn sàng, không cần nhập URL/Key.
+  // Mọi ghi đi qua Edge Function với JWT (api.js). Giữ hàm để tương thích các nơi đang gọi.
+  _isClientReady = true;
+  updateDeployStatusCard();
 }
 
 // ============================================================
@@ -179,7 +169,6 @@ function clearConsole() {
 // Lưu & Tải Cấu hình
 async function saveSystemConfig() {
   const config = {
-    supaUrl: document.getElementById('supaUrl').value.trim(),
     companyName: document.getElementById('companyName').value.trim(),
     officeName: document.getElementById('officeName').value.trim(),
     companyAddress: document.getElementById('companyAddress').value.trim(),
@@ -229,22 +218,15 @@ function loadSavedConfig() {
   if (saved) {
     const config = JSON.parse(saved);
 
-    // Xoá bỏ các khoá nhạy cảm nếu đã lỡ lưu từ trước
+    // Xoá bỏ các khoá nhạy cảm/thừa nếu đã lỡ lưu từ trước (supaUrl/supaKey không còn dùng)
     let needsUpdate = false;
-    if (config.supaKey !== undefined) {
-      delete config.supaKey;
-      needsUpdate = true;
-    }
-    if (config.ghToken !== undefined) {
-      delete config.ghToken;
-      needsUpdate = true;
-    }
+    ['supaKey', 'supaUrl', 'ghToken'].forEach(k => {
+      if (config[k] !== undefined) { delete config[k]; needsUpdate = true; }
+    });
     if (needsUpdate) {
       localStorage.setItem('hstc_admin_config', JSON.stringify(config));
     }
 
-    document.getElementById('supaUrl').value = config.supaUrl || '';
-    document.getElementById('supaKey').value = ''; // Yêu cầu nhập thủ công
     document.getElementById('companyName').value = config.companyName || 'CHẤM CÔNG CBNV';
     document.getElementById('officeName').value = config.officeName || 'Siêu Thanh Hà Nội';
     document.getElementById('companyAddress').value = config.companyAddress || 'Số 5 Nguyễn Ngọc Vũ, Phường Thanh Xuân, TP Hà Nội';
