@@ -145,7 +145,7 @@ function switchTab(tabId, tabElement) {
     if (tabId === 'guide') loadGuideContent();
   } else {
     if (tabId !== 'config' && tabId !== 'deploy') {
-      alert('Vui lòng kết nối cấu hình Supabase ở tab "Cấu Hình Hệ Thống" trước khi truy cập dữ liệu!');
+      alert('Vui lòng kết nối cấu hình hệ thống ở tab "Cấu Hình Hệ Thống" trước khi truy cập dữ liệu!');
       switchTab('config');
       document.querySelectorAll('.nav-tab').forEach(t => {
         if(t.textContent.includes('Cấu Hình')) t.classList.add('active');
@@ -207,9 +207,9 @@ async function saveSystemConfig() {
     );
 
     await Promise.all(promises);
-    alert('💾 Đã lưu cấu hình và đồng bộ lên Supabase thành công!');
+    alert('💾 Đã lưu cấu hình và đồng bộ lên hệ thống thành công!');
   } catch (e) {
-    alert('⚠️ Đã lưu cấu hình ở trình duyệt nhưng lỗi đồng bộ lên Supabase: ' + e.message);
+    alert('⚠️ Đã lưu cấu hình ở trình duyệt nhưng lỗi đồng bộ lên hệ thống: ' + e.message);
   }
 }
 
@@ -364,7 +364,7 @@ async function loadNsclPrintCfg(){
 function resetNsclPrintCfg(){ _pcfgSet(PCFG_DEFAULTS); }
 
 async function saveNsclPrintCfg(){
-  if(!_isClientReady){ alert('Chưa kết nối Supabase!'); return; }
+  if(!_isClientReady){ alert('Chưa kết nối hệ thống!'); return; }
   const cfg = {
     fontName:  Math.min(16, Math.max(8,  parseInt(document.getElementById('pcfg-fontName').value,10)  || 11)),
     fontData:  Math.min(16, Math.max(8,  parseInt(document.getElementById('pcfg-fontData').value,10)  || 11)),
@@ -398,7 +398,7 @@ async function saveNsclPrintCfg(){
       + "values ('nscl_print_config', '" + json.replace(/'/g, "''") + "');";
     window.prompt(
       '⚠️ Bảng admin_settings chưa cho phép tạo dòng mới (RLS).\n' +
-      'Hãy COPY câu lệnh SQL bên dưới, dán vào Supabase → SQL Editor → Run (chạy 1 lần duy nhất).\n' +
+      'Hãy COPY câu lệnh SQL bên dưới, dán vào SQL Editor của cơ sở dữ liệu → Run (chạy 1 lần duy nhất).\n' +
       'Sau đó cấu hình đã được lưu; các lần sau bấm “Lưu” sẽ cập nhật bình thường.',
       sql
     );
@@ -421,14 +421,14 @@ function updateDeployStatusCard() {
   const statusEl = document.getElementById('deploy-cfg-status');
   if (_isClientReady) {
     statusEl.innerHTML = `
-      <div style="margin-bottom:8px;">🟢 <b>Supabase:</b> Đã kết nối thành công</div>
+      <div style="margin-bottom:8px;">🟢 <b>Máy chủ dữ liệu:</b> Đã kết nối thành công</div>
       <div style="margin-bottom:8px;">📦 <b>GitHub Repo:</b> ${document.getElementById('ghUser').value}/${document.getElementById('ghRepo').value}</div>
       <div style="margin-bottom:8px;">📍 <b>Tên văn phòng:</b> ${document.getElementById('companyName').value}</div>
       <div style="margin-bottom:8px;">📏 <b>Bán kính hợp lệ:</b> ${document.getElementById('officeRadius').value} m</div>
       <div>🎯 <b>Tọa độ:</b> ${document.getElementById('officeLat').value}, ${document.getElementById('officeLng').value}</div>
     `;
   } else {
-    statusEl.innerHTML = '<span style="color:#ea4335;">🔴 Vui lòng điền và lưu cấu hình Supabase tại tab Cấu Hình.</span>';
+    statusEl.innerHTML = '<span style="color:#ea4335;">🔴 Vui lòng điền và lưu cấu hình hệ thống tại tab Cấu Hình.</span>';
   }
 }
 
@@ -1536,7 +1536,7 @@ function handleFileSelected() {
 
 async function startDeployProcess() {
   if (!_isClientReady) {
-    log('Lỗi: Chưa kết nối Supabase. Vui lòng cấu hình ở tab Cấu Hình!', 'error');
+    log('Lỗi: Chưa kết nối hệ thống. Vui lòng cấu hình ở tab Cấu Hình!', 'error');
     return;
   }
 
@@ -1636,7 +1636,7 @@ function fmtCheckedAt(s){
 }
 
 async function loadAttendanceLogs(){
-  if(!_isClientReady){ alert('Vui lòng kết nối Supabase ở tab "Cấu Hình Hệ Thống" trước!'); return; }
+  if(!_isClientReady){ alert('Vui lòng kết nối hệ thống ở tab "Cấu Hình Hệ Thống" trước!'); return; }
 
   const mSel = document.getElementById('att-month');
   const ySel = document.getElementById('att-year');

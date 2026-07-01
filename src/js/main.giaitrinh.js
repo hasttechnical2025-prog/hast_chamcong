@@ -187,7 +187,7 @@ function onDeptChange() {
 
 async function loadData() {
   var container = document.getElementById('tbl-container');
-  container.innerHTML = '<div class="empty">⏳ Đang tải dữ liệu từ Supabase...</div>';
+  container.innerHTML = '<div class="empty">⏳ Đang tải dữ liệu...</div>';
 
   var selMonth = document.getElementById('sel-month');
   var selYear  = document.getElementById('sel-year');
@@ -707,7 +707,7 @@ async function confirmBatch() {
   document.getElementById('batch-actions').style.display  = 'none';
   document.getElementById('progress-wrap').style.display  = 'block';
   document.getElementById('progress-label').style.display = 'block';
-  document.getElementById('progress-label').textContent   = 'Đang xử lý trên Supabase...';
+  document.getElementById('progress-label').textContent   = 'Đang xử lý...';
 
   try {
     // Chạy song song N lần duyệt lên Supabase qua Promise.all.
