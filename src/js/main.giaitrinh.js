@@ -1313,7 +1313,8 @@ function _showExportBlocked(depts, month, year) {
  * Xuất file .xlsx bảng công TOÀN CÔNG TY của tháng đang chọn.
  * - Ngày công chuẩn  = số ngày thường (trừ T7/CN) tính TỪ ngày vào làm đến hết tháng.
  * - Ngày công thực tế = (số ngày điểm > 5) x 1 + (số ngày điểm <= 5) x 0.5.
- * - Ngày nghỉ P/Ô/N  = tổng ngày P + Ô + N rơi vào ngày thường (ngày lễ hiển thị N).
+ * - Ngày nghỉ P/Ô/N  = tổng ngày P + Ô + N rơi vào ngày thường (ngày lễ hiển thị N),
+ *   CỘNG thêm 0.5 cho mỗi ngày điểm <= 5 (nửa ngày phép) -> thực tế + nghỉ = chuẩn.
  * Bắt buộc mọi phòng ban đã Ký & Khóa mới cho xuất.
  */
 function exportNsclExcel() {
@@ -1366,7 +1367,13 @@ function exportNsclExcel() {
       if (val === 'P' || val === 'Ô' || val === 'N') { nghi++; continue; }
 
       const num = parseFloat(val);
-      if (!isNaN(num)) thucTe += (num > 5 ? 1 : 0.5);
+      if (!isNaN(num)) {
+        // Điểm > 5  = trọn 1 công.
+        // Điểm <= 5 = nửa công thực tế + nửa ngày phép
+        // -> (thực tế + nghỉ) luôn khớp đúng Ngày công chuẩn.
+        if (num > 5) { thucTe += 1; }
+        else { thucTe += 0.5; nghi += 0.5; }
+      }
     }
 
     aoa.push([
@@ -1374,7 +1381,7 @@ function exportNsclExcel() {
       emp.department || '',
       chuan,
       Math.round(thucTe * 10) / 10,
-      nghi
+      Math.round(nghi * 10) / 10
     ]);
   });
 
