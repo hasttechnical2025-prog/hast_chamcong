@@ -94,6 +94,9 @@ function logout() {
 function showMainScreen() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-screen').style.display  = 'flex';
+  // Nút "Xuất Excel" chỉ dành cho tài khoản Kế toán-Hành chính (view_all)
+  const _btnX = document.getElementById('btn-export-excel');
+  if (_btnX) _btnX.style.display = _viewAll ? 'flex' : 'none';
 }
 
 function openChangePassword() {
@@ -1273,6 +1276,121 @@ function _nsclSignerName(dept) {
   return tbp ? tbp.name : dept;
 }
 // Phòng đang thao tác: TBP -> phòng mình; admin -> phòng đang chọn ở dropdown.
+// ══════════════════════════════════════════════
+// XUẤT EXCEL BẢNG CÔNG (chỉ tài khoản Kế toán-Hành chính)
+// ══════════════════════════════════════════════
+// Popup báo còn phòng chưa Ký & Khóa -> kế toán biết cần giục phòng nào.
+function _showExportBlocked(depts, month, year) {
+  const pad = n => n < 10 ? '0' + n : '' + n;
+  const items = depts.map(d => `<li style="margin:3px 0;">${escHtml(d)}</li>`).join('');
+  const old = document.getElementById('nscl-export-overlay');
+  if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'nscl-export-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1002;display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:22px 22px 18px;box-shadow:0 8px 32px rgba(0,0,0,.25);">
+      <h3 style="margin:0 0 6px;font-size:16px;color:#c5221f;">🔒 Chưa thể xuất Excel</h3>
+      <p style="margin:0 0 12px;font-size:13.5px;color:#3c4043;line-height:1.55;">
+        Bảng điểm NSCL tháng <b>${pad(month)}/${year}</b> phải được <b>Ký &amp; Khóa ở TẤT CẢ phòng ban</b> thì số liệu mới đủ tin cậy để làm lương.
+        Hiện còn <b>${depts.length}</b> phòng chưa ký:
+      </p>
+      <ul style="margin:0 0 14px;padding-left:20px;font-size:14px;color:#c5221f;font-weight:600;">${items}</ul>
+      <p style="margin:0 0 16px;font-size:12.5px;color:#666;line-height:1.5;">
+        Vui lòng nhắc TBP các phòng trên vào tab <b>Bảng Điểm NSCL</b> → bấm <b>🔏 Ký &amp; Khóa</b>. Sau đó bấm <b>Tải lại</b> rồi xuất Excel.
+      </p>
+      <div style="text-align:right;">
+        <button id="nscl-export-close" style="background:#1a73e8;color:#fff;border:none;border-radius:9px;padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer;">Đã hiểu</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('#nscl-export-close').addEventListener('click', close);
+}
+
+/**
+ * Xuất file .xlsx bảng công TOÀN CÔNG TY của tháng đang chọn.
+ * - Ngày công chuẩn  = số ngày thường (trừ T7/CN) tính TỪ ngày vào làm đến hết tháng.
+ * - Ngày công thực tế = (số ngày điểm > 5) x 1 + (số ngày điểm <= 5) x 0.5.
+ * - Ngày nghỉ P/Ô/N  = tổng ngày P + Ô + N rơi vào ngày thường (ngày lễ hiển thị N).
+ * Bắt buộc mọi phòng ban đã Ký & Khóa mới cho xuất.
+ */
+function exportNsclExcel() {
+  if (!_viewAll) { showToast('⚠️ Chỉ tài khoản Kế toán-Hành chính mới xuất được file này.', 'error'); return; }
+  if (typeof XLSX === 'undefined') {
+    showToast('❌ Chưa tải được thư viện Excel. Kiểm tra kết nối mạng rồi tải lại trang.', 'error');
+    return;
+  }
+
+  const selMonth = parseInt(document.getElementById('sel-month').value, 10);
+  const selYear  = parseInt(document.getElementById('sel-year').value, 10);
+  const pad = n => n < 10 ? '0' + n : '' + n;
+  const daysInMonth = new Date(selYear, selMonth, 0).getDate();
+
+  // Luôn xuất TOÀN CÔNG TY, không phụ thuộc bộ lọc phòng ban đang xem
+  const emps = (_allActiveEmployees || []).slice();
+  if (emps.length === 0) { showToast('⚠️ Không có CBNV để xuất.', 'error'); return; }
+
+  // 1) Chặn nếu còn phòng ban chưa Ký & Khóa
+  const depts = Array.from(new Set(emps.map(e => e.department).filter(Boolean)));
+  const unsigned = depts.filter(d => !_nsclLocks[d]).sort((a, b) => a.localeCompare(b, 'vi'));
+  if (unsigned.length > 0) { _showExportBlocked(unsigned, selMonth, selYear); return; }
+
+  // 2) Tính số liệu từng CBNV
+  emps.sort((a, b) =>
+    (a.department || '').localeCompare(b.department || '', 'vi') ||
+    (a.name || '').localeCompare(b.name || '', 'vi'));
+
+  const aoa = [['Họ tên', 'Phòng ban', 'Ngày công chuẩn', 'Ngày công thực tế', 'Ngày nghỉ phép/Lễ tết/Chế độ']];
+
+  emps.forEach(emp => {
+    let chuan = 0, thucTe = 0, nghi = 0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ymd = `${selYear}-${pad(selMonth)}-${pad(d)}`;
+      const dow = new Date(ymd).getDay();
+      if (dow === 0 || dow === 6) continue;                        // bỏ Thứ 7 / Chủ Nhật
+      if (emp.ngay_vao_lam && ymd < emp.ngay_vao_lam) continue;    // chưa vào làm -> không tính
+
+      chuan++; // ngày công chuẩn: ngày thường kể từ ngày vào làm (ngày lễ vẫn tính, sẽ vào cột nghỉ)
+
+      const r = _recordMap[emp.name.toLowerCase() + '_' + ymd];
+      let val = (r && r.nscl_score) ? String(r.nscl_score).trim() : '';
+      const up = val.toUpperCase();
+      if (up === 'P') val = 'P';
+      else if (up === 'Ô' || up === 'O') val = 'Ô';
+      else if (up === 'N') val = 'N';
+      if (_holidaysMap && _holidaysMap.has(ymd)) val = 'N';        // ngày lễ -> N
+
+      if (val === 'P' || val === 'Ô' || val === 'N') { nghi++; continue; }
+
+      const num = parseFloat(val);
+      if (!isNaN(num)) thucTe += (num > 5 ? 1 : 0.5);
+    }
+
+    aoa.push([
+      emp.name,
+      emp.department || '',
+      chuan,
+      Math.round(thucTe * 10) / 10,
+      nghi
+    ]);
+  });
+
+  // 3) Dựng file .xlsx
+  try {
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{ wch: 26 }, { wch: 20 }, { wch: 16 }, { wch: 18 }, { wch: 30 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `T${pad(selMonth)}-${selYear}`);
+    XLSX.writeFile(wb, `Bang_cong_NSCL_T${pad(selMonth)}_${selYear}.xlsx`);
+    showToast(`📊 Đã xuất Excel bảng công tháng ${pad(selMonth)}/${selYear} (${aoa.length - 1} CBNV).`, 'success');
+  } catch (e) {
+    showToast('❌ Lỗi xuất Excel: ' + e.message, 'error');
+  }
+}
+
 function _nsclCurrentDept() {
   if (!_isAdmin) return _tbpDept;
   return (document.getElementById('sel-dept') || {}).value || '';
@@ -1781,6 +1899,7 @@ document.addEventListener('click', function(e) {
     signAndLockNscl: () => signAndLockNscl(),
     unlockNscl: () => unlockNscl(),
     printNsclReport: () => printNsclReport(),
+    exportNsclExcel: () => exportNsclExcel(),
     closeUndo: () => closeUndo(),
     confirmUndo: () => confirmUndo(),
     closeReject: () => closeReject(),

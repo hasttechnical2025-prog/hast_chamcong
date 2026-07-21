@@ -12,6 +12,8 @@
 
 <!-- Supabase JS Client SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Thư viện tạo file .xlsx cho nút Xuất Excel (chỉ dùng ở tab Bảng Điểm NSCL) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 
 
@@ -160,6 +162,9 @@
         <button class="btn-nscl-action" data-action="signAndLockNscl" data-args="" style="background:#137333; color:#fff;">🔏 Ký & Khóa</button>
         <button class="btn-nscl-action" data-action="unlockNscl" data-args="" style="background:#b06000; color:#fff;">🔓 Mở khóa</button>
         <button class="btn-nscl-action" data-action="printNsclReport" data-args="">🖨️ In Bảng Điểm NSCL</button>
+        <!-- Chỉ hiện với tài khoản Kế toán-Hành chính (view_all) — bật trong main.giaitrinh.js -->
+        <button class="btn-nscl-action" id="btn-export-excel" data-action="exportNsclExcel" data-args=""
+          style="background:#0f7b3f; color:#fff; display:none;">📊 Xuất Excel</button>
       </div>
     </div>
 
@@ -261,7 +266,7 @@
   </div>
 </div>
 
-<script type="module" src="../src/js/main.giaitrinh.js?v=21"></script>
+<script type="module" src="../src/js/main.giaitrinh.js?v=22"></script>
 
 </body>
 </html>
