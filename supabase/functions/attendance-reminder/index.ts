@@ -77,12 +77,15 @@ serve(async (req) => {
     }
 
     // ── Lấy danh sách nhân viên Active (Bảng public.chamcong_employees) ──
-    const { data: emps, error: empErr } = await supabase
+    const { data: empsRaw, error: empErr } = await supabase
       .from("chamcong_employees")
-      .select("name, telegram_chat_id, status, loai_ca")
+      .select("name, telegram_chat_id, status, loai_ca, mien_cham_cong")
       .or('status.is.null,status.ilike.%đang%,status.ilike.%active%,status.ilike.%làm%');
 
-    if (empErr || !emps) throw empErr || new Error("No employees found");
+    if (empErr || !empsRaw) throw empErr || new Error("No employees found");
+
+    // Bỏ qua người được MIỄN CHẤM CÔNG (TGĐ, lái xe, bảo vệ kho...) — không nhắc nhở họ
+    const emps = empsRaw.filter((e: any) => !e.mien_cham_cong);
 
     // ── Lấy Record của ngày hôm nay (Bảng public.chamcong_attendance_records) ──
     const { data: records, error: recErr } = await supabase
@@ -179,7 +182,9 @@ serve(async (req) => {
 
     // Gửi thông báo tổng hợp lên Group công ty
     let totalNotified = 0;
-    const [y, m, d] = today.split("-");
+    // Đặt tên khác y/m/d để KHÔNG trùng biến `m` (số phút hiện tại) đã khai báo ở trên
+    // -> trùng tên trong cùng phạm vi sẽ gây SyntaxError, function không khởi động được.
+    const [gYear, gMonth, gDay] = today.split("-");
     const groupMsgs = Object.keys(absentBySession).map(sessionName => {
       const list = absentBySession[sessionName];
       totalNotified += list.length;
@@ -191,7 +196,7 @@ serve(async (req) => {
       else if (sessionName === "Chiều OUT") timeRangeMsg = "vào lúc 17:15";
 
       const groupMsg = `📢 <b>Nhắc nhở chấm công [${sessionName}]</b>\n`
-        + `📅 Ngày: ${d}/${m}/${y}\n`
+        + `📅 Ngày: ${gDay}/${gMonth}/${gYear}\n`
         + `🕒 Thời gian quét: ${timeRangeMsg}\n\n`
         + `<b>Danh sách CBNV chưa chấm công:</b>\n`
         + list.map((name, i) => `${i + 1}. ${name}`).join("\n");

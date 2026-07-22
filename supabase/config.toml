@@ -6,3 +6,8 @@ project_id = "hast_chamcong"
 # Giữ dòng này để mọi lần `supabase functions deploy api` đều không bật lại verify_jwt.
 [functions.api]
 verify_jwt = false
+
+# Function attendance-reminder được pg_cron gọi qua net.http_post (không kèm JWT người dùng).
+# Bật verify_jwt sẽ làm cron bị chặn 401 -> bot ngừng nhắc chấm công. Giữ tắt.
+[functions.attendance-reminder]
+verify_jwt = false

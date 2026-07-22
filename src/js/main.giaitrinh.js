@@ -233,7 +233,7 @@ async function loadData() {
     // 1. Lấy thông tin phòng ban của tất cả Employees (Thêm điều kiện status active)
     const { data: emps, error: empErr } = await supabaseClient
       .from('chamcong_employees')
-      .select('name, department, status, role, ngay_vao_lam');
+      .select('name, department, status, role, ngay_vao_lam, mien_cham_cong');
 
     if (empErr) throw empErr;
 
@@ -342,6 +342,10 @@ async function loadData() {
 
         // TBP: Lọc theo phòng ban TBP quản lý
         if (!_isAdmin && !_viewAll && _tbpDept && userDept !== _tbpDept) return;
+
+        // Miễn chấm công (TGĐ, lái xe, bảo vệ kho...): không cần chấm công GPS nên
+        // KHÔNG sinh dòng giải trình nào — họ vẫn được chấm điểm NSCL bình thường.
+        if (e.mien_cham_cong) return;
 
         // Chưa vào làm: bỏ qua các ngày trước ngày vào làm (không sinh record D, không cần giải trình)
         if (e.ngay_vao_lam && curDateYMD < e.ngay_vao_lam) return;
@@ -1683,6 +1687,9 @@ function _nsclCurrentDept() {
 // Admin được bỏ qua hoàn toàn. Trả về { blocked, reason }.
 function _nsclJustBlock(empName, dateYMD) {
   if (_isAdmin) return { blocked: false, reason: '' };
+  // Miễn chấm công: không có dữ liệu chấm công là ĐÚNG quy định -> luôn cho chấm điểm
+  const _e = (_allActiveEmployees || []).find(x => x.name === empName);
+  if (_e && _e.mien_cham_cong) return { blocked: false, reason: '' };
   const r = _recordMap[empName.toLowerCase() + '_' + dateYMD];
   const grades = (r && r.grades) ? r.grades : 'D,D,D,D'; // không có bản ghi = vắng cả ngày
   const ga = grades.split(',').map(s => s.trim());

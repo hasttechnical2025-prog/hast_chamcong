@@ -67,9 +67,9 @@ export const GPS_EXPIRE_MS = 1 * 60 * 1000; // GPS hết hạn sau 1 phút
   // ('Đang làm việc', 'đang làm', 'active', null...). Lọc cứng = 'Đang làm việc' sẽ bỏ
   // sót người status lệch -> file cá nhân /nv không được sinh -> CBNV vào app bị 404.
   // Dùng cùng quy tắc với bot nhắc nhở (attendance-reminder) để đồng nhất.
-  const { data: emps, error: empErr } = await supabase
+  const { data: empsRaw, error: empErr } = await supabase
     .from('chamcong_employees')
-    .select('name, token, status')
+    .select('name, token, status, mien_cham_cong')
     .or('status.is.null,status.ilike.%đang%,status.ilike.%active%,status.ilike.%làm%');
 
   if (empErr) {
@@ -77,7 +77,12 @@ export const GPS_EXPIRE_MS = 1 * 60 * 1000; // GPS hết hạn sau 1 phút
     process.exit(1);
   }
 
-  console.log(`Tìm thấy ${emps.length} nhân viên active.`);
+  // Bỏ qua người MIỄN CHẤM CÔNG (TGĐ, lái xe, bảo vệ kho...) — không sinh tệp PWA/QR cho họ
+  const emps = (empsRaw || []).filter(e => !e.mien_cham_cong);
+  const soMien = (empsRaw || []).length - emps.length;
+
+  console.log(`Tìm thấy ${emps.length} nhân viên active cần tạo tệp cá nhân.`);
+  if (soMien > 0) console.log(`(Bỏ qua ${soMien} nhân viên được miễn chấm công.)`);
 
   console.log('4. Đang tạo các tệp PWA cá nhân cho iOS...');
   // Xóa thư mục nv cũ và tạo mới

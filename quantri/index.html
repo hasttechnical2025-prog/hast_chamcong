@@ -187,6 +187,16 @@
             <input type="date" id="emp-startdate">
           </div>
         </div>
+        <div class="form-group" style="margin-top:4px;">
+          <label style="display:flex; align-items:center; gap:9px; cursor:pointer; font-weight:600;">
+            <input type="checkbox" id="emp-mien-cc" style="width:17px; height:17px; cursor:pointer;">
+            <span>Miễn chấm công (TGĐ, lái xe, bảo vệ kho…)</span>
+          </label>
+          <div style="font-size:12px; color:#888; margin-top:5px; line-height:1.5; padding-left:26px;">
+            Không cần chấm công GPS, không bị bot nhắc, không sinh mã QR và không xuất hiện ở Duyệt Giải Trình
+            — nhưng <b>vẫn được chấm điểm NSCL bình thường</b>.
+          </div>
+        </div>
         <div style="display:flex; gap:10px; margin-top: 10px;">
           <button class="btn btn-blue" style="flex: 1;" data-action="saveEmployee" data-args="">💾 Lưu nhân viên</button>
           <button id="btn-emp-cancel" class="btn btn-gray" style="display:none;" data-action="cancelEmployeeEdit" data-args="">Hủy</button>
@@ -665,6 +675,6 @@
   </div>
 </div>
 
-<script type="module" src="../src/js/main.quantri.js?v=21"></script>
+<script type="module" src="../src/js/main.quantri.js?v=22"></script>
 </body>
 </html>

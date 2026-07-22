@@ -548,6 +548,7 @@ async function saveEmployee() {
   const status = document.getElementById('emp-status').value;
   const telegram = document.getElementById('emp-telegram').value.trim();
   const ngayVaoLam = document.getElementById('emp-startdate').value || null;
+  const mienCC = document.getElementById('emp-mien-cc').checked;
 
   if (!name) { alert('Vui lòng điền họ và tên nhân viên!'); return; }
 
@@ -558,7 +559,8 @@ async function saveEmployee() {
     loai_ca: loai_ca,
     status: status,
     telegram_chat_id: telegram ? parseInt(telegram) : null,
-    ngay_vao_lam: ngayVaoLam
+    ngay_vao_lam: ngayVaoLam,
+    mien_cham_cong: mienCC
   };
 
   try {
@@ -607,6 +609,7 @@ function editEmployee(id) {
 
   document.getElementById('emp-telegram').value = emp.telegram_chat_id || '';
   document.getElementById('emp-startdate').value = emp.ngay_vao_lam || '';
+  document.getElementById('emp-mien-cc').checked = !!emp.mien_cham_cong;
 
   document.getElementById('emp-form-title').textContent = '📝 Chỉnh sửa thông tin nhân viên';
   document.getElementById('btn-emp-cancel').style.display = 'inline-flex';
@@ -621,6 +624,7 @@ function cancelEmployeeEdit() {
   document.getElementById('emp-status').selectedIndex = 0;
   document.getElementById('emp-telegram').value = '';
   document.getElementById('emp-startdate').value = '';
+  document.getElementById('emp-mien-cc').checked = false;
 
   document.getElementById('emp-form-title').textContent = '👤 Thêm nhân viên mới';
   document.getElementById('btn-emp-cancel').style.display = 'none';
