@@ -1179,16 +1179,22 @@ async function saveNsclAdjust(inputEl) {
   }
 }
 
-// Điền nhanh 10
-async function autofillPoints10() {
+// Điền nhanh 10 — hỏi xác nhận bằng hộp thoại trong app
+function autofillPoints10() {
   const dept = _nsclCurrentDept();
   if (dept && _nsclLocks[dept]) {
     showToast('⚠️ Bảng điểm đã Ký và Khóa, không thể điền điểm hàng loạt.', 'error');
     return;
   }
+  _appConfirm({
+    icon: '⚡', title: 'Điền nhanh điểm 10',
+    html: 'Tự động điền <b>10 điểm</b> vào <b>tất cả ngày làm việc còn trống</b> của nhân sự đang hiển thị?' +
+          '<div style="margin-top:8px;color:#888;font-size:12.5px;">Sẽ KHÔNG điền vào những ngày chưa tới.</div>',
+    okText: 'Điền ngay'
+  }, () => _doAutofillPoints10());
+}
 
-  if (!confirm('Bạn có chắc muốn tự động điền 10 điểm vào TẤT CẢ các ngày làm việc trống của nhân sự đang hiển thị?\n(Sẽ KHÔNG điền vào những ngày trong tương lai.)')) return;
-
+async function _doAutofillPoints10() {
   // Mốc "hôm nay" theo lịch địa phương (YYYY-MM-DD) để so sánh chuỗi
   const _t = new Date();
   const _pad = n => n < 10 ? '0' + n : '' + n;
@@ -1347,38 +1353,103 @@ async function _initExportTarget() {
   } catch (e) { /* chưa liên kết */ }
 }
 
+// Hộp thoại XÁC NHẬN của riêng app — thay cho confirm() của trình duyệt.
+// onYes chạy ngay trong sự kiện click nên vẫn giữ được "user activation".
+function _appConfirm(opts, onYes) {
+  const o = opts || {};
+  const old = document.getElementById('app-confirm-overlay');
+  if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'app-confirm-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1004;display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:430px;width:100%;padding:22px;box-shadow:0 8px 32px rgba(0,0,0,.25);">
+      <h3 style="margin:0 0 10px;font-size:16px;color:${o.color || '#1a73e8'};">${o.icon || ''} ${escHtml(o.title || 'Xác nhận')}</h3>
+      <div style="font-size:13.5px;color:#3c4043;line-height:1.6;">${o.html || ''}</div>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button id="app-confirm-no" style="flex:1;padding:11px;border-radius:9px;border:none;background:#f1f3f4;color:#444;font-size:14px;font-weight:600;cursor:pointer;">${escHtml(o.cancelText || 'Hủy')}</button>
+        <button id="app-confirm-yes" style="flex:1;padding:11px;border-radius:9px;border:none;background:${o.color || '#1a73e8'};color:#fff;font-size:14px;font-weight:700;cursor:pointer;">${escHtml(o.okText || 'Đồng ý')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelector('#app-confirm-no').addEventListener('click', close);
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('#app-confirm-yes').addEventListener('click', () => { close(); onYes(); });
+}
+
+// Hộp thoại NHẬP TÊN SHEET của riêng app (không dùng prompt() của trình duyệt).
+// onConfirm được gọi NGAY trong sự kiện click để giữ "user activation" -> mở được
+// cửa sổ chọn file của trình duyệt ngay sau đó.
+function _askExportTarget(onConfirm) {
+  const old = document.getElementById('nscl-target-overlay');
+  if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'nscl-target-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1003;display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:470px;width:100%;padding:22px;box-shadow:0 8px 32px rgba(0,0,0,.25);">
+      <h3 style="margin:0 0 8px;font-size:16px;color:#1a73e8;">📁 Chọn file Excel đích</h3>
+      <p style="margin:0 0 14px;font-size:13.5px;color:#3c4043;line-height:1.55;">
+        Dữ liệu bảng công sẽ được ghi thẳng vào <b>một sheet</b> trong file Excel bạn chọn trên ổ cứng.
+      </p>
+      <label style="display:block;font-size:13px;font-weight:600;color:#5f6368;margin-bottom:6px;">Tên sheet cần ghi</label>
+      <input id="nscl-target-sheet" type="text" value="${escHtml(_expSheetName())}"
+        style="width:100%;border:1.5px solid #dadce0;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+      <div style="font-size:12px;color:#888;margin-top:6px;line-height:1.5;">
+        Trùng tên sheet có sẵn → ghi đè sheet đó. Tên mới → tạo thêm sheet mới. <b>Các sheet khác giữ nguyên.</b>
+      </div>
+      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:12.5px;color:#7a5c00;line-height:1.5;">
+        ⚠️ Bấm <b>Tiếp tục</b> → trình duyệt mở cửa sổ chọn file, rồi hỏi quyền chỉnh sửa: hãy bấm
+        <b>“Save changes”</b>. Đây là hộp thoại bảo mật của Chrome, ứng dụng không thể thay đổi.
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button id="nscl-target-cancel" style="flex:1;padding:11px;border-radius:9px;border:none;background:#f1f3f4;color:#444;font-size:14px;font-weight:600;cursor:pointer;">Hủy</button>
+        <button id="nscl-target-ok" style="flex:1;padding:11px;border-radius:9px;border:none;background:#1a73e8;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Tiếp tục</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+
+  const close = () => ov.remove();
+  ov.querySelector('#nscl-target-cancel').addEventListener('click', close);
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('#nscl-target-ok').addEventListener('click', () => {
+    const raw = (document.getElementById('nscl-target-sheet').value || '').trim();
+    close();
+    onConfirm((raw || 'BangCong').substring(0, 31));
+  });
+  setTimeout(() => {
+    const i = document.getElementById('nscl-target-sheet');
+    if (i) { i.focus(); i.select(); }
+  }, 100);
+}
+
 // Chọn file Excel đích + tên sheet cần ghi (làm 1 lần cho mỗi máy)
-async function pickExportTarget() {
+function pickExportTarget() {
   if (!_fsSupported()) {
     showToast('⚠️ Trình duyệt này không ghi thẳng vào file được. Hãy dùng Chrome/Edge, hoặc bấm "Xuất Excel" để tải file về.', 'error');
     return;
   }
-  try {
-    const [handle] = await window.showOpenFilePicker({
-      multiple: false,
-      types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
-    });
-    if (!handle) return;
-    if (!(await _expEnsurePerm(handle))) {
-      showToast('⚠️ Chưa cấp quyền chỉnh sửa file. Hãy chọn lại và bấm "Chỉnh sửa tệp".', 'error');
-      return;
+  _askExportTarget(async (sheet) => {
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        multiple: false,
+        types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
+      });
+      if (!handle) return;
+      if (!(await _expEnsurePerm(handle))) {
+        showToast('⚠️ Chưa cấp quyền chỉnh sửa file. Bấm lại "Chọn file đích" và chọn "Save changes".', 'error');
+        return;
+      }
+      await _expIdbSet(handle);
+      localStorage.setItem(_EXP_SHEET_KEY, sheet);
+      _updateExportTargetLabel(handle.name, sheet);
+      showToast(`📁 Đã liên kết: ${handle.name} → sheet "${sheet}"`, 'success');
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // người dùng đóng cửa sổ chọn file
+      showToast('❌ Lỗi chọn file: ' + e.message, 'error');
     }
-    let sheet = prompt(
-      'Ghi dữ liệu vào SHEET nào trong file này?\n\n' +
-      '• Gõ đúng tên sheet có sẵn → ghi đè sheet đó.\n' +
-      '• Gõ tên mới → tạo thêm sheet mới.',
-      _expSheetName());
-    if (sheet === null) return; // bấm Hủy
-    sheet = (sheet.trim() || 'BangCong').substring(0, 31);
-
-    await _expIdbSet(handle);
-    localStorage.setItem(_EXP_SHEET_KEY, sheet);
-    _updateExportTargetLabel(handle.name, sheet);
-    showToast(`📁 Đã liên kết: ${handle.name} → sheet "${sheet}"`, 'success');
-  } catch (e) {
-    if (e && e.name === 'AbortError') return; // người dùng đóng hộp thoại
-    showToast('❌ Lỗi chọn file: ' + e.message, 'error');
-  }
+  });
 }
 
 /**
@@ -1618,14 +1689,22 @@ function _showNsclBlockReport(list) {
   ov.querySelectorAll('tbody tr td').forEach(td => { td.style.padding = '7px 6px'; td.style.borderBottom = '1px solid #f1f3f4'; });
 }
 
-async function signAndLockNscl() {
+function signAndLockNscl() {
   const selMonth = parseInt(document.getElementById('sel-month').value, 10);
   const selYear  = parseInt(document.getElementById('sel-year').value, 10);
   const dept = _nsclCurrentDept();
   if (!dept) { showToast('⚠️ Hãy chọn 1 phòng ban cụ thể để ký & khóa.', 'error'); return; }
   if (_nsclLocks[dept]) { showToast('Bảng điểm phòng này đã được ký & khóa rồi.', ''); return; }
   const signer = _nsclSignerName(dept);
-  if (!confirm(`KÝ & KHÓA bảng điểm phòng "${dept}" tháng ${selMonth}/${selYear}?\n\nNgười ký: ${signer}\nSau khi khóa, chỉ Admin mới mở lại để chấm điểm.`)) return;
+  _appConfirm({
+    icon: '🔏', title: 'Ký & Khóa bảng điểm', color: '#137333', okText: 'Ký & Khóa',
+    html: `Ký &amp; khóa bảng điểm phòng <b>${escHtml(dept)}</b> tháng <b>${selMonth}/${selYear}</b>?` +
+          `<div style="margin-top:10px;">Người ký: <b>${escHtml(signer)}</b></div>` +
+          `<div style="margin-top:8px;color:#888;font-size:12.5px;">Sau khi khóa, chỉ Admin mới mở lại để chấm điểm.</div>`
+  }, () => _doSignAndLockNscl(dept, selMonth, selYear, signer));
+}
+
+async function _doSignAndLockNscl(dept, selMonth, selYear, signer) {
   try {
     await adminWrite('chamcong_nscl_lock', 'insert', [{
       department: dept, thang: selMonth, nam: selYear,
@@ -1636,7 +1715,7 @@ async function signAndLockNscl() {
   } catch (e) { showToast('❌ Lỗi ký & khóa: ' + e.message, 'error'); }
 }
 
-async function unlockNscl() {
+function unlockNscl() {
   if (!_isAdmin) { showToast('⚠️ Chỉ Admin mới được mở khóa bảng điểm.', 'error'); return; }
   const selMonth = parseInt(document.getElementById('sel-month').value, 10);
   const selYear  = parseInt(document.getElementById('sel-year').value, 10);
@@ -1644,12 +1723,17 @@ async function unlockNscl() {
   if (!dept) { showToast('⚠️ Chọn phòng ban cần mở khóa ở dropdown.', 'error'); return; }
   const lk = _nsclLocks[dept];
   if (!lk) { showToast('Phòng này chưa bị khóa.', ''); return; }
-  if (!confirm(`Mở khóa bảng điểm phòng "${dept}" tháng ${selMonth}/${selYear} để chấm lại?`)) return;
-  try {
-    await adminWrite('chamcong_nscl_lock', 'delete', null, 'id', lk.id);
-    showToast('🔓 Đã mở khóa. Có thể chấm điểm lại.', 'success');
-    loadData();
-  } catch (e) { showToast('❌ Lỗi mở khóa: ' + e.message, 'error'); }
+  _appConfirm({
+    icon: '🔓', title: 'Mở khóa bảng điểm', color: '#b06000', okText: 'Mở khóa',
+    html: `Mở khóa bảng điểm phòng <b>${escHtml(dept)}</b> tháng <b>${selMonth}/${selYear}</b> để chấm lại?` +
+          `<div style="margin-top:8px;color:#888;font-size:12.5px;">Bảng điểm sẽ hết trạng thái đã ký cho tới khi ký lại.</div>`
+  }, async () => {
+    try {
+      await adminWrite('chamcong_nscl_lock', 'delete', null, 'id', lk.id);
+      showToast('🔓 Đã mở khóa. Có thể chấm điểm lại.', 'success');
+      loadData();
+    } catch (e) { showToast('❌ Lỗi mở khóa: ' + e.message, 'error'); }
+  });
 }
 
 // In Bảng — dựng bảng in sạch trực tiếp từ dữ liệu (không clone bảng màn hình)
