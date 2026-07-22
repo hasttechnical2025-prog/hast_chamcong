@@ -1390,18 +1390,23 @@ function _askExportTarget(onConfirm) {
   ov.innerHTML = `
     <div style="background:#fff;border-radius:14px;max-width:470px;width:100%;padding:22px;box-shadow:0 8px 32px rgba(0,0,0,.25);">
       <h3 style="margin:0 0 8px;font-size:16px;color:#1a73e8;">📁 Chọn file Excel đích</h3>
-      <p style="margin:0 0 14px;font-size:13.5px;color:#3c4043;line-height:1.55;">
-        Dữ liệu bảng công sẽ được ghi thẳng vào <b>một sheet</b> trong file Excel bạn chọn trên ổ cứng.
-      </p>
-      <label style="display:block;font-size:13px;font-weight:600;color:#5f6368;margin-bottom:6px;">Tên sheet cần ghi</label>
+      <div style="background:#fce8e6;border:1px solid #f5c6c2;border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:13px;color:#c5221f;line-height:1.55;">
+        🛑 <b>Chọn một file RIÊNG chỉ để chứa bảng công</b> (vd <b>bang_cong.xlsx</b>) — có thể gõ tên mới để tạo file mới.<br>
+        <b>TUYỆT ĐỐI không chọn file lương / file làm việc nhiều sheet</b>, vì mỗi lần xuất app sẽ <b>ghi đè toàn bộ</b> file đích.
+      </div>
+      <label style="display:block;font-size:13px;font-weight:600;color:#5f6368;margin-bottom:6px;">Tên sheet trong file đó</label>
       <input id="nscl-target-sheet" type="text" value="${escHtml(_expSheetName())}"
         style="width:100%;border:1.5px solid #dadce0;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
       <div style="font-size:12px;color:#888;margin-top:6px;line-height:1.5;">
-        Trùng tên sheet có sẵn → ghi đè sheet đó. Tên mới → tạo thêm sheet mới. <b>Các sheet khác giữ nguyên.</b>
+        Dùng tên này khi liên kết từ file lương (Power Query). Nếu lỡ chọn file nhiều sheet, app sẽ <b>từ chối</b> để bảo vệ dữ liệu.
       </div>
-      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:12.5px;color:#7a5c00;line-height:1.5;">
-        ⚠️ Bấm <b>Tiếp tục</b> → trình duyệt mở cửa sổ chọn file, rồi hỏi quyền chỉnh sửa: hãy bấm
-        <b>“Save changes”</b>. Đây là hộp thoại bảo mật của Chrome, ứng dụng không thể thay đổi.
+      <div style="background:#e8f0fe;border:1px solid #c6dafc;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:12.5px;color:#174ea6;line-height:1.5;">
+        💡 Cách dùng cho file lương: <b>Data → Get Data → From File → From Excel Workbook</b> → trỏ tới file riêng này →
+        mỗi tháng chỉ bấm <b>Refresh</b>, file lương giữ nguyên 100% định dạng.
+      </div>
+      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12.5px;color:#7a5c00;line-height:1.5;">
+        ⚠️ Bấm <b>Tiếp tục</b> → trình duyệt mở cửa sổ lưu file rồi hỏi quyền ghi: bấm <b>“Save changes”</b>.
+        Đây là hộp thoại bảo mật của Chrome, ứng dụng không thể thay đổi.
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;">
         <button id="nscl-target-cancel" style="flex:1;padding:11px;border-radius:9px;border:none;background:#f1f3f4;color:#444;font-size:14px;font-weight:600;cursor:pointer;">Hủy</button>
@@ -1424,6 +1429,39 @@ function _askExportTarget(onConfirm) {
   }, 100);
 }
 
+// Kiểm tra file đích có an toàn để GHI ĐÈ TOÀN BỘ hay không.
+// An toàn = file rỗng, hoặc file chỉ có đúng 1 sheet do chính app tạo trước đó.
+// File nhiều sheet (workbook làm việc thật) -> TỪ CHỐI, tránh phá dữ liệu người dùng.
+async function _isSafeTargetFile(handle, sheetName) {
+  try {
+    const f = await handle.getFile();
+    if (!f || f.size === 0) return { safe: true, sheets: [] };
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array', bookSheets: true });
+    const names = wb.SheetNames || [];
+    if (names.length === 0) return { safe: true, sheets: names };
+    if (names.length === 1 && names[0] === sheetName) return { safe: true, sheets: names };
+    return { safe: false, sheets: names };
+  } catch (e) {
+    return { safe: true, sheets: [] }; // không đọc được -> coi như file mới
+  }
+}
+
+// Cảnh báo khi người dùng trỏ vào workbook thật
+function _showUnsafeTargetWarning(fileName, sheets) {
+  _appConfirm({
+    icon: '🛑', title: 'Không thể dùng file này', color: '#c5221f',
+    okText: 'Đã hiểu', cancelText: 'Đóng',
+    html: `File <b>${escHtml(fileName)}</b> đang có <b>${sheets.length}</b> sheet: ` +
+          `<span style="color:#c5221f;">${escHtml(sheets.slice(0, 6).join(', '))}${sheets.length > 6 ? '…' : ''}</span>` +
+          `<div style="margin-top:10px;">Đây là <b>file làm việc của bạn</b>. Ứng dụng <b>ghi đè toàn bộ</b> file đích mỗi lần xuất, ` +
+          `nên chọn file này sẽ <b>mất hết định dạng, công thức và các sheet khác</b>.</div>` +
+          `<div style="margin-top:10px;padding:10px 12px;background:#e8f0fe;border:1px solid #c6dafc;border-radius:9px;font-size:12.5px;color:#174ea6;line-height:1.55;">` +
+          `✅ Hãy chọn/tạo <b>một file Excel RIÊNG</b> (vd <b>bang_cong.xlsx</b>) chỉ dùng để chứa bảng công. ` +
+          `Sau đó trong file lương, dùng <b>Data → Get Data → From File</b> (Power Query) trỏ tới file riêng đó rồi bấm <b>Refresh</b> — ` +
+          `file lương giữ nguyên 100% định dạng.</div>`
+  }, () => { /* chỉ đóng */ });
+}
+
 // Chọn file Excel đích + tên sheet cần ghi (làm 1 lần cho mỗi máy)
 function pickExportTarget() {
   if (!_fsSupported()) {
@@ -1432,15 +1470,21 @@ function pickExportTarget() {
   }
   _askExportTarget(async (sheet) => {
     try {
-      const [handle] = await window.showOpenFilePicker({
-        multiple: false,
+      // showSaveFilePicker: cho phép TẠO FILE MỚI dành riêng cho bảng công,
+      // và đã kèm sẵn quyền ghi (không phải xin quyền thêm lần nữa).
+      const handle = await window.showSaveFilePicker({
+        suggestedName: 'bang_cong.xlsx',
         types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
       });
       if (!handle) return;
       if (!(await _expEnsurePerm(handle))) {
-        showToast('⚠️ Chưa cấp quyền chỉnh sửa file. Bấm lại "Chọn file đích" và chọn "Save changes".', 'error');
+        showToast('⚠️ Chưa cấp quyền ghi file. Hãy chọn lại file đích.', 'error');
         return;
       }
+      // RÀO AN TOÀN: không cho trỏ vào workbook nhiều sheet của người dùng
+      const chk = await _isSafeTargetFile(handle, sheet);
+      if (!chk.safe) { _showUnsafeTargetWarning(handle.name, chk.sheets); return; }
+
       await _expIdbSet(handle);
       localStorage.setItem(_EXP_SHEET_KEY, sheet);
       _updateExportTargetLabel(handle.name, sheet);
@@ -1469,17 +1513,19 @@ async function _writeToTarget(aoa, cols) {
   }
 
   const sheetName = _expSheetName();
-  let wb = null;
-  try {
-    const file = await handle.getFile();
-    if (file.size > 0) wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-  } catch (e) { /* file rỗng/không đọc được -> tạo workbook mới */ }
-  if (!wb) wb = XLSX.utils.book_new();
 
+  // RÀO AN TOÀN LẦN 2: nếu file đích hiện là workbook nhiều sheet -> DỪNG, không ghi đè.
+  const chk = await _isSafeTargetFile(handle, sheetName);
+  if (!chk.safe) { _showUnsafeTargetWarning(handle.name, chk.sheets); return false; }
+
+  // ⚠️ AN TOÀN: TUYỆT ĐỐI KHÔNG đọc rồi ghi đè lại workbook có sẵn của người dùng.
+  // Thư viện xlsx bản miễn phí khi đọc-ghi lại sẽ làm MẤT định dạng/công thức và có thể
+  // làm hỏng file (Excel phải repair). Vì vậy file đích là file RIÊNG chỉ chứa bảng công,
+  // và mỗi lần xuất là ghi MỚI HOÀN TOÀN file đó.
+  const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = cols;
-  if (wb.SheetNames.indexOf(sheetName) >= 0) wb.Sheets[sheetName] = ws; // ghi đè đúng sheet
-  else XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
   const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const writable = await handle.createWritable();
