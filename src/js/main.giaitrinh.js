@@ -1598,10 +1598,14 @@ async function exportNsclExcel() {
     (a.department || '').localeCompare(b.department || '', 'vi') ||
     (a.name || '').localeCompare(b.name || '', 'vi'));
 
-  const aoa = [['Họ tên', 'Phòng ban', 'Ngày công chuẩn', 'Ngày công thực tế', 'Ngày nghỉ phép/Lễ tết/Chế độ']];
+  const aoa = [['Họ tên', 'Phòng ban', 'Ngày công chuẩn', 'Ngày công thực tế',
+                'Nghỉ phép', 'Nghỉ lễ tết', 'Ngày nghỉ phép/Lễ tết/Chế độ']];
 
   emps.forEach(emp => {
-    let chuan = 0, thucTe = 0, nghi = 0;
+    let chuan = 0, thucTe = 0;
+    let nghiPhep = 0;  // P = 1 ngày; điểm <= 5 = 0.5 ngày phép
+    let nghiLe   = 0;  // ngày lễ/tết do admin thiết lập (chamcong_holidays)
+    let nghiKhac = 0;  // Ô (ốm/chế độ) + chữ N gõ tay -> gộp vào cột Tổng
 
     for (let d = 1; d <= daysInMonth; d++) {
       const ymd = `${selYear}-${pad(selMonth)}-${pad(d)}`;
@@ -1611,37 +1615,44 @@ async function exportNsclExcel() {
 
       chuan++; // ngày công chuẩn: ngày thường kể từ ngày vào làm (ngày lễ vẫn tính, sẽ vào cột nghỉ)
 
+      // Ngày lễ/tết theo quy định (admin thiết lập) -> luôn tính vào cột "Nghỉ lễ tết"
+      if (_holidaysMap && _holidaysMap.has(ymd)) { nghiLe++; continue; }
+
       const r = _recordMap[emp.name.toLowerCase() + '_' + ymd];
       let val = (r && r.nscl_score) ? String(r.nscl_score).trim() : '';
       const up = val.toUpperCase();
       if (up === 'P') val = 'P';
       else if (up === 'Ô' || up === 'O') val = 'Ô';
       else if (up === 'N') val = 'N';
-      if (_holidaysMap && _holidaysMap.has(ymd)) val = 'N';        // ngày lễ -> N
 
-      if (val === 'P' || val === 'Ô' || val === 'N') { nghi++; continue; }
+      if (val === 'P') { nghiPhep += 1; continue; }               // nghỉ phép
+      if (val === 'Ô' || val === 'N') { nghiKhac += 1; continue; } // ốm/chế độ + N gõ tay
 
       const num = parseFloat(val);
       if (!isNaN(num)) {
         // Điểm > 5  = trọn 1 công.
         // Điểm <= 5 = nửa công thực tế + nửa ngày phép
-        // -> (thực tế + nghỉ) luôn khớp đúng Ngày công chuẩn.
+        // -> (thực tế + tổng nghỉ) luôn khớp đúng Ngày công chuẩn.
         if (num > 5) { thucTe += 1; }
-        else { thucTe += 0.5; nghi += 0.5; }
+        else { thucTe += 0.5; nghiPhep += 0.5; }
       }
     }
 
+    const r1 = v => Math.round(v * 10) / 10;
     aoa.push([
       emp.name,
       emp.department || '',
       chuan,
-      Math.round(thucTe * 10) / 10,
-      Math.round(nghi * 10) / 10
+      r1(thucTe),
+      r1(nghiPhep),
+      r1(nghiLe),
+      r1(nghiPhep + nghiLe + nghiKhac)   // Tổng: phép + lễ tết + ốm/chế độ + N
     ]);
   });
 
   // 3) Ghi ra file: ưu tiên ghi thẳng vào file đã liên kết, nếu chưa có thì tải về
-  const cols = [{ wch: 26 }, { wch: 20 }, { wch: 16 }, { wch: 18 }, { wch: 30 }];
+  const cols = [{ wch: 26 }, { wch: 20 }, { wch: 16 }, { wch: 18 },
+                { wch: 12 }, { wch: 12 }, { wch: 30 }];
   try {
     const res = await _writeToTarget(aoa, cols);
     if (res === false) return;              // đã liên kết nhưng thiếu quyền -> đã báo
