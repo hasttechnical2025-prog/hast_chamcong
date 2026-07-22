@@ -163,6 +163,9 @@
         <button class="btn-nscl-action" data-action="unlockNscl" data-args="" style="background:#b06000; color:#fff;">🔓 Mở khóa</button>
         <button class="btn-nscl-action" data-action="printNsclReport" data-args="">🖨️ In Bảng Điểm NSCL</button>
         <!-- Chỉ hiện với tài khoản Kế toán-Hành chính (view_all) — bật trong main.giaitrinh.js -->
+        <button class="btn-nscl-action" id="btn-pick-target" data-action="pickExportTarget" data-args=""
+          style="background:#5f6368; color:#fff; display:none; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+          title="Chọn file Excel trên ổ cứng để ghi thẳng dữ liệu vào (Chrome/Edge).">📁 Chọn file đích</button>
         <button class="btn-nscl-action" id="btn-export-excel" data-action="exportNsclExcel" data-args=""
           style="background:#0f7b3f; color:#fff; display:none;">📊 Xuất Excel</button>
       </div>
@@ -266,7 +269,7 @@
   </div>
 </div>
 
-<script type="module" src="../src/js/main.giaitrinh.js?v=23"></script>
+<script type="module" src="../src/js/main.giaitrinh.js?v=24"></script>
 
 </body>
 </html>

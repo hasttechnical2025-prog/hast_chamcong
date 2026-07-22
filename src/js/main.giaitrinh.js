@@ -97,6 +97,8 @@ function showMainScreen() {
   // Nút "Xuất Excel" chỉ dành cho tài khoản Kế toán-Hành chính (view_all)
   const _btnX = document.getElementById('btn-export-excel');
   if (_btnX) _btnX.style.display = _viewAll ? 'flex' : 'none';
+  // Nút chọn file đích: chỉ KTHC + chỉ trình duyệt hỗ trợ ghi file (Chrome/Edge)
+  if (_viewAll) _initExportTarget();
 }
 
 function openChangePassword() {
@@ -1279,6 +1281,142 @@ function _nsclSignerName(dept) {
 // ══════════════════════════════════════════════
 // XUẤT EXCEL BẢNG CÔNG (chỉ tài khoản Kế toán-Hành chính)
 // ══════════════════════════════════════════════
+// ── Ghi thẳng vào 1 file Excel chỉ định trên ổ cứng (File System Access API) ──
+// Chỉ Chrome/Edge hỗ trợ. "Tay cầm file" lưu trong IndexedDB của CHÍNH máy đó, nên
+// mỗi máy phải bấm "Chọn file đích" một lần; máy chưa liên kết sẽ tự tải file về.
+const _EXP_DB = 'hstc_export_fs', _EXP_STORE = 'handles', _EXP_KEY = 'nscl_target';
+const _EXP_SHEET_KEY = 'hstc_export_sheet';
+
+function _fsSupported() { return typeof window.showOpenFilePicker === 'function'; }
+
+function _expIdb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(_EXP_DB, 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore(_EXP_STORE); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _expIdbSet(val) {
+  const db = await _expIdb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(_EXP_STORE, 'readwrite');
+    tx.objectStore(_EXP_STORE).put(val, _EXP_KEY);
+    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+  });
+}
+async function _expIdbGet() {
+  const db = await _expIdb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(_EXP_STORE, 'readonly');
+    const r = tx.objectStore(_EXP_STORE).get(_EXP_KEY);
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+
+// Xin/kiểm tra quyền GHI trên file đã chọn (sau khi khởi động lại trình duyệt sẽ hỏi lại 1 lần)
+async function _expEnsurePerm(handle) {
+  const opts = { mode: 'readwrite' };
+  if ((await handle.queryPermission(opts)) === 'granted') return true;
+  return (await handle.requestPermission(opts)) === 'granted';
+}
+
+function _expSheetName() { return localStorage.getItem(_EXP_SHEET_KEY) || 'BangCong'; }
+
+// Cập nhật nhãn nút cho biết đang ghi vào file/sheet nào
+function _updateExportTargetLabel(fileName, sheet) {
+  const b = document.getElementById('btn-pick-target');
+  if (!b) return;
+  if (fileName) {
+    b.textContent = `📁 ${fileName} ▸ ${sheet}`;
+    b.title = `Đang ghi vào file "${fileName}", sheet "${sheet}". Bấm để đổi file/sheet khác.`;
+  } else {
+    b.textContent = '📁 Chọn file đích';
+    b.title = 'Chọn file Excel trên ổ cứng để ghi thẳng dữ liệu vào (Chrome/Edge).';
+  }
+}
+
+// Khôi phục nhãn khi mở lại trang (nếu máy này đã từng liên kết file)
+async function _initExportTarget() {
+  if (!_fsSupported()) return;
+  const b = document.getElementById('btn-pick-target');
+  if (b) b.style.display = 'flex';
+  try {
+    const h = await _expIdbGet();
+    if (h) _updateExportTargetLabel(h.name, _expSheetName());
+  } catch (e) { /* chưa liên kết */ }
+}
+
+// Chọn file Excel đích + tên sheet cần ghi (làm 1 lần cho mỗi máy)
+async function pickExportTarget() {
+  if (!_fsSupported()) {
+    showToast('⚠️ Trình duyệt này không ghi thẳng vào file được. Hãy dùng Chrome/Edge, hoặc bấm "Xuất Excel" để tải file về.', 'error');
+    return;
+  }
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      multiple: false,
+      types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
+    });
+    if (!handle) return;
+    if (!(await _expEnsurePerm(handle))) {
+      showToast('⚠️ Chưa cấp quyền chỉnh sửa file. Hãy chọn lại và bấm "Chỉnh sửa tệp".', 'error');
+      return;
+    }
+    let sheet = prompt(
+      'Ghi dữ liệu vào SHEET nào trong file này?\n\n' +
+      '• Gõ đúng tên sheet có sẵn → ghi đè sheet đó.\n' +
+      '• Gõ tên mới → tạo thêm sheet mới.',
+      _expSheetName());
+    if (sheet === null) return; // bấm Hủy
+    sheet = (sheet.trim() || 'BangCong').substring(0, 31);
+
+    await _expIdbSet(handle);
+    localStorage.setItem(_EXP_SHEET_KEY, sheet);
+    _updateExportTargetLabel(handle.name, sheet);
+    showToast(`📁 Đã liên kết: ${handle.name} → sheet "${sheet}"`, 'success');
+  } catch (e) {
+    if (e && e.name === 'AbortError') return; // người dùng đóng hộp thoại
+    showToast('❌ Lỗi chọn file: ' + e.message, 'error');
+  }
+}
+
+/**
+ * Ghi dữ liệu vào file đã liên kết. Giữ nguyên các sheet khác trong file.
+ * @returns {null} chưa liên kết (gọi nơi khác tự fallback tải về)
+ *          {false} có liên kết nhưng lỗi/không đủ quyền (đã báo cho người dùng)
+ *          {{name,sheet}} ghi thành công
+ */
+async function _writeToTarget(aoa, cols) {
+  let handle = null;
+  try { handle = await _expIdbGet(); } catch (e) { /* bỏ qua */ }
+  if (!handle) return null;
+
+  if (!(await _expEnsurePerm(handle))) {
+    showToast('⚠️ Chưa được cấp quyền ghi file. Khi trình duyệt hỏi hãy bấm "Chỉnh sửa tệp".', 'error');
+    return false;
+  }
+
+  const sheetName = _expSheetName();
+  let wb = null;
+  try {
+    const file = await handle.getFile();
+    if (file.size > 0) wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+  } catch (e) { /* file rỗng/không đọc được -> tạo workbook mới */ }
+  if (!wb) wb = XLSX.utils.book_new();
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = cols;
+  if (wb.SheetNames.indexOf(sheetName) >= 0) wb.Sheets[sheetName] = ws; // ghi đè đúng sheet
+  else XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+  const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const writable = await handle.createWritable();
+  await writable.write(out);
+  await writable.close();
+  return { name: handle.name, sheet: sheetName };
+}
+
 // Popup báo còn phòng chưa Ký & Khóa -> kế toán biết cần giục phòng nào.
 function _showExportBlocked(depts, month, year) {
   const pad = n => n < 10 ? '0' + n : '' + n;
@@ -1317,7 +1455,7 @@ function _showExportBlocked(depts, month, year) {
  *   CỘNG thêm 0.5 cho mỗi ngày điểm <= 5 (nửa ngày phép) -> thực tế + nghỉ = chuẩn.
  * Bắt buộc mọi phòng ban đã Ký & Khóa mới cho xuất.
  */
-function exportNsclExcel() {
+async function exportNsclExcel() {
   if (!_viewAll) { showToast('⚠️ Chỉ tài khoản Kế toán-Hành chính mới xuất được file này.', 'error'); return; }
   if (typeof XLSX === 'undefined') {
     showToast('❌ Chưa tải được thư viện Excel. Kiểm tra kết nối mạng rồi tải lại trang.', 'error');
@@ -1385,14 +1523,22 @@ function exportNsclExcel() {
     ]);
   });
 
-  // 3) Dựng file .xlsx
+  // 3) Ghi ra file: ưu tiên ghi thẳng vào file đã liên kết, nếu chưa có thì tải về
+  const cols = [{ wch: 26 }, { wch: 20 }, { wch: 16 }, { wch: 18 }, { wch: 30 }];
   try {
+    const res = await _writeToTarget(aoa, cols);
+    if (res === false) return;              // đã liên kết nhưng thiếu quyền -> đã báo
+    if (res) {
+      showToast(`📊 Đã ghi ${aoa.length - 1} CBNV vào "${res.name}" — sheet "${res.sheet}".`, 'success');
+      return;
+    }
+    // Chưa liên kết file đích -> tải về như bình thường
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{ wch: 26 }, { wch: 20 }, { wch: 16 }, { wch: 18 }, { wch: 30 }];
+    ws['!cols'] = cols;
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, `T${pad(selMonth)}-${selYear}`);
     XLSX.writeFile(wb, `Bang_cong_NSCL_T${pad(selMonth)}_${selYear}.xlsx`);
-    showToast(`📊 Đã xuất Excel bảng công tháng ${pad(selMonth)}/${selYear} (${aoa.length - 1} CBNV).`, 'success');
+    showToast(`📊 Đã tải file bảng công tháng ${pad(selMonth)}/${selYear} (${aoa.length - 1} CBNV).`, 'success');
   } catch (e) {
     showToast('❌ Lỗi xuất Excel: ' + e.message, 'error');
   }
@@ -1907,6 +2053,7 @@ document.addEventListener('click', function(e) {
     unlockNscl: () => unlockNscl(),
     printNsclReport: () => printNsclReport(),
     exportNsclExcel: () => exportNsclExcel(),
+    pickExportTarget: () => pickExportTarget(),
     closeUndo: () => closeUndo(),
     confirmUndo: () => confirmUndo(),
     closeReject: () => closeReject(),
