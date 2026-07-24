@@ -19,7 +19,7 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="../src/css/base.css?v=5">
-  <link rel="stylesheet" href="../src/css/components.css?v=8">
+  <link rel="stylesheet" href="../src/css/components.css?v=9">
   <link rel="stylesheet" href="../src/css/history.css?v=5">
   <link rel="stylesheet" href="../src/css/guide.css?v=5">
 </head>
@@ -171,11 +171,37 @@
       </div>
     </div>
 
-    <div style="display:flex;flex-direction:column;overflow:hidden;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.08); height: fit-content; max-height: 100%;">
+    <div style="display:flex;flex-direction:column;overflow:hidden;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.08); height: fit-content; max-height: 100%; min-height:0;">
       <div class="table-wrap">
         <div id="tbl-nscl-container">
           <div class="empty">Bảng chấm công NSCL sẽ hiển thị ở đây.</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Chú thích cách chấm điểm — giúp TBP chấm đúng các trường hợp đặc biệt -->
+    <div class="nscl-legend">
+      <div style="font-weight:700; color:#1a73e8; margin-bottom:6px;">📝 Hướng dẫn chấm điểm</div>
+      <div class="lg-row">
+        <span class="lg-item"><span class="lg-key">1–15</span> Điểm NSCL trong ngày
+          <span style="color:#888;">(điểm <b>&gt;5</b> = 1 công · điểm <b>≤5</b> = nửa công + nửa ngày phép)</span></span>
+      </div>
+      <div class="lg-row" style="margin-top:5px;">
+        <span class="lg-item"><span class="lg-key lg-p">P</span> Nghỉ phép</span>
+        <span class="lg-item"><span class="lg-key lg-om">Ô</span> Nghỉ ốm / chế độ</span>
+        <span class="lg-item"><span class="lg-key lg-n">N</span> Nghỉ lễ tết <span style="color:#888;">(ngày lễ tự điền, không sửa được)</span></span>
+        <span class="lg-item"><span class="lg-key"></span> Ô trống = <b>chưa chấm</b></span>
+      </div>
+      <div class="lg-row" style="margin-top:5px;">
+        <span class="lg-item"><span class="lg-key lg-block"></span> Ô sọc đỏ = <b>chưa chấm được</b>
+          <span style="color:#888;">— ngày có công B/D mà giải trình chưa được Đồng ý. Hãy duyệt giải trình trước.</span></span>
+      </div>
+      <div class="lg-row" style="margin-top:5px; color:#888;">
+        <span class="lg-item">Nền cột:</span>
+        <span class="lg-item"><span class="lg-key lg-t7"></span> Thứ 7</span>
+        <span class="lg-item"><span class="lg-key lg-cn"></span> Chủ nhật</span>
+        <span class="lg-item"><span class="lg-key lg-le"></span> Ngày lễ</span>
+        <span class="lg-item">— các cột này không cần chấm.</span>
       </div>
     </div>
   </div>

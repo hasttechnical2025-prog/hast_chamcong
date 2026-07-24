@@ -673,6 +673,31 @@ body.cbnv .btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:
   color: #c5221f !important; -webkit-text-fill-color: #c5221f;
   cursor: not-allowed; opacity: 1;
 }
+
+/* ── Chú thích cách chấm điểm dưới bảng NSCL (màu khớp với ô thật trên lưới) ── */
+.nscl-legend {
+  flex-shrink: 0; margin-top: 10px; background: #fff;
+  border: 1px solid #e8eaed; border-radius: 10px; padding: 10px 14px;
+  font-size: 12.5px; color: #3c4043; line-height: 1.6;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.nscl-legend .lg-row { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
+.nscl-legend .lg-item { display: inline-flex; align-items: center; gap: 6px; }
+.nscl-legend .lg-key {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px; height: 22px; padding: 0 6px; border-radius: 5px;
+  font-weight: 700; font-size: 12px; border: 1px solid #dadce0; background: #fff;
+  flex-shrink: 0;
+}
+.nscl-legend .lg-p     { background: #d9e7ff; color: #1a56c4; }
+.nscl-legend .lg-om    { background: #ffd9de; color: #c5221f; }
+.nscl-legend .lg-n     { background: #e0e0e0; color: #5f6368; }
+.nscl-legend .lg-t7    { background: #fff2e6; }
+.nscl-legend .lg-cn    { background: #e6f9ec; }
+.nscl-legend .lg-le    { background: #f2f2f2; }
+.nscl-legend .lg-block {
+  background: repeating-linear-gradient(45deg, #ffe3e3, #ffe3e3 5px, #ffcfcf 5px, #ffcfcf 10px);
+}
 .col-sum { background: #f8f9fa; font-weight: 700; color: #1a73e8; }
 .col-pm { background:#fff7e6; padding:0; }
 .pm-input { font-weight:700; color:#e65100; }
