@@ -48,9 +48,9 @@ UPDATE public.chamcong_employees SET token = gen_random_uuid() WHERE token IS NU
 -- Khởi tạo tài khoản mặc định trong chamcong_auth
 INSERT INTO public.chamcong_auth (username, password_hash, role, department)
 VALUES
-('admin', crypt('admin_kt2026', gen_salt('bf')), 'admin', null),
-('tbp_kd', crypt('tbp_kd2026', gen_salt('bf')), 'TBP', 'Kinh doanh'),
-('tbp_kt', crypt('tbp_kt2026', gen_salt('bf')), 'TBP', 'Kế toán-Hành chính')
+('admin', crypt('<DA_DOI_MAT_KHAU>', gen_salt('bf')), 'admin', null),
+('tbp_kd', crypt('<DA_DOI_MAT_KHAU>', gen_salt('bf')), 'TBP', 'Kinh doanh'),
+('tbp_kt', crypt('<DA_DOI_MAT_KHAU>', gen_salt('bf')), 'TBP', 'Kế toán-Hành chính')
 ON CONFLICT (username) DO NOTHING;
 
 -- Khởi tạo cấu hình hệ thống mặc định nếu chưa có

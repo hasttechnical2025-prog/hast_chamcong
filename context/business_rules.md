@@ -184,9 +184,9 @@ TBP mở giaitrinh_admin.html → duyệt Đồng ý / Từ chối
 
 | Password | Role | Phòng ban thấy | Dropdown phòng ban |
 |---|---|---|---|
-| `tbp_kd2026` | TBP Kinh doanh | Chỉ Kinh doanh | Khóa |
-| `tbp_kt2026` | TBP Kế toán-HC | Chỉ Kế toán-HC | Khóa |
-| `admin_kt2026` | Admin | Tất cả | Tự do chọn |
+| `<DA_DOI_MAT_KHAU>` | TBP Kinh doanh | Chỉ Kinh doanh | Khóa |
+| `<DA_DOI_MAT_KHAU>` | TBP Kế toán-HC | Chỉ Kế toán-HC | Khóa |
+| `<DA_DOI_MAT_KHAU>` | Admin | Tất cả | Tự do chọn |
 
 ### Duyệt hàng loạt (batch)
 

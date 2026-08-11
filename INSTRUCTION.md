@@ -49,10 +49,10 @@ source/ (sửa file hiện có)
 ```
 SUPABASE_URL      = 
 SUPABASE_ANON_KEY = 
-TELEGRAM_TOKEN    = 8782519076:AAEN1ESG-RQHQvldhVXrugwJ9GOxpvN-g10
+TELEGRAM_TOKEN    = <DAT_TRONG_SUPABASE_SECRETS_KHONG_COMMIT>
 ADMIN_USERS = [
-  { pw: 'tbp_kd2026',   dept: 'Kinh doanh',         isAdmin: false },
-  { pw: 'tbp_kt2026',   dept: 'Kế toán-Hành chính', isAdmin: false },
-  { pw: 'admin_kt2026', dept: '',                    isAdmin: true  },
+  { pw: '<DA_DOI_MAT_KHAU>',   dept: 'Kinh doanh',         isAdmin: false },
+  { pw: '<DA_DOI_MAT_KHAU>',   dept: 'Kế toán-Hành chính', isAdmin: false },
+  { pw: '<DA_DOI_MAT_KHAU>', dept: '',                    isAdmin: true  },
 ]
 ```

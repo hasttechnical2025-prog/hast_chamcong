@@ -7,7 +7,7 @@
 | GitHub Pages | `https://hasttechnical2025-prog.github.io/hast_chamcong/` |
 | Apps Script URL | `https://script.google.com/macros/s/AKfycbwxoh9oU-lA6g9I-bCVeWpoJdo1fYvtnyVmzR28dXvBpyWkRB7edfKEaC7g89KlSRaX/exec` |
 | Google Sheet ID | `1f4fTjTE03dnv26OUJhhzCu6GImLQ7-7aC7TKPQqsIcE` |
-| Telegram Token | `8782519076:AAEN1ESG-RQHQvldhVXrugwJ9GOxpvN-g10` |
+| Telegram Token | `<DAT_TRONG_SUPABASE_SECRETS_KHONG_COMMIT>` |
 | SW Version | `v2026.05.16` |
 | Supabase URL | ← Điền sau khi tạo project |
 | Supabase Anon Key | ← Điền sau khi tạo project |

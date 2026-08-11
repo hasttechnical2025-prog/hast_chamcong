@@ -289,7 +289,7 @@ serve(async (req) => {
 Vào Supabase Dashboard → **Settings → Edge Functions → Secrets**:
 
 ```
-TELEGRAM_TOKEN = 8782519076:AAEN1ESG-RQHQvldhVXrugwJ9GOxpvN-g10
+TELEGRAM_TOKEN = <DAT_TRONG_SUPABASE_SECRETS_KHONG_COMMIT>
 ```
 
 `SUPABASE_URL` và `SUPABASE_SERVICE_ROLE_KEY` đã có sẵn tự động,
@@ -457,7 +457,7 @@ curl -X POST \
 SUPABASE_PROJECT_REF = ________________  (lấy từ Settings → General)
 SUPABASE_ANON_KEY    = ________________
 SUPABASE_SERVICE_ROLE_KEY = ___________  (chỉ dùng trong pg_cron SQL)
-TELEGRAM_TOKEN       = 8782519076:AAEN1ESG-RQHQvldhVXrugwJ9GOxpvN-g10
+TELEGRAM_TOKEN       = <DAT_TRONG_SUPABASE_SECRETS_KHONG_COMMIT>
 TBP_TELEGRAM_IDS     = lấy từ bảng employees WHERE role='TBP'
 ADMIN_PAGE_URL       = https://hasttechnical2025-prog.github.io/hast_chamcong/giaitrinh_admin.html
 ```

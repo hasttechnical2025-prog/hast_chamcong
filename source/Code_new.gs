@@ -2,17 +2,19 @@
 // CẤU HÌNH CỐ ĐỊNH
 // ============================================================
 const SHEET_ID         = '1f4fTjTE03dnv26OUJhhzCu6GImLQ7-7aC7TKPQqsIcE';
-const TELEGRAM_TOKEN   = '8782519076:AAEN1ESG-RQHQvldhVXrugwJ9GOxpvN-g10'; // ← Token bot Telegram
+const TELEGRAM_TOKEN   = '<DAT_TRONG_SUPABASE_SECRETS_KHONG_COMMIT>'; // ← Token bot Telegram
 // ── Mật khẩu đa cấp cho trang duyệt giải trình ────────────
 // Mỗi entry: { pw, dept, isAdmin }
 //   dept=''        → admin, xem được tất cả phòng ban
 //   dept='Tên PB'  → TBP, chỉ xem phòng ban đó
 //   isAdmin=true   → được chọn phòng ban tự do
-const ADMIN_PASSWORD   = 'hstc2026'; // Dùng cho các check đơn giản (batchApprove, approveGiaiTrinh)
+// ⚠️ BẢO MẬT: KHÔNG hardcode mật khẩu vào mã nguồn (repo public). Backend cũ (Apps Script)
+// đã ngừng dùng; app hiện xác thực qua bảng chamcong_auth (mật khẩu đã hash) + Edge Function.
+const ADMIN_PASSWORD   = '<DA_XOA_KHOI_REPO>';
 const ADMIN_USERS = [
-  { pw: 'kinhdoanh_pw2026',    dept: 'Kinh doanh',           isAdmin: false }, // TBP Kinh doanh
-  { pw: 'kthc_pw2026',    dept: 'Kế toán-Hành chính',   isAdmin: false }, // TBP Kế toán-HC
-  { pw: 'admin_kt2026',  dept: '',                      isAdmin: true  }, // Admin Kỹ thuật
+  { pw: '<DA_XOA_KHOI_REPO>',    dept: 'Kinh doanh',           isAdmin: false }, // TBP Kinh doanh
+  { pw: '<DA_XOA_KHOI_REPO>',    dept: 'Kế toán-Hành chính',   isAdmin: false }, // TBP Kế toán-HC
+  { pw: '<DA_XOA_KHOI_REPO>',  dept: '',                      isAdmin: true  }, // Admin Kỹ thuật
 ];
 
 // Hàm xác thực password → trả về user info hoặc null
