@@ -3,6 +3,15 @@ import { supabaseClient } from './supabaseClient.js';
 import { state, getEmployeeName } from './state.js';
 import { showPopup } from './gps.js';
 
+// Nhãn loại nghỉ (đồng bộ từ app Số công tác). buoi lẻ -> kèm (sáng)/(chiều).
+const LEAVE_LABEL = { phep: 'Nghỉ phép', om: 'Nghỉ ốm', viec_rieng: 'Việc riêng' };
+function leaveText(loai, buoi) {
+  const base = LEAVE_LABEL[loai] || 'Nghỉ phép';
+  if (buoi === 'sang') return base + ' (sáng)';
+  if (buoi === 'chieu') return base + ' (chiều)';
+  return base;
+}
+
 export function showHistory(from) {
   const name = getEmployeeName();
   if (!name) { showPopup('Vui lòng xác nhận họ tên trước.'); return; }
@@ -115,6 +124,19 @@ export async function loadHistory(name) {
 
     if (rowsErr) throw rowsErr;
 
+    // NGHỈ PHÉP đã duyệt (đẩy từ app Số công tác sang bảng chamcong_nghi_phep_dong_bo).
+    // Đọc theo employee_name + khoảng ngày -> map ngày -> {loai, buoi}. Best-effort: lỗi thì bỏ qua.
+    const leaveMap = {};
+    try {
+      const { data: leaveRows } = await supabaseClient
+        .from('chamcong_nghi_phep_dong_bo')
+        .select('ngay,buoi,loai')
+        .eq('employee_name', name)
+        .gte('ngay', startDate)
+        .lte('ngay', endDate);
+      (leaveRows || []).forEach(l => { leaveMap[l.ngay] = { loai: l.loai, buoi: l.buoi }; });
+    } catch (e) { /* bảng chưa có / lỗi -> coi như không có nghỉ phép */ }
+
     // Ngày vào làm: các ngày trước đó coi như "chưa vào làm" -> bỏ qua (không D, không tính)
     let ngayVaoLam = null;
     try {
@@ -137,6 +159,7 @@ export async function loadHistory(name) {
     let congThucTe = 0;
     let congBD = 0;
     let khongCham = 0;
+    let nghiPhep = 0;
 
     const nowTime = new Date();
     const todayStr = `${nowTime.getFullYear()}-${padStr(nowTime.getMonth() + 1)}-${padStr(nowTime.getDate())}`;
@@ -180,15 +203,23 @@ export async function loadHistory(name) {
         isVirtual = true;
       }
 
+      const leave = leaveMap[curDateYMD];
+      const isFullLeave = !!leave && leave.buoi === 'ca_ngay';
+
       if (r) {
         const ga = (r.grades || 'D,D,D,D').split(',').map(g => g.trim());
         const hasAbsent = ga.every(g => g === 'D');
         const allOk = ga.every(g => g === 'A');
 
         if (isTodayOrBefore && !isHoliday && !isWeekend) {
-          if (!isVirtual) congThucTe++;
-          if (!isVirtual && !allOk) congBD++;
-          if (isVirtual) khongCham++;
+          if (isFullLeave) {
+            // Nghỉ phép cả ngày đã duyệt -> tính riêng, KHÔNG coi là "không chấm" / "công B,D".
+            nghiPhep++;
+          } else {
+            if (!isVirtual) congThucTe++;
+            if (!isVirtual && !allOk) congBD++;
+            if (isVirtual) khongCham++;
+          }
         }
 
         days.push({
@@ -205,7 +236,11 @@ export async function loadHistory(name) {
           reason: r.justification || '',
           approve: r.approve_status || '',
           isHoliday: isHoliday,
-          holidayLabel: holidaysMap[dateStr] || ''
+          holidayLabel: holidaysMap[dateStr] || '',
+          // Nghỉ phép đã duyệt (đồng bộ) — hiển thị P + nhãn, bỏ gate giải trình.
+          isLeave: !!leave,
+          isFullLeave: isFullLeave,
+          leaveLabel: leave ? leaveText(leave.loai, leave.buoi) : ''
         });
       }
     }
@@ -219,6 +254,7 @@ export async function loadHistory(name) {
       congThucTe: congThucTe,
       congBD: congBD,
       khongCham: khongCham,
+      nghiPhep: nghiPhep,
       todayStr: todayLocalStr,
       holidaysMap: holidaysMap,
       days: days
@@ -257,7 +293,8 @@ export function renderHistory(data) {
       `<div class="hist-stat"><div class="val">${data.congChuan || 0}</div><div class="lbl">Công chuẩn</div></div>` +
       `<div class="hist-stat"><div class="val" style="color:#137333;">${data.congThucTe || 0}</div><div class="lbl">Công thực</div></div>` +
       `<div class="hist-stat"><div class="val" style="color:#b45309;">${data.congBD || 0}</div><div class="lbl">Công B,D</div></div>` +
-      `<div class="hist-stat"><div class="val" style="color:#c5221f;">${data.khongCham || 0}</div><div class="lbl">Không chấm</div></div>`;
+      `<div class="hist-stat"><div class="val" style="color:#c5221f;">${data.khongCham || 0}</div><div class="lbl">Không chấm</div></div>` +
+      `<div class="hist-stat"><div class="val" style="color:#1d4ed8;">${data.nghiPhep || 0}</div><div class="lbl">Nghỉ phép</div></div>`;
   }
 
   const contentEl = document.getElementById('hist-content');
@@ -318,6 +355,26 @@ export function renderHistory(data) {
     const noReasonClass = reasonDisplay === '' ? ' no-reason' : '';
     const dowStyle = isWeekend || isHoliday ? 'font-weight:700;' : 'color:#888;';
     const dowLabel = dow === 0 ? 'CN' : 'T' + DOW_LABEL[dow];
+
+    // NGHỈ PHÉP đã duyệt (đồng bộ từ Số công tác) — hiển thị như ĐÃ giải trình + ĐÃ duyệt:
+    // cả ngày -> badge P; nửa buổi -> giữ đánh giá thật. KHÔNG hiện gate "+ Giải trình".
+    if (d.isLeave && !isWeekend && !isHoliday) {
+      const gradeCell = d.isFullLeave
+        ? '<span style="display:inline-block;min-width:16px;text-align:center;color:#1d4ed8;font-weight:700;">P</span>'
+        : (gradeSpan(d.g1) + ' ' + gradeSpan(d.g2) + ' ' + gradeSpan(d.g3) + ' ' + gradeSpan(d.g4));
+      tableHtml += `<tr class="leave" style="background:#eff6ff;">`
+        + `<td>${d.date}</td>`
+        + `<td style="${dowStyle}">${dowLabel}</td>`
+        + `<td>${fmtTime(d.morningIn)}</td>`
+        + `<td>${fmtTime(d.morningOut)}</td>`
+        + `<td>${fmtTime(d.afternoonIn)}</td>`
+        + `<td>${fmtTime(d.afternoonOut)}</td>`
+        + `<td style="white-space:nowrap;">${gradeCell}</td>`
+        + `<td><span class="gt-text" style="color:#1e40af;">🌴 ${d.leaveLabel}</span></td>`
+        + `<td><span class="badge-approve badge-dongY">✅ Đồng ý</span></td>`
+        + '</tr>';
+      return;
+    }
 
     tableHtml += `<tr class="${rowClass}${noReasonClass}">`
       + `<td>${d.date}</td>`

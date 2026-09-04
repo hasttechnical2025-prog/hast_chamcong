@@ -4,6 +4,18 @@ import { loginAdmin, approveJustification, adminWrite, changeSelfPassword } from
 import { setSupabaseToken } from './supabaseClient.js';
 
 
+// NGHỈ PHÉP đồng bộ từ app Số công tác (bảng chamcong_nghi_phep_dong_bo).
+const LEAVE_LABEL = { phep: 'Nghỉ phép', om: 'Nghỉ ốm', viec_rieng: 'Việc riêng' };
+// Mã điểm NSCL tự gợi ý cho ngày nghỉ CẢ NGÀY: P=nghỉ phép, Ô=ốm/chế độ.
+// 'viec_rieng' -> 'P' (tính như nghỉ phép, có lương) — user chốt 2026-09-04.
+const LEAVE_NSCL = { phep: 'P', om: 'Ô', viec_rieng: 'P' };
+function leaveText(loai, buoi) {
+  const base = LEAVE_LABEL[loai] || 'Nghỉ phép';
+  if (buoi === 'sang') return base + ' (sáng)';
+  if (buoi === 'chieu') return base + ' (chiều)';
+  return base;
+}
+
 // Khởi tạo biến toàn cục
 let _pw = '';
 let _isAdmin = false;
@@ -304,6 +316,34 @@ async function loadData() {
     records.forEach(r => {
       recordMap[r.employee_name.toLowerCase() + '_' + r.date] = r;
     });
+
+    // NGHỈ PHÉP đã duyệt (đồng bộ từ app Số công tác) -> OVERLAY vào recordMap (chỉ RAM, KHÔNG ghi DB):
+    //  • justification = nhãn + approve_status='Đồng ý' -> MỞ ô chấm (bỏ chặn _nsclJustBlock) +
+    //    board hiện "đã duyệt", không nag TBP đi giải trình.
+    //  • CẢ NGÀY: nscl_score = P/Ô (nếu ô còn trống) -> ô hiện marker, "Điền nhanh 10" bỏ qua
+    //    (chỉ điền ô trống), NSCL đếm đúng cột Nghỉ phép/ốm. Nửa buổi: chỉ mở ô + nhãn, để TBP chấm.
+    // Tự đồng bộ theo bảng nguồn: gỡ nghỉ bên app A -> hết dòng -> overlay biến mất ở lần tải sau.
+    try {
+      const { data: leaveRows } = await supabaseClient
+        .from('chamcong_nghi_phep_dong_bo')
+        .select('employee_name,ngay,buoi,loai')
+        .gte('ngay', startDate)
+        .lte('ngay', endDate);
+      (leaveRows || []).forEach(l => {
+        const nm = l.employee_name || '';
+        const key = nm.toLowerCase() + '_' + l.ngay;
+        let rec = recordMap[key];
+        if (!rec) {
+          rec = { id: `virtual-${l.ngay}-${nm}`, employee_name: nm, date: l.ngay, grades: 'D, D, D, D', justification: '', approve_status: 'Chờ' };
+          recordMap[key] = rec;
+        }
+        if (!rec.justification || !String(rec.justification).trim()) rec.justification = leaveText(l.loai, l.buoi);
+        rec.approve_status = 'Đồng ý';
+        if (l.buoi === 'ca_ngay' && (!rec.nscl_score || !String(rec.nscl_score).trim())) {
+          rec.nscl_score = LEAVE_NSCL[l.loai] || 'P';
+        }
+      });
+    } catch (e) { /* bảng chưa có / lỗi -> bỏ qua, không ảnh hưởng board */ }
 
     // 3b. Lấy trạng thái KÝ & KHÓA bảng điểm NSCL của tháng (theo phòng ban)
     _nsclLocks = {};
