@@ -2262,6 +2262,18 @@ document.addEventListener('click', function(e) {
   }
 });
 
+// Khôi phục tháng/năm đã chọn khi TẢI LẠI TRANG (F5) hoặc login lại.
+// sessionStorage sống qua refresh, nhưng dropdown bị reset về mặc định HTML (Th01/2026).
+// Nếu không nạp lại, loadData nhánh "đã khởi tạo" đọc nhầm dropdown -> nhảy về Tháng 1/2026.
+{
+  const sm = sessionStorage.getItem('hstc_sel_month');
+  const sy = sessionStorage.getItem('hstc_sel_year');
+  const selM = document.getElementById('sel-month');
+  const selY = document.getElementById('sel-year');
+  if (selM && sm) selM.value = sm;
+  if (selY && sy) selY.value = sy;
+}
+
 // Bắt sự kiện phím Enter trên ô mật khẩu (Chạy trực tiếp vì ES Module đã defer)
 {
   const pwInput = document.getElementById('pw-input');
