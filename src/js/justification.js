@@ -34,7 +34,10 @@ function applyLoaiUI() {
 export function openGiaiTrinh(date, opts) {
   opts = opts || {};
   gtDate = date;
-  gtType = opts.type || 'phep';       // mới -> mặc định Nghỉ phép (cả ngày)
+  // Tương thích ngược: nếu HTML cũ (chưa có nút Loại — vd tệp /nv chưa deploy lại),
+  // ép Loại = 'khac' để submit dùng đúng nội dung ô textarea như cơ chế cũ.
+  const hasNewForm = !!document.getElementById('gt-loai');
+  gtType = hasNewForm ? (opts.type || 'phep') : 'khac';  // mới -> mặc định Nghỉ phép (cả ngày)
   gtBuoi = opts.buoi || 'ca_ngay';
 
   setSeg('gt-loai', gtType);
