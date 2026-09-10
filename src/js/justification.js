@@ -23,10 +23,13 @@ function setSeg(groupId, value) {
   });
 }
 
-// Ô Nội dung chỉ mở khi Loại = Khác.
+// Nghỉ phép/Ốm -> hiện Buổi, ẩn Nội dung. Khác -> ẩn Buổi, hiện Nội dung.
 function applyLoaiUI() {
+  const isKhac = (gtType === 'khac');
+  const buoiWrap = document.getElementById('gt-buoi-wrap');
+  if (buoiWrap) buoiWrap.hidden = isKhac;
   const ndWrap = document.getElementById('gt-nd-wrap');
-  if (ndWrap) ndWrap.hidden = (gtType !== 'khac');
+  if (ndWrap) ndWrap.hidden = !isKhac;
   const err = document.getElementById('gt-err');
   if (err) err.hidden = true;
 }

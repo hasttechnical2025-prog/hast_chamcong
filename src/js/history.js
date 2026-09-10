@@ -303,8 +303,7 @@ export function renderHistory(data) {
       `<div class="hist-stat"><div class="val">${data.congChuan || 0}</div><div class="lbl">Công chuẩn</div></div>` +
       `<div class="hist-stat"><div class="val" style="color:#137333;">${data.congThucTe || 0}</div><div class="lbl">Công thực</div></div>` +
       `<div class="hist-stat"><div class="val" style="color:#b45309;">${data.congBD || 0}</div><div class="lbl">Công B,D</div></div>` +
-      `<div class="hist-stat"><div class="val" style="color:#c5221f;">${data.khongCham || 0}</div><div class="lbl">Không chấm</div></div>` +
-      `<div class="hist-stat"><div class="val" style="color:#1d4ed8;">${data.nghiPhep || 0}</div><div class="lbl">Nghỉ phép</div></div>`;
+      `<div class="hist-stat"><div class="val" style="color:#c5221f;">${data.khongCham || 0}</div><div class="lbl">Không chấm</div></div>`;
   }
 
   const contentEl = document.getElementById('hist-content');
