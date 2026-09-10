@@ -332,7 +332,27 @@
   <div class="giaitrinh-box">
     <div class="giaitrinh-title">📝 Giải trình / Bổ sung lý do</div>
     <div class="giaitrinh-date" id="gt-date-label"></div>
-    <textarea id="gt-reason" placeholder="Nhập lý do: đi công tác, nghỉ phép, đi muộn..."></textarea>
+
+    <div class="gt-field-label">Lý do</div>
+    <div class="gt-seg" id="gt-loai">
+      <button type="button" data-v="phep">Nghỉ phép</button>
+      <button type="button" data-v="om">Nghỉ ốm</button>
+      <button type="button" data-v="khac">Khác</button>
+    </div>
+
+    <div class="gt-field-label">Buổi</div>
+    <div class="gt-seg" id="gt-buoi">
+      <button type="button" data-v="ca_ngay">Cả ngày</button>
+      <button type="button" data-v="sang">Sáng</button>
+      <button type="button" data-v="chieu">Chiều</button>
+    </div>
+
+    <div id="gt-nd-wrap" hidden>
+      <div class="gt-field-label">Nội dung <span style="color:#aaa;font-weight:400;">(bắt buộc khi chọn Khác)</span></div>
+      <textarea id="gt-reason" placeholder="Đi công tác, quên chấm công, đi muộn có lý do..."></textarea>
+      <div class="gt-err" id="gt-err" hidden>Nhập nội dung trước khi lưu</div>
+    </div>
+
     <div class="giaitrinh-actions">
       <button class="btn-gt-cancel">Hủy</button>
       <button class="btn-gt-submit" id="btn-gt-submit">💾 Lưu</button>

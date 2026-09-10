@@ -64,9 +64,13 @@ export async function logAttendance(payload) {
 
 /**
  * CBNV gửi giải trình
+ * @param {string} date - YYYY-MM-DD
+ * @param {string} reason - nội dung/nhãn lý do
+ * @param {'phep'|'om'|'khac'} [type] - loại giải trình
+ * @param {'ca_ngay'|'sang'|'chieu'} [buoi] - buổi
  */
-export async function submitJustification(date, reason) {
-  return await callApi('/justification', { date, reason });
+export async function submitJustification(date, reason, type, buoi) {
+  return await callApi('/justification', { date, reason, type, buoi });
 }
 
 /**

@@ -349,10 +349,28 @@ serve(async (req) => {
         });
       }
 
-      const { date, reason } = await req.json();
+      const { date, reason, type, buoi } = await req.json();
       if (!date || !reason) {
         return new Response(JSON.stringify({ error: "Thiếu thông tin ngày hoặc lý do" }), {
           status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      // Chuẩn hoá Loại/Buổi; giá trị lạ -> 'khac'/'ca_ngay'.
+      const jType = (type === "phep" || type === "om" || type === "khac") ? type : "khac";
+      const jBuoi = (buoi === "ca_ngay" || buoi === "sang" || buoi === "chieu") ? buoi : "ca_ngay";
+
+      // Chặn sửa khi giải trình ĐÃ được Đồng ý (bảo toàn phê duyệt của TBP).
+      const { data: existing } = await supabase
+        .from("chamcong_attendance_records")
+        .select("approve_status")
+        .eq("employee_name", meta.employee_name)
+        .eq("date", date)
+        .maybeSingle();
+      if (existing && existing.approve_status === "Đồng ý") {
+        return new Response(JSON.stringify({ error: "Giải trình ngày này đã được TBP duyệt, không thể sửa. Nếu cần thay đổi, vui lòng báo TBP." }), {
+          status: 409,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
@@ -361,6 +379,8 @@ serve(async (req) => {
         .from("chamcong_attendance_records")
         .update({
           justification: reason,
+          justification_type: jType,
+          justification_buoi: jBuoi,
           approve_status: "Chờ"
         })
         .eq("employee_name", meta.employee_name)
@@ -377,6 +397,8 @@ serve(async (req) => {
             date: date,
             grades: "D,D,D,D",
             justification: reason,
+            justification_type: jType,
+            justification_buoi: jBuoi,
             approve_status: "Chờ"
           }]);
         if (insErr) throw insErr;
@@ -444,12 +466,37 @@ serve(async (req) => {
         }
       }
 
+      // Tự chấm điểm NSCL theo Loại/Buổi giải trình:
+      //  - Đồng ý + Nghỉ phép/Ốm: cả ngày -> 'P'/'Ô'; nửa buổi -> '5'.
+      //  - Từ chối / Hủy duyệt (không phải Đồng ý): gỡ điểm nghỉ đã tự chấm để ngày hết tính là nghỉ.
+      //  - Loại 'khac'/không có: KHÔNG đụng nscl_score (để TBP tự chấm).
+      const scoreFields: Record<string, unknown> = {};
+      {
+        const { data: rec } = await supabase
+          .from("chamcong_attendance_records")
+          .select("justification_type, justification_buoi")
+          .eq("employee_name", employee_name)
+          .eq("date", date)
+          .maybeSingle();
+        const jt = rec?.justification_type;
+        const jb = rec?.justification_buoi;
+        if (jt === "phep" || jt === "om") {
+          if (approve_status === "Đồng ý") {
+            const mark = jt === "phep" ? "P" : "Ô";
+            scoreFields.nscl_score = (jb === "sang" || jb === "chieu") ? "5" : mark;
+          } else {
+            scoreFields.nscl_score = "";
+          }
+        }
+      }
+
       const { data: updated, error } = await supabase
         .from("chamcong_attendance_records")
         .update({
           approve_status,
           approve_note,
-          approve_time: new Date().toISOString()
+          approve_time: new Date().toISOString(),
+          ...scoreFields
         })
         .eq("employee_name", employee_name)
         .eq("date", date)
@@ -468,7 +515,8 @@ serve(async (req) => {
             grades: "D,D,D,D",
             approve_status,
             approve_note,
-            approve_time: new Date().toISOString()
+            approve_time: new Date().toISOString(),
+            ...scoreFields
           }]);
         if (insErr) throw insErr;
       }

@@ -12,6 +12,13 @@ function leaveText(loai, buoi) {
   return base;
 }
 
+// Escape cho attribute & text (lý do do CBNV tự nhập có thể chứa " < >).
+function escAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 export function showHistory(from) {
   const name = getEmployeeName();
   if (!name) { showPopup('Vui lòng xác nhận họ tên trước.'); return; }
@@ -235,6 +242,9 @@ export async function loadHistory(name) {
           note: r.note || '',
           reason: r.justification || '',
           approve: r.approve_status || '',
+          approveNote: r.approve_note || '',
+          jtype: r.justification_type || '',
+          jbuoi: r.justification_buoi || '',
           isHoliday: isHoliday,
           holidayLabel: holidaysMap[dateStr] || '',
           // Nghỉ phép đã duyệt (đồng bộ) — hiển thị P + nhãn, bỏ gate giải trình.
@@ -391,14 +401,16 @@ export function renderHistory(data) {
         ? `<td>${reasonDisplay}</td><td></td>`
         : (d.allOk && !reasonDisplay
           ? '<td></td><td></td>'
-          : `<td class="gt-cell" data-gt="${d.date}">`
+          : `<td class="gt-cell${d.approve === 'Đồng ý' ? ' gt-locked' : ''}" data-gt="${d.date}" data-type="${escAttr(d.jtype)}" data-buoi="${escAttr(d.jbuoi)}" data-content="${escAttr(d.reason)}">`
           + (reasonDisplay
             ? `<span class="gt-text">${reasonDisplay}</span>`
+              + (d.approve === 'Đồng ý' ? ' <span class="gt-lock-ic" title="Đã duyệt — không sửa được">🔒</span>' : '')
             : `<span class="gt-hint">+ Giải trình</span>`)
           + `</td>`
           + `<td>${!reasonDisplay ? '' : (
             d.approve === 'Đồng ý' ? '<span class="badge-approve badge-dongY">✅ Đồng ý</span>'
-              : d.approve === 'Từ chối' ? '<span class="badge-approve badge-tuChoi">❌ Từ chối</span>'
+              : d.approve === 'Từ chối' ? ('<span class="badge-approve badge-tuChoi">❌ Từ chối</span>'
+                  + (d.approveNote ? `<div class="gt-reject-note">TBP: ${escAttr(d.approveNote)}</div>` : ''))
                 : '<span class="badge-approve badge-choDuyet">⏳ Chờ</span>'
           )}</td>`
         ))
