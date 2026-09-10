@@ -1,4 +1,4 @@
-const VERSION = 'v2026.09.10.03';
+const VERSION = 'v2026.09.10_54224';
 const CACHE_NAME = `hast-attendance-${VERSION}`;
 
 // Liệt kê tài nguyên tĩnh cần precache
