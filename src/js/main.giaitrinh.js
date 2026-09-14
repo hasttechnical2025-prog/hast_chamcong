@@ -1111,21 +1111,29 @@ async function saveNsclScore(inputEl) {
   }
   inputEl.value = val;
 
-  // Nếu giá trị không đổi so với DB thì bỏ qua
-  if (r && (r.nscl_score || '') === val) return;
-  if (!r && val === '') return;
+  // Record ẢO (id 'virtual-...') = CHƯA có dòng thật trong DB (ngày nghỉ đồng bộ / ngày chưa chấm).
+  // Phải INSERT, KHÔNG được UPDATE theo id giả -> tránh lỗi "invalid input syntax for type uuid".
+  const isVirtual = !!r && typeof r.id === 'string' && r.id.startsWith('virtual-');
+
+  // Nếu giá trị không đổi so với DB thì bỏ qua (chỉ với record THẬT; ảo thì chưa có trong DB -> vẫn lưu).
+  if (r && !isVirtual && (r.nscl_score || '') === val) return;
+  if ((!r || isVirtual) && val === '') return;
 
   try {
-    if (!r) {
+    if (!r || isVirtual) {
       const res = await adminWrite('chamcong_attendance_records', 'insert', [{
         employee_name: empName,
         date: dateYMD,
-        grades: 'D, D, D, D',
+        grades: (r && r.grades) ? r.grades : 'D, D, D, D',
         approve_status: 'Chờ',
         nscl_score: val
       }]);
       if (res && res.data && res.data.length > 0) {
-        _recordMap[key] = res.data[0]; // Ghi nhận vào RAM
+        const inserted = res.data[0];
+        // Giữ overlay nghỉ phép (RAM-only, KHÔNG ghi DB): nhãn + trạng thái đã duyệt -> render lại
+        // trong phiên không mất nhãn / không bị chặn ô. Lần tải sau overlay tự áp lại từ bảng nguồn.
+        if (r) { if (r.justification) inserted.justification = r.justification; if (r.approve_status) inserted.approve_status = r.approve_status; }
+        _recordMap[key] = inserted; // Ghi nhận vào RAM
       }
     } else {
       await adminWrite('chamcong_attendance_records', 'update', { nscl_score: val }, 'id', r.id);
@@ -1174,22 +1182,29 @@ async function saveNsclAdjust(inputEl) {
   // Cột nscl_adjust kiểu numeric: ô trống phải gửi NULL (không phải '')
   const dbVal = (val === '') ? null : Number(val);
 
-  // Không đổi so với hiện tại thì bỏ qua
+  // Record ẢO (id 'virtual-...') = chưa có dòng thật trong DB -> phải INSERT, không UPDATE id giả.
+  const isVirtual = !!r && typeof r.id === 'string' && r.id.startsWith('virtual-');
+
+  // Không đổi so với hiện tại thì bỏ qua (chỉ với record THẬT)
   const curStr = (r && r.nscl_adjust != null) ? String(r.nscl_adjust) : '';
-  if (r && curStr === val) return;
-  if (!r && val === '') return; // chưa có bản ghi mà cũng để trống -> khỏi tạo
+  if (r && !isVirtual && curStr === val) return;
+  if ((!r || isVirtual) && val === '') return; // chưa có bản ghi mà cũng để trống -> khỏi tạo
 
   try {
-    if (!r) {
+    if (!r || isVirtual) {
       const res = await adminWrite('chamcong_attendance_records', 'insert', [{
         employee_name: empName,
         date: dateYMD,
-        grades: 'D, D, D, D',
+        grades: (r && r.grades) ? r.grades : 'D, D, D, D',
         approve_status: 'Chờ',
-        nscl_score: '',
+        nscl_score: (r && r.nscl_score) ? r.nscl_score : '',
         nscl_adjust: dbVal
       }]);
-      if (res && res.data && res.data.length > 0) _recordMap[key] = res.data[0];
+      if (res && res.data && res.data.length > 0) {
+        const inserted = res.data[0];
+        if (r) { if (r.justification) inserted.justification = r.justification; if (r.approve_status) inserted.approve_status = r.approve_status; }
+        _recordMap[key] = inserted;
+      }
     } else {
       await adminWrite('chamcong_attendance_records', 'update', { nscl_adjust: dbVal }, 'id', r.id);
       r.nscl_adjust = dbVal;
