@@ -321,7 +321,9 @@ async function loadData() {
     //  • justification = nhãn + approve_status='Đồng ý' -> MỞ ô chấm (bỏ chặn _nsclJustBlock) +
     //    board hiện "đã duyệt", không nag TBP đi giải trình.
     //  • CẢ NGÀY: nscl_score = P/Ô (nếu ô còn trống) -> ô hiện marker, "Điền nhanh 10" bỏ qua
-    //    (chỉ điền ô trống), NSCL đếm đúng cột Nghỉ phép/ốm. Nửa buổi: chỉ mở ô + nhãn, để TBP chấm.
+    //    (chỉ điền ô trống), NSCL đếm đúng cột Nghỉ phép/ốm.
+    //  • NỬA BUỔI (sáng/chiều): gợi ý nscl_score = '5' (0.5 công + 0.5 nghỉ) nếu ô còn trống —
+    //    chỉ là marker RAM, TBP vẫn sửa được; áp cho cả nghỉ phép lẫn ốm.
     // Tự đồng bộ theo bảng nguồn: gỡ nghỉ bên app A -> hết dòng -> overlay biến mất ở lần tải sau.
     try {
       const { data: leaveRows } = await supabaseClient
@@ -339,8 +341,9 @@ async function loadData() {
         }
         if (!rec.justification || !String(rec.justification).trim()) rec.justification = leaveText(l.loai, l.buoi);
         rec.approve_status = 'Đồng ý';
-        if (l.buoi === 'ca_ngay' && (!rec.nscl_score || !String(rec.nscl_score).trim())) {
-          rec.nscl_score = LEAVE_NSCL[l.loai] || 'P';
+        if (!rec.nscl_score || !String(rec.nscl_score).trim()) {
+          // CẢ NGÀY -> P/Ô; NỬA BUỔI (sáng/chiều) -> gợi ý 5. Marker RAM-only, TBP vẫn sửa được.
+          rec.nscl_score = (l.buoi === 'ca_ngay') ? (LEAVE_NSCL[l.loai] || 'P') : '5';
         }
       });
     } catch (e) { /* bảng chưa có / lỗi -> bỏ qua, không ảnh hưởng board */ }
