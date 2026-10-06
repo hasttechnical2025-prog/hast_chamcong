@@ -100,6 +100,11 @@ async function adminLogin() {
     if (overlay) overlay.style.display = 'none';
 
     updateDeployStatusCard();
+
+    // Nạp lại dữ liệu tab Cấu hình bằng JWT admin VỪA nhận. Trước đó onload có thể đã chạy
+    // loadAccounts() với token cũ/rỗng -> 403; nạp lại ở đây để danh sách hiện đúng.
+    loadAccounts();
+    loadNsclPrintCfg();
   } catch (e) {
     if (errEl) {
       errEl.textContent = '❌ ' + e.message;
@@ -241,7 +246,9 @@ function loadSavedConfig() {
     document.getElementById('ghBranch').value = config.ghBranch || 'main';
     document.getElementById('ghToken').value = ''; // Yêu cầu nhập thủ công
     initSupabase();
-    if (_isClientReady) { loadNsclPrintCfg(); loadAccounts(); }
+    // loadAccounts() được nạp sau khi đăng nhập admin (adminLogin), KHÔNG gọi ở đây
+    // để tránh bắn request bằng token cũ/rỗng -> 403 "đứng" trên bảng.
+    if (_isClientReady) { loadNsclPrintCfg(); }
     _pcfgBindColorSync();
   }
 }
@@ -277,6 +284,9 @@ async function updatePassword(key, inputId) {
 async function loadAccounts() {
   const el = document.getElementById('acc-list');
   if (!el) return;
+  // Chưa có JWT (chưa đăng nhập) -> hiện gợi ý trung lập, không bắn request chắc chắn lỗi.
+  const jwt = localStorage.getItem('hstc_jwt') || sessionStorage.getItem('hstc_jwt');
+  if (!jwt) { el.innerHTML = '<i style="color:#888;">Đăng nhập quản trị để xem danh sách tài khoản.</i>'; return; }
   try {
     const res = await adminAccount('list');
     const data = res.data;
@@ -290,8 +300,12 @@ async function loadAccounts() {
         ).join('')
       + '</tbody></table>';
   } catch (e) {
-    el.innerHTML = '<span style="color:#c5221f;">❌ Lỗi tải tài khoản: ' + e.message
-      + ' (cần chạy SQL tạo các hàm chamcong_list_accounts/upsert/delete).</span>';
+    const msg = (e && e.message) ? e.message : String(e);
+    // Chỉ gợi ý "chạy SQL tạo hàm" khi lỗi THỰC SỰ là thiếu RPC; lỗi auth/khác hiện đúng message gốc.
+    const hint = /function|PGRST202|does not exist|could not find/i.test(msg)
+      ? ' (cần chạy SQL tạo các hàm chamcong_list_accounts/upsert/delete).'
+      : '';
+    el.innerHTML = '<span style="color:#c5221f;">❌ Lỗi tải tài khoản: ' + escHtmlA(msg) + hint + '</span>';
   }
 }
 
